@@ -38,7 +38,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ### ###########################################################################
 
-RGX_BVNC := 33.15.11.3
+RGX_BVNC := 22.104.208.318
 PVR_SYSTEM := rgx_ti_linux
 
 include ../config/preconfig.mk

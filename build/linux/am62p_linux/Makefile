@@ -38,7 +38,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ### ###########################################################################
 
-RGX_BVNC := 33.15.11.3
+RGX_BVNC := 36.53.104.796
 PVR_SYSTEM := rgx_ti_linux
 
 include ../config/preconfig.mk
@@ -50,9 +50,7 @@ endif
 
 NO_HARDWARE := 0
 PVR_LDM_PLATFORM_PRE_REGISTERED := 1
-
 SUPPORT_NATIVE_FENCE_SYNC := 1
-SUPPORT_MIPS_64K_PAGE_SIZE := 1
 
 KERNEL_COMPONENTS := srvkm
 

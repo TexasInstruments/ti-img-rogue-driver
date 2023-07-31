@@ -52,6 +52,9 @@ NO_HARDWARE := 0
 PVR_LDM_PLATFORM_PRE_REGISTERED := 1
 SUPPORT_NATIVE_FENCE_SYNC := 1
 
+# HACK to circumvent buffer import issues for now
+SUPPORT_WRAP_EXTMEM := 0
+
 KERNEL_COMPONENTS := srvkm
 
 ifeq ($(PVR_REMVIEW),1)
@@ -61,6 +64,9 @@ ifeq ($(PVR_REMVIEW),1)
 else
  PVR_DRM_MODESET_DRIVER_NAME := tidss
 endif
+
+# Always print fatal and error logs, especially in kernel mode.
+PVRSRV_NEED_PVR_DPF := 1
 
 # Should be last
 include ../config/core.mk
