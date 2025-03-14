@@ -1193,10 +1193,11 @@ PVRSRVSetDeviceSystemPowerState(PPVRSRV_DEVICE_NODE psDeviceNode,
 	PFN_SYS_DEV_IS_DEFAULT_STATE_OFF pfnIsDefaultStateOff;
 
 	if (psDeviceNode->eDevState < PVRSRV_DEVICE_STATE_ACTIVE) {
-		/* Power device is not initialised. */
-		PVR_DPF((PVR_DBG_ERROR, "%s: Device not initialised",
+		/* Power device is not initialised. Ignoring request. */
+		PVR_DPF((PVR_DBG_MESSAGE,
+			 "%s: Device not initialised, ignoring request",
 			 __func__));
-		return PVRSRV_ERROR_INVALID_PARAMS;
+		return PVRSRV_OK;
 	}
 
 	/* Prevent simultaneous SetPowerStateKM calls */
