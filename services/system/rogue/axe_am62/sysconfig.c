@@ -242,7 +242,7 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 		PVR_LOG(("%s: failed to resume", __func__));
 
 	/* Prepare core clock and get reference for later power management */
-	pd_data->core_clk = devm_clk_get_prepared(pd_data->dev, "core");
+	pd_data->core_clk = devm_clk_get_prepared(pd_data->dev, NULL);
 	if (IS_ERR(pd_data->core_clk)) {
 		PVR_DPF((PVR_DBG_ERROR, "%s: failed to lookup core clock",
 			 __func__));
