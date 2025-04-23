@@ -159,7 +159,7 @@ static int SysDevPowerDomainsInit(struct pvr_power_data *pd_data)
 	 */
 
 	pd_data->firmware_pd =
-		dev_pm_domain_attach_by_name(pd_data->dev, "firmware");
+		dev_pm_domain_attach_by_name(pd_data->dev, "gpu_0");
 	if (IS_ERR_OR_NULL(pd_data->firmware_pd)) {
 		err = PTR_ERR(pd_data->firmware_pd);
 		goto failed_attach;
@@ -173,7 +173,7 @@ static int SysDevPowerDomainsInit(struct pvr_power_data *pd_data)
 		goto failed_attach;
 	}
 
-	pd_data->dust_pd = dev_pm_domain_attach_by_name(pd_data->dev, "dust");
+	pd_data->dust_pd = dev_pm_domain_attach_by_name(pd_data->dev, "gpucore_0");
 	if (IS_ERR_OR_NULL(pd_data->dust_pd)) {
 		err = PTR_ERR(pd_data->dust_pd);
 		goto failed_attach;
@@ -291,7 +291,7 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 	}
 
 	/* Prepare core clock and get reference for later power management */
-	pd_data->core_clk = devm_clk_get_prepared(pd_data->dev, "core");
+	pd_data->core_clk = devm_clk_get_prepared(pd_data->dev, NULL);
 	if (IS_ERR(pd_data->core_clk)) {
 		PVR_DPF((PVR_DBG_ERROR, "%s: failed to lookup core clock",
 			 __func__));
