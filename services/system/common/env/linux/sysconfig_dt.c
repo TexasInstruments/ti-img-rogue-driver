@@ -367,7 +367,8 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 			((struct device *)pvOSDevice)->driver->of_match_table,
 			pvOSDevice);
 		if (id) {
-			if (!strcmp(id->compatible, "ti,j721s2-gpu")) {
+			if (!(strcmp(id->compatible, "ti,j721s2-gpu") ||
+			      strcmp(id->compatible, "ti,j721s2-pvr"))) {
 				(*ppsDevConfig)->eCacheSnoopingMode =
 					PVRSRV_DEVICE_SNOOP_CPU_ONLY;
 			}
