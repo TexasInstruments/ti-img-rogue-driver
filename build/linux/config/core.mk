@@ -135,7 +135,7 @@ include ../defs.mk
 # Infer PVR_BUILD_DIR from the directory configuration is launched from.
 # Check anyway that such a directory exists.
 #
-PVR_BUILD_DIR := $(notdir $(abspath .))
+PVR_BUILD_DIR ?= $(notdir $(abspath .))
 $(call directory-must-exist,$(TOP)/build/linux/$(PVR_BUILD_DIR))
 
 # Output directory for configuration, object code,
