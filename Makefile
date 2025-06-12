@@ -53,7 +53,7 @@ MAKECMDGOALS ?= build
 .PHONY: $(MAKECMDGOALS)
 .SUFFIXES:
 .DEFAULT $(filter-out clang-format,$(MAKECMDGOALS)):
-	@$(if $(ALREADY_INVOKED_SUBMAKE),:,$(eval ALREADY_INVOKED_SUBMAKE := true)$(MAKE) --no-print-directory -C $(TOP)/build/linux/$(PVR_BUILD_DIR) $(MAKECMDGOALS) TOP=$(TOP))
+	@$(if $(ALREADY_INVOKED_SUBMAKE),:,$(eval ALREADY_INVOKED_SUBMAKE := true)$(MAKE) --no-print-directory -C $(TOP)/build/linux/$(PVR_BUILD_DIR) $(MAKECMDGOALS) TOP=$(TOP) PVR_BUILD_DIR=$(PVR_BUILD_DIR))
 
 Makefile: ;
 
