@@ -1,14 +1,14 @@
-load("@kernel_toolchain_info//:dict.bzl", "CLANG_VERSION")
-load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
-load("//build/bazel_common_rules/exec:exec.bzl", "exec", "exec_test")
+package(
+    default_visibility = [
+        "//visibility:public",
+    ],
+)
+
 load(
     "//build/kernel/kleaf:kernel.bzl",
     "ddk_headers",
+    "ddk_uapi_headers",
     "ddk_module",
-    "kernel_abi",
-    "kernel_abi_dist",
-    "kernel_build",
-    "kernel_module",
     "kernel_module_group",
 )
 
@@ -190,27 +190,6 @@ filegroup(
     ],
 )
 
-kernel_abi(
-    name = "ti_abi",
-    kernel_build = "//common:ti",
-    kernel_modules = [
-        "//imgtech-module:ti_ext_module",
-    ],
-    kmi_enforced = True,
-    kmi_symbol_list_add_only = True,
-)
-
-kernel_abi_dist(
-    name = "ti_abi_dist",
-    data = [
-        "//common:ti",
-    ],
-    flat = True,
-    kernel_abi = "ti_abi",
-    kernel_build_add_vmlinux = True,
-    log = "info",
-)
-
 ddk_module(
     name = "am62x_imgtech_module",
     srcs = [
@@ -222,7 +201,6 @@ ddk_module(
     copts = [
         "-D__linux__",
         "-Wno-missing-field-initializers",
-        "-Wdeclaration-after-statement",
         "-Wno-format-zero-length",
         "-Wmissing-prototypes",
         "-Wstrict-prototypes",
@@ -234,11 +212,10 @@ ddk_module(
         "-include",
         "$(location include/config_kernel_am62_android.h)",
     ],
-    kernel_build = "//common:ti",
-    visibility = ["//visibility:public"],
+    kernel_build = "//:target_kernel_build",
     deps = [
         ":am62x_imgtech_module_headers",
-        "//common:all_headers_aarch64",
+        "//:target_kernel_headers",
     ],
 )
 
@@ -458,7 +435,6 @@ ddk_module(
     copts = [
         "-D__linux__",
         "-Wno-missing-field-initializers",
-        "-Wdeclaration-after-statement",
         "-Wno-format-zero-length",
         "-Wmissing-prototypes",
         "-Wstrict-prototypes",
@@ -470,11 +446,10 @@ ddk_module(
         "-include",
         "$(location include/config_kernel_am62p_android.h)",
     ],
-    kernel_build = "//common:ti",
-    visibility = ["//visibility:public"],
+    kernel_build = "//:target_kernel_build",
     deps = [
         ":am62p_imgtech_module_headers",
-        "//common:all_headers_aarch64",
+        "//:target_kernel_headers",
     ],
 )
 
@@ -531,12 +506,29 @@ ddk_headers(
     ],
 )
 
-kernel_module_group(
-    name = "ti_ext_modules",
+filegroup(
+    name = "imgtech_uapi_headers_group",
+    srcs = glob(
+        [
+            "generated/rogue/**/*.h",
+            "hwdefs/**/*.h", 
+            "include/**/*.h",
+            "services/*.h",
+            "services/include/*.h",
+            "services/include/rogue/*.h",
+            "services/shared/include/*.h",
+        ],
+        exclude = [
+            "kernel/**/*.h",  # Exclude kernel internal headers
+        ],
+    ),
+)
+
+ddk_uapi_headers(
+    name = "imgtech_gpu_ddk_uapi_headers",
     srcs = [
-        # do not sort
-        ":am62x_imgtech_module",
-        ":am62p_imgtech_module",
+        ":imgtech_uapi_headers_group",
     ],
-    visibility = ["//visibility:public"],
+    out = "imgtech-gpu-uapi-headers.tar.gz",
+    kernel_build = "//:target_kernel_build",
 )
