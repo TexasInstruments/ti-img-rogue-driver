@@ -54,6 +54,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sysconfig_cmn.h"
 #include "sysinfo.h"
 
+#if defined(SUPPORT_ARM_ARCH_TIMER)
+#include <clocksource/arm_arch_timer.h>
+#endif
+
 #include <linux/clk.h>
 #include <linux/clk/clk-conf.h>
 #include <linux/dma-mapping.h>
@@ -169,6 +173,9 @@ static PVRSRV_ERROR PopulateTimingInfo(struct device *psDev,
 		.bEnableActivePM = IMG_TRUE,
 		.bEnableRDPowIsland = IMG_FALSE,
 		.ui32ActivePMLatencyms = SYS_RGX_ACTIVE_POWER_LATENCY_MS,
+#if defined(SUPPORT_ARM_ARCH_TIMER)
+		.ui32SOCClockSpeed = arch_timer_get_cntfrq(),
+#endif
 	};
 
 	psRgxData->psRGXTimingInfo = psTimingInfo;
@@ -339,6 +346,13 @@ static PVRSRV_ERROR PostPowerState(IMG_HANDLE hSysData,
 	return PVRSRV_OK;
 }
 
+#if defined(SUPPORT_ARM_ARCH_TIMER)
+static IMG_UINT64 ReadArchTimer(void *)
+{
+	return arch_timer_read_counter();
+}
+#endif
+
 PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 {
 	PVRSRV_ERROR eStatus = PVRSRV_OK;
@@ -360,6 +374,9 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 		.pfnSysDevErrorNotify = SysRGXErrorNotify,
 		.pfnPrePowerState = PrePowerState,
 		.pfnPostPowerState = PostPowerState,
+#if defined(SUPPORT_ARM_ARCH_TIMER)
+		.pfnSoCTimerRead = ReadArchTimer,
+#endif
 	};
 
 	do {
