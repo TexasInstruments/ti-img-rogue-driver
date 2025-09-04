@@ -268,6 +268,11 @@ endif
 # default enable SUPPORT_DOUBLE_FREE_SENTINEL for all builds
 SUPPORT_DOUBLE_FREE_SENTINEL ?= 1
 
+# PVR_ENABLE_DMABUF_UPSTREAM_COMPAT enables behavior where the GPU is granted
+# read/write access to the dma_buf regardless of the permission set to the
+# dma_buf, in accordance with common upstream DRM driver practices.
+$(eval $(call TunableBothConfigC,PVR_ENABLE_DMABUF_UPSTREAM_COMPAT,))
+
 # Write out settings to config* for the next make stage
 $(eval $(call TunableBothConfigC,SUPPORT_RGXKICKSYNC_BRIDGE,))
 $(eval $(call TunableBothConfigMake,SUPPORT_RGXKICKSYNC_BRIDGE,))

@@ -248,6 +248,15 @@ ifeq ($(MESA_EGL),1)
  endif
 endif
 
+# dma_buf upstream compatibility is disabled by default on Android and
+# Chromium OS. For all other platforms, it should be enabled if MESA_EGL,
+# MESA_WSI, or MESA_ZINK_COMMON are set.
+ifeq ($(filter 1,$(SUPPORT_ANDROID_PLATFORM) $(SUPPORT_CHROMIUMOS_PLATFORM)),)
+ ifneq ($(or $(MESA_EGL),$(MESA_WSI),$(MESA_ZINK_COMMON)),)
+  PVR_ENABLE_DMABUF_UPSTREAM_COMPAT ?= 1
+ endif
+endif
+
 ifeq ($(call is-not-target-os,neutrino),true)
  SUPPORT_VKEXT_IMAGE_FORMAT_MOD := 1
 endif
