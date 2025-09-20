@@ -48,8 +48,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "dllist.h"
 #include "allocmem.h"
 
-struct _PVRSRV_POOL_
-{
+struct _PVRSRV_POOL_ {
 	POS_LOCK hLock;
 	/* total max number of permitted entries in the pool */
 	IMG_UINT uiMaxEntries;
@@ -69,18 +68,16 @@ struct _PVRSRV_POOL_
 	void *pvPrivData;
 };
 
-typedef struct _PVRSRV_POOL_ENTRY_
-{
+typedef struct _PVRSRV_POOL_ENTRY_ {
 	DLLIST_NODE sNode;
 	void *pvData;
 } PVRSRV_POOL_ENTRY;
 
 PVRSRV_ERROR PVRSRVPoolCreate(PVRSRV_POOL_ALLOC_FUNC *pfnAlloc,
-					PVRSRV_POOL_FREE_FUNC *pfnFree,
-					IMG_UINT32 ui32MaxEntries,
-					const IMG_CHAR *pszName,
-					void *pvPrivData,
-					PVRSRV_POOL **ppsPool)
+			      PVRSRV_POOL_FREE_FUNC *pfnFree,
+			      IMG_UINT32 ui32MaxEntries,
+			      const IMG_CHAR *pszName, void *pvPrivData,
+			      PVRSRV_POOL **ppsPool)
 {
 	PVRSRV_POOL *psPool;
 	PVRSRV_ERROR eError;
@@ -112,8 +109,7 @@ err_alloc:
 	return eError;
 }
 
-static void _DestroyPoolEntry(PVRSRV_POOL *psPool,
-					PVRSRV_POOL_ENTRY *psEntry)
+static void _DestroyPoolEntry(PVRSRV_POOL *psPool, PVRSRV_POOL_ENTRY *psEntry)
 {
 	psPool->pfnFree(psPool->pvPrivData, psEntry->pvData);
 	OSFreeMem(psEntry);
@@ -121,30 +117,27 @@ static void _DestroyPoolEntry(PVRSRV_POOL *psPool,
 
 void PVRSRVPoolDestroy(PVRSRV_POOL *psPool)
 {
-	if (psPool->uiNumBusy != 0)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Attempt to destroy pool %s "
-						"with %u entries still in use",
-						__func__,
-						psPool->pszName,
-						psPool->uiNumBusy));
+	if (psPool->uiNumBusy != 0) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "%s: Attempt to destroy pool %s "
+			 "with %u entries still in use",
+			 __func__, psPool->pszName, psPool->uiNumBusy));
 		return;
 	}
 
 	OSLockDestroy(psPool->hLock);
 
-	if (psPool->uiNumFree)
-	{
+	if (psPool->uiNumFree) {
 		PVRSRV_POOL_ENTRY *psEntry;
 		DLLIST_NODE *psChosenNode;
 
 		psChosenNode = dllist_get_next_node(&psPool->sFreeList);
 
-		while (psChosenNode)
-		{
+		while (psChosenNode) {
 			dllist_remove_node(psChosenNode);
 
-			psEntry = IMG_CONTAINER_OF(psChosenNode, PVRSRV_POOL_ENTRY, sNode);
+			psEntry = IMG_CONTAINER_OF(psChosenNode,
+						   PVRSRV_POOL_ENTRY, sNode);
 			_DestroyPoolEntry(psPool, psEntry);
 
 			psPool->uiNumFree--;
@@ -183,9 +176,8 @@ err_allocmem:
 	return eError;
 }
 
-PVRSRV_ERROR PVRSRVPoolGet(PVRSRV_POOL *psPool,
-					PVRSRV_POOL_TOKEN *hToken,
-					void **ppvDataOut)
+PVRSRV_ERROR PVRSRVPoolGet(PVRSRV_POOL *psPool, PVRSRV_POOL_TOKEN *hToken,
+			   void **ppvDataOut)
 {
 	PVRSRV_POOL_ENTRY *psEntry;
 	PVRSRV_ERROR eError = PVRSRV_OK;
@@ -194,19 +186,17 @@ PVRSRV_ERROR PVRSRVPoolGet(PVRSRV_POOL *psPool,
 	OSLockAcquire(psPool->hLock);
 
 	psChosenNode = dllist_get_next_node(&psPool->sFreeList);
-	if (unlikely(psChosenNode == NULL))
-	{
+	if (unlikely(psChosenNode == NULL)) {
 		/* no available elements in the pool. try to create one */
 
 		eError = _CreateNewPoolEntry(psPool, &psEntry);
 
 		PVR_GOTO_IF_ERROR(eError, out_unlock);
-	}
-	else
-	{
+	} else {
 		dllist_remove_node(psChosenNode);
 
-		psEntry = IMG_CONTAINER_OF(psChosenNode, PVRSRV_POOL_ENTRY, sNode);
+		psEntry = IMG_CONTAINER_OF(psChosenNode, PVRSRV_POOL_ENTRY,
+					   sNode);
 
 		psPool->uiNumFree--;
 	}
@@ -215,8 +205,9 @@ PVRSRV_ERROR PVRSRVPoolGet(PVRSRV_POOL *psPool,
 	/* Don't poison the IN buffer as that is copied from client and would be
 	 * waste of cycles.
 	 */
-	OSCachedMemSet(((IMG_PBYTE)psEntry->pvData)+PVRSRV_MAX_BRIDGE_IN_SIZE,
-			PVRSRV_POISON_ON_ALLOC_VALUE, PVRSRV_MAX_BRIDGE_OUT_SIZE);
+	OSCachedMemSet(((IMG_PBYTE)psEntry->pvData) + PVRSRV_MAX_BRIDGE_IN_SIZE,
+		       PVRSRV_POISON_ON_ALLOC_VALUE,
+		       PVRSRV_MAX_BRIDGE_OUT_SIZE);
 #endif
 
 	psPool->uiNumBusy++;
@@ -239,13 +230,10 @@ void PVRSRVPoolPut(PVRSRV_POOL *psPool, PVRSRV_POOL_TOKEN hToken)
 	/* put this entry in the pool if the pool has space,
 	 * otherwise free it
 	 */
-	if (psPool->uiNumFree < psPool->uiMaxEntries)
-	{
+	if (psPool->uiNumFree < psPool->uiMaxEntries) {
 		dllist_add_to_tail(&psPool->sFreeList, &psEntry->sNode);
 		psPool->uiNumFree++;
-	}
-	else
-	{
+	} else {
 		_DestroyPoolEntry(psPool, psEntry);
 	}
 

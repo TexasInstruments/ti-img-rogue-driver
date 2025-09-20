@@ -44,52 +44,53 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PVR_DVFS_H
 
 #if defined(SUPPORT_LINUX_DVFS)
- #include <linux/devfreq.h>
- #include <linux/thermal.h>
+#include <linux/devfreq.h>
+#include <linux/thermal.h>
 
- #if defined(CONFIG_DEVFREQ_THERMAL)
-  #include <linux/devfreq_cooling.h>
- #endif
+#if defined(CONFIG_DEVFREQ_THERMAL)
+#include <linux/devfreq_cooling.h>
+#endif
 
- #include <linux/pm_opp.h>
+#include <linux/pm_opp.h>
 #endif
 
 #if defined(SUPPORT_PDVFS)
 // #include <linux/notifier.h>
- #include "pvr_notifier.h"
+#include "pvr_notifier.h"
 #endif
 
 #include "img_types.h"
 
-typedef void (*PFN_SYS_DEV_DVFS_SET_FREQUENCY)(IMG_HANDLE hSysData, IMG_UINT32 ui32Freq);
-typedef void (*PFN_SYS_DEV_DVFS_SET_VOLTAGE)(IMG_HANDLE hSysData, IMG_UINT32 ui32Volt);
+typedef void (*PFN_SYS_DEV_DVFS_SET_FREQUENCY)(IMG_HANDLE hSysData,
+					       IMG_UINT32 ui32Freq);
+typedef void (*PFN_SYS_DEV_DVFS_SET_VOLTAGE)(IMG_HANDLE hSysData,
+					     IMG_UINT32 ui32Volt);
 
-typedef PVRSRV_ERROR (*PFN_DEV_NOTIFY_CLOCK_FREQ)(PPVRSRV_DEVICE_NODE psDeviceNode, IMG_UINT32 ui32NewFreq);
+typedef PVRSRV_ERROR (*PFN_DEV_NOTIFY_CLOCK_FREQ)(
+	PPVRSRV_DEVICE_NODE psDeviceNode, IMG_UINT32 ui32NewFreq);
 
-typedef struct _IMG_OPP_
-{
-	IMG_UINT32			ui32Volt;
+typedef struct _IMG_OPP_ {
+	IMG_UINT32 ui32Volt;
 	/*
 	 * Unit of frequency in Hz.
 	 */
-	IMG_UINT32			ui32Freq;
+	IMG_UINT32 ui32Freq;
 } IMG_OPP;
 
-typedef struct _IMG_DVFS_DEVICE_CFG_
-{
-	const IMG_OPP  *pasOPPTable;
-	IMG_UINT32      ui32OPPTableSize;
+typedef struct _IMG_DVFS_DEVICE_CFG_ {
+	const IMG_OPP *pasOPPTable;
+	IMG_UINT32 ui32OPPTableSize;
 #if defined(SUPPORT_LINUX_DVFS)
-	IMG_UINT32      ui32PollMs;
+	IMG_UINT32 ui32PollMs;
 #endif
-	IMG_INT32       i32CapacityHeadroom;
-	IMG_BOOL        bIdleReq;
-	IMG_BOOL        bDTConfig;
-	PFN_SYS_DEV_DVFS_SET_FREQUENCY  pfnSetFrequency;
-	PFN_SYS_DEV_DVFS_SET_VOLTAGE    pfnSetVoltage;
+	IMG_INT32 i32CapacityHeadroom;
+	IMG_BOOL bIdleReq;
+	IMG_BOOL bDTConfig;
+	PFN_SYS_DEV_DVFS_SET_FREQUENCY pfnSetFrequency;
+	PFN_SYS_DEV_DVFS_SET_VOLTAGE pfnSetVoltage;
 
 #if defined(SUPPORT_PDVFS_DEVFREQ)
-	PFN_DEV_NOTIFY_CLOCK_FREQ       pfnNotifyCoreClkChange;
+	PFN_DEV_NOTIFY_CLOCK_FREQ pfnNotifyCoreClkChange;
 #endif
 
 #if defined(CONFIG_DEVFREQ_THERMAL) && defined(SUPPORT_LINUX_DVFS)
@@ -98,27 +99,24 @@ typedef struct _IMG_DVFS_DEVICE_CFG_
 } IMG_DVFS_DEVICE_CFG;
 
 #if defined(SUPPORT_LINUX_DVFS)
-typedef struct _IMG_DVFS_GOVERNOR_
-{
-	IMG_BOOL			bEnabled;
+typedef struct _IMG_DVFS_GOVERNOR_ {
+	IMG_BOOL bEnabled;
 } IMG_DVFS_GOVERNOR;
 
-typedef struct _IMG_DVFS_GOVERNOR_CFG_
-{
-	IMG_UINT32			ui32UpThreshold;
-	IMG_UINT32			ui32DownDifferential;
+typedef struct _IMG_DVFS_GOVERNOR_CFG_ {
+	IMG_UINT32 ui32UpThreshold;
+	IMG_UINT32 ui32DownDifferential;
 #if defined(SUPPORT_PVR_DVFS_GOVERNOR)
 	/* custom thresholds */
-	IMG_UINT32			uiNumMembus;
+	IMG_UINT32 uiNumMembus;
 #endif
 } IMG_DVFS_GOVERNOR_CFG;
 #endif
 
 #if defined(__linux__)
 #if defined(SUPPORT_LINUX_DVFS) || defined(SUPPORT_PDVFS)
-typedef enum
-{
-	PVR_DVFS_STATE_NONE	= 0,
+typedef enum {
+	PVR_DVFS_STATE_NONE = 0,
 	PVR_DVFS_STATE_INIT_PENDING,
 	PVR_DVFS_STATE_READY,
 	PVR_DVFS_STATE_OFF,
@@ -127,19 +125,18 @@ typedef enum
 #endif
 
 #if defined(SUPPORT_LINUX_DVFS)
-typedef struct _IMG_DVFS_DEVICE_
-{
-	struct dev_pm_opp		*psOPP;
-	struct devfreq			*psDevFreq;
-	PVR_DVFS_STATE		eState;
+typedef struct _IMG_DVFS_DEVICE_ {
+	struct dev_pm_opp *psOPP;
+	struct devfreq *psDevFreq;
+	PVR_DVFS_STATE eState;
 #if defined(SUPPORT_PVR_DVFS_GOVERNOR)
 	IMG_DVFS_GOVERNOR_CFG data;
-	IMG_BOOL			bGovernorReady;
+	IMG_BOOL bGovernorReady;
 #else
 	struct devfreq_simple_ondemand_data data;
 #endif
 #if defined(CONFIG_DEVFREQ_THERMAL)
-	struct thermal_cooling_device	*psDevfreqCoolingDevice;
+	struct thermal_cooling_device *psDevfreqCoolingDevice;
 #endif
 #if defined(CONFIG_PM_DEVFREQ_EVENT) && defined(SUPPORT_PVR_DVFS_GOVERNOR)
 	struct pvr_profiling_device *psProfilingDevice;
@@ -148,34 +145,32 @@ typedef struct _IMG_DVFS_DEVICE_
 #endif
 
 #if defined(SUPPORT_PDVFS)
-typedef struct _IMG_PDVFS_DEVICE_
-{
-	struct devfreq		*psDevFreq;
-	PVR_DVFS_STATE		eState;
+typedef struct _IMG_PDVFS_DEVICE_ {
+	struct devfreq *psDevFreq;
+	PVR_DVFS_STATE eState;
 	//struct notifier_block	sNotifierBlock;
-	IMG_HANDLE		hGpuUtilUserDVFS;
-	unsigned long		ulMinFreq;
-	unsigned long		ulMaxFreq;
-	IMG_BOOL			bGovernorReady;
+	IMG_HANDLE hGpuUtilUserDVFS;
+	unsigned long ulMinFreq;
+	unsigned long ulMaxFreq;
+	IMG_BOOL bGovernorReady;
 #if defined(SUPPORT_PDVFS_STATS)
-	ktime_t			*ptOPPStatsTable;
-	ktime_t			tLastTransition;
-	IMG_UINT32			ui32CurrentOPP;
+	ktime_t *ptOPPStatsTable;
+	ktime_t tLastTransition;
+	IMG_UINT32 ui32CurrentOPP;
 #endif
 } IMG_PDVFS_DEVICE;
 #endif
 
-typedef struct _IMG_DVFS_
-{
+typedef struct _IMG_DVFS_ {
 #if defined(SUPPORT_LINUX_DVFS)
-	IMG_DVFS_DEVICE			sDVFSDevice;
-	IMG_DVFS_GOVERNOR		sDVFSGovernor;
-	IMG_DVFS_GOVERNOR_CFG	sDVFSGovernorCfg;
+	IMG_DVFS_DEVICE sDVFSDevice;
+	IMG_DVFS_GOVERNOR sDVFSGovernor;
+	IMG_DVFS_GOVERNOR_CFG sDVFSGovernorCfg;
 #elif defined(SUPPORT_PDVFS)
-	IMG_PDVFS_DEVICE		sPDVFSDevice;
+	IMG_PDVFS_DEVICE sPDVFSDevice;
 #endif
-	IMG_DVFS_DEVICE_CFG		sDVFSDeviceCfg;
+	IMG_DVFS_DEVICE_CFG sDVFSDeviceCfg;
 } PVRSRV_DVFS;
-#endif/* (__linux__) */
+#endif /* (__linux__) */
 
 #endif /* PVR_DVFS_H */

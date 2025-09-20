@@ -60,22 +60,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 struct fpf_apu2gpu_cb_config {
 	phys_addr_t buff_paddr; /*!< Physical address of the circular buffer. */
-	size_t buff_pages;      /*!< Number of pages of the circular buffer
+	size_t buff_pages; /*!< Number of pages of the circular buffer
 	                             allocation. */
 	phys_addr_t ctrl_paddr; /*!< Physical address of the circular buffer
 	                             control structure. */
-	size_t ctrl_pages;      /*!< Number of pages of the circular buffer
+	size_t ctrl_pages; /*!< Number of pages of the circular buffer
 	                             control structure allocation (usually 1
 	                             page). */
-	size_t page_shift;      /*!< Page shift of the pages used in circular
+	size_t page_shift; /*!< Page shift of the pages used in circular
 	                             buffer allocations (usually 12 for 4K
 	                             pages). */
 };
 
 /*! Kick register size.
  */
-enum fpf_apu2gpu_kickreg_write_size
-{
+enum fpf_apu2gpu_kickreg_write_size {
 	FPF_APU2GPU_KICKREG_WRITE_SIZE_32B, /*!< Register is a 32-bit register. */
 	FPF_APU2GPU_KICKREG_WRITE_SIZE_64B, /*!< Register is a 64-bit register. */
 };
@@ -90,8 +89,7 @@ enum fpf_apu2gpu_kickreg_write_size
  *     void __iomem *gpu_kick_regbank = ioremap(regbank_paddr.uiAddr,
  *                                              regbank_size);
  */
-struct fpf_apu2gpu_kickreg_regbank
-{
+struct fpf_apu2gpu_kickreg_regbank {
 	IMG_CPU_PHYADDR regbank_paddr;
 	IMG_UINT32 regbank_size;
 };
@@ -113,13 +111,13 @@ struct fpf_apu2gpu_kickreg_regbank
  *         writel((u32) write_value, reg);
  *     }
  */
-struct fpf_apu2gpu_kickreg_details
-{
-	enum fpf_apu2gpu_kickreg_write_size reg_size; /*! Kick regiter size (32-bit
+struct fpf_apu2gpu_kickreg_details {
+	enum fpf_apu2gpu_kickreg_write_size
+		reg_size; /*! Kick regiter size (32-bit
 	                                                  or 64-bit). */
-	IMG_UINT32 reg_offset;                        /*! Register offset in the
+	IMG_UINT32 reg_offset; /*! Register offset in the
 	                                                  register bank. */
-	IMG_UINT64 write_value;                       /*! Value to write. */
+	IMG_UINT64 write_value; /*! Value to write. */
 };
 
 /*! Kick register configuration.
@@ -127,8 +125,7 @@ struct fpf_apu2gpu_kickreg_details
  * APU driver shall use this data to map the register bank into its address
  * space and to signal the GPU about the completed work.
  */
-struct fpf_apu2gpu_mts_config
-{
+struct fpf_apu2gpu_mts_config {
 	struct fpf_apu2gpu_kickreg_regbank kickreg_regbank;
 	struct fpf_apu2gpu_kickreg_details kickreg_details;
 };
@@ -153,7 +150,8 @@ extern int fpf_apu2gpu_acquire_cb(struct fpf_apu2gpu_cb_config *cb_config);
  *              `fpf_apu2gpu_mts_config` for details..
  * @Return      0 on success and standard negative error code on failure.
  */
-extern int fpf_apu2gpu_supply_kickreg(struct fpf_apu2gpu_mts_config *mts_config);
+extern int
+fpf_apu2gpu_supply_kickreg(struct fpf_apu2gpu_mts_config *mts_config);
 
 /*!
  * @Function    fpf_apu2gpu_put

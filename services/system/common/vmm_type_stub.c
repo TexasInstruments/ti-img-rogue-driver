@@ -49,8 +49,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "vmm_impl.h"
 #include "vmm_pvz_server.h"
 
-static PVRSRV_ERROR
-StubVMMMapDevPhysHeap(IMG_UINT64 ui64Size,
+static PVRSRV_ERROR StubVMMMapDevPhysHeap(IMG_UINT64 ui64Size,
 					  IMG_UINT64 ui64Addr)
 {
 	PVR_UNREFERENCED_PARAMETER(ui64Size);
@@ -58,22 +57,17 @@ StubVMMMapDevPhysHeap(IMG_UINT64 ui64Size,
 	return PVRSRV_ERROR_NOT_IMPLEMENTED;
 }
 
-static PVRSRV_ERROR
-StubVMMUnmapDevPhysHeap(void)
+static PVRSRV_ERROR StubVMMUnmapDevPhysHeap(void)
 {
 	return PVRSRV_ERROR_NOT_IMPLEMENTED;
 }
 
-static VMM_PVZ_CLIENT_CONNECTION gsStubPvzClient =
-{
-	.sClientFuncTab = {
-		/* pfnMapDevPhysHeap */
-		&StubVMMMapDevPhysHeap,
+static VMM_PVZ_CLIENT_CONNECTION
+	gsStubPvzClient = { .sClientFuncTab = { /* pfnMapDevPhysHeap */
+						&StubVMMMapDevPhysHeap,
 
-		/* pfnUnmapDevPhysHeap */
-		&StubVMMUnmapDevPhysHeap
-	}
-};
+						/* pfnUnmapDevPhysHeap */
+						&StubVMMUnmapDevPhysHeap } };
 
 static VMM_PVZ_SERVER_CONNECTION gsStubPvzServer =
 {
@@ -99,35 +93,45 @@ static VMM_PVZ_SERVER_CONNECTION gsStubPvzServer =
 
 PVRSRV_ERROR VMMCreatePvzServerConnection(IMG_HANDLE *phPvzConnection)
 {
-	VMM_PVZ_SERVER_CONNECTION **ppsConnection = (VMM_PVZ_SERVER_CONNECTION**) phPvzConnection;
+	VMM_PVZ_SERVER_CONNECTION **ppsConnection =
+		(VMM_PVZ_SERVER_CONNECTION **)phPvzConnection;
 
-	PVR_LOG_RETURN_IF_FALSE((NULL != ppsConnection), "VMMCreatePvzServerConnection", PVRSRV_ERROR_INVALID_PARAMS);
+	PVR_LOG_RETURN_IF_FALSE((NULL != ppsConnection),
+				"VMMCreatePvzServerConnection",
+				PVRSRV_ERROR_INVALID_PARAMS);
 	*ppsConnection = &gsStubPvzServer;
 	return PVRSRV_OK;
 }
 
 PVRSRV_ERROR VMMCreatePvzClientConnection(IMG_HANDLE *phPvzConnection)
 {
-	VMM_PVZ_CLIENT_CONNECTION **ppsConnection = (VMM_PVZ_CLIENT_CONNECTION**) phPvzConnection;
+	VMM_PVZ_CLIENT_CONNECTION **ppsConnection =
+		(VMM_PVZ_CLIENT_CONNECTION **)phPvzConnection;
 
-	PVR_LOG_RETURN_IF_FALSE((NULL != ppsConnection), "VMMCreatePvzClientConnection", PVRSRV_ERROR_INVALID_PARAMS);
+	PVR_LOG_RETURN_IF_FALSE((NULL != ppsConnection),
+				"VMMCreatePvzClientConnection",
+				PVRSRV_ERROR_INVALID_PARAMS);
 	*ppsConnection = &gsStubPvzClient;
 	return PVRSRV_OK;
 }
 
 void VMMDestroyPvzServerConnection(IMG_HANDLE *phPvzConnection)
 {
-	VMM_PVZ_SERVER_CONNECTION **ppsConnection = (VMM_PVZ_SERVER_CONNECTION**) phPvzConnection;
+	VMM_PVZ_SERVER_CONNECTION **ppsConnection =
+		(VMM_PVZ_SERVER_CONNECTION **)phPvzConnection;
 
-	PVR_LOG_RETURN_VOID_IF_FALSE((NULL != ppsConnection), "VMMDestroyPvzServerConnection");
+	PVR_LOG_RETURN_VOID_IF_FALSE((NULL != ppsConnection),
+				     "VMMDestroyPvzServerConnection");
 	*ppsConnection = NULL;
 }
 
 void VMMDestroyPvzClientConnection(IMG_HANDLE *phPvzConnection)
 {
-	VMM_PVZ_CLIENT_CONNECTION **ppsConnection = (VMM_PVZ_CLIENT_CONNECTION**) phPvzConnection;
+	VMM_PVZ_CLIENT_CONNECTION **ppsConnection =
+		(VMM_PVZ_CLIENT_CONNECTION **)phPvzConnection;
 
-	PVR_LOG_RETURN_VOID_IF_FALSE((NULL != ppsConnection), "VMMDestroyPvzClientConnection");
+	PVR_LOG_RETURN_VOID_IF_FALSE((NULL != ppsConnection),
+				     "VMMDestroyPvzClientConnection");
 	*ppsConnection = NULL;
 }
 

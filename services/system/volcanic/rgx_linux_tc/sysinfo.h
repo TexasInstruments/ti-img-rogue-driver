@@ -50,25 +50,25 @@ IMG_UINT32 GetPlatformTimeMultiplier(void);
 
 /*!< System specific poll/timeout details */
 #if defined(VIRTUAL_PLATFORM)
-#define MAX_HW_TIME_US                           (240000000)
-#define DEVICES_WATCHDOG_POWER_ON_SLEEP_TIMEOUT  (120000)
-#define EVENT_OBJECT_TIMEOUT_US                  (120000000)
+#define MAX_HW_TIME_US (240000000)
+#define DEVICES_WATCHDOG_POWER_ON_SLEEP_TIMEOUT (120000)
+#define EVENT_OBJECT_TIMEOUT_US (120000000)
 #else
-#define MAX_HW_TIME_US                           (20000000 * GetPlatformTimeMultiplier())
-#define DEVICES_WATCHDOG_POWER_ON_SLEEP_TIMEOUT  (10000) // (1500)
+#define MAX_HW_TIME_US (20000000 * GetPlatformTimeMultiplier())
+#define DEVICES_WATCHDOG_POWER_ON_SLEEP_TIMEOUT (10000) // (1500)
 
 #if defined(TC_APOLLO_TCF5)
-#define EVENT_OBJECT_TIMEOUT_US                  (2000000)
+#define EVENT_OBJECT_TIMEOUT_US (2000000)
 #else
-#define EVENT_OBJECT_TIMEOUT_US                  (100000 * GetPlatformTimeMultiplier())
+#define EVENT_OBJECT_TIMEOUT_US (100000 * GetPlatformTimeMultiplier())
 #endif
 
 #endif
 #define DEVICES_WATCHDOG_POWER_OFF_SLEEP_TIMEOUT (3600000)
-#define WAIT_TRY_COUNT                           (10000)
+#define WAIT_TRY_COUNT (10000)
 
-#define OS_CLEANUP_THREAD_TIMEOUT_US             (10000000ULL)
-#define OS_CLEANUP_THREAD_RETRY_COUNT            (1000)
+#define OS_CLEANUP_THREAD_TIMEOUT_US (10000000ULL)
+#define OS_CLEANUP_THREAD_RETRY_COUNT (1000)
 
 /* Multiplier for increasing the default value of FDTI on slow platforms */
 #define PVRSRV_FDTI_MULTIPLIER (50U)

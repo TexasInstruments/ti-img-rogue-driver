@@ -49,7 +49,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sync_server.h"
 #include "rgxdevice.h"
 
-
 typedef struct _RGX_SERVER_KICKSYNC_CONTEXT_ RGX_SERVER_KICKSYNC_CONTEXT;
 
 /**************************************************************************/ /*!
@@ -57,11 +56,9 @@ typedef struct _RGX_SERVER_KICKSYNC_CONTEXT_ RGX_SERVER_KICKSYNC_CONTEXT;
 @Description    Function that dumps debug info of kick sync ctxs on this device
 @Return         none
 */ /**************************************************************************/
-void
-DumpKickSyncCtxtsInfo(PVRSRV_RGXDEV_INFO *psDevInfo,
-                      DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
-                      void *pvDumpDebugFile,
-                      IMG_UINT32 ui32VerbLevel);
+void DumpKickSyncCtxtsInfo(PVRSRV_RGXDEV_INFO *psDevInfo,
+			   DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
+			   void *pvDumpDebugFile, IMG_UINT32 ui32VerbLevel);
 
 /**************************************************************************/ /*!
 @Function       CheckForStalledClientKickSyncCtxt
@@ -76,14 +73,11 @@ IMG_UINT32 CheckForStalledClientKickSyncCtxt(PVRSRV_RGXDEV_INFO *psDevInfo);
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV_ error code
 */ /**************************************************************************/
 PVRSRV_ERROR
-PVRSRVRGXCreateKickSyncContextKM(CONNECTION_DATA              * psConnection,
-                                 PVRSRV_DEVICE_NODE           * psDeviceNode,
-                                 IMG_HANDLE                     hMemCtxPrivData,
-                                 IMG_UINT32                     ui32PackedCCBSizeU88,
-                                 IMG_UINT32                     ui32ContextFlags,
-                                 RGX_SERVER_KICKSYNC_CONTEXT ** ppsKicksyncContext);
-
-
+PVRSRVRGXCreateKickSyncContextKM(
+	CONNECTION_DATA *psConnection, PVRSRV_DEVICE_NODE *psDeviceNode,
+	IMG_HANDLE hMemCtxPrivData, IMG_UINT32 ui32PackedCCBSizeU88,
+	IMG_UINT32 ui32ContextFlags,
+	RGX_SERVER_KICKSYNC_CONTEXT **ppsKicksyncContext);
 
 /**************************************************************************/ /*!
 @Function       PVRSRVRGXDestroyKickSyncContextKM
@@ -91,7 +85,8 @@ PVRSRVRGXCreateKickSyncContextKM(CONNECTION_DATA              * psConnection,
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV_ error code
 */ /**************************************************************************/
 PVRSRV_ERROR
-PVRSRVRGXDestroyKickSyncContextKM(RGX_SERVER_KICKSYNC_CONTEXT * psKicksyncContext);
+PVRSRVRGXDestroyKickSyncContextKM(
+	RGX_SERVER_KICKSYNC_CONTEXT *psKicksyncContext);
 
 /**************************************************************************/ /*!
 @Function       PVRSRVRGXKickSyncKM
@@ -99,21 +94,20 @@ PVRSRVRGXDestroyKickSyncContextKM(RGX_SERVER_KICKSYNC_CONTEXT * psKicksyncContex
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV_ error code
 */ /**************************************************************************/
 PVRSRV_ERROR
-PVRSRVRGXKickSyncKM(RGX_SERVER_KICKSYNC_CONTEXT * psKicksyncContext,
-                    IMG_UINT32                    ui32ClientUpdateCount,
-                    SYNC_PRIMITIVE_BLOCK       ** pauiClientUpdateUFODevVarBlock,
-                    IMG_UINT32                  * paui32ClientUpdateDevVarOffset,
-                    IMG_UINT32                  * paui32ClientUpdateValue,
-                    IMG_UINT32                    ui32FWCmdSize,
-                    PVRSRV_FENCE                  iCheckFence,
-                    PVRSRV_TIMELINE               iUpdateTimeline,
-                    PVRSRV_FENCE                * piUpdateFence,
-                    IMG_CHAR                      szUpdateFenceName[PVRSRV_SYNC_NAME_LENGTH],
+PVRSRVRGXKickSyncKM(RGX_SERVER_KICKSYNC_CONTEXT *psKicksyncContext,
+		    IMG_UINT32 ui32ClientUpdateCount,
+		    SYNC_PRIMITIVE_BLOCK **pauiClientUpdateUFODevVarBlock,
+		    IMG_UINT32 *paui32ClientUpdateDevVarOffset,
+		    IMG_UINT32 *paui32ClientUpdateValue,
+		    IMG_UINT32 ui32FWCmdSize, PVRSRV_FENCE iCheckFence,
+		    PVRSRV_TIMELINE iUpdateTimeline,
+		    PVRSRV_FENCE *piUpdateFence,
+		    IMG_CHAR szUpdateFenceName[PVRSRV_SYNC_NAME_LENGTH],
 
-                    IMG_UINT32                    ui32ExtJobRef);
+		    IMG_UINT32 ui32ExtJobRef);
 
 #endif /* RGXKICKSYNC_H */
 
-/**************************************************************************//**
+/**************************************************************************/ /**
  End of file (rgxkicksync.h)
 ******************************************************************************/

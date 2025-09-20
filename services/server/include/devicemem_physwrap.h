@@ -51,13 +51,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "device.h"
 
 IMG_INTERNAL PVRSRV_ERROR
-DevmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode,
-                  IMG_CPU_PHYADDR *psPhysAddrs,
-                  IMG_UINT32 uiLog2PageSize,
-                  IMG_DEVMEM_SIZE_T uiSize,
-                  IMG_DEVMEM_ALIGN_T uiAlign,
-                  PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                  const IMG_CHAR *pszText,
-                  DEVMEM_MEMDESC **ppsMemDescPtr);
+DevmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode, IMG_CPU_PHYADDR *psPhysAddrs,
+		  IMG_UINT32 uiLog2PageSize, IMG_DEVMEM_SIZE_T uiSize,
+		  IMG_DEVMEM_ALIGN_T uiAlign, PVRSRV_MEMALLOCFLAGS_T uiFlags,
+		  const IMG_CHAR *pszText, DEVMEM_MEMDESC **ppsMemDescPtr);
 
 #endif

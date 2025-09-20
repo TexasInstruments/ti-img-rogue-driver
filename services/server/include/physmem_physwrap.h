@@ -56,11 +56,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "pmr_impl.h"
 
 PVRSRV_ERROR
-PhysmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode,
-                   IMG_CPU_PHYADDR *pasPhysAddrs,
-                   IMG_UINT32 uiLog2PageSize,
-                   IMG_DEVMEM_SIZE_T uiSize,
-                   PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                   PMR **ppsPMROut);
+PhysmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode, IMG_CPU_PHYADDR *pasPhysAddrs,
+		   IMG_UINT32 uiLog2PageSize, IMG_DEVMEM_SIZE_T uiSize,
+		   PVRSRV_MEMALLOCFLAGS_T uiFlags, PMR **ppsPMROut);
 
 #endif /* SRVSRV_PHYSMEM_PHYSWRAP_H */

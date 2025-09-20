@@ -50,7 +50,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rgxfwimageutils.h"
 #include "pvrversion.h"
 
-#if defined(CONFIG_ARM64) && defined(__linux__) && defined(SUPPORT_CPUCACHED_FWMEMCTX)
+#if defined(CONFIG_ARM64) && defined(__linux__) && \
+	defined(SUPPORT_CPUCACHED_FWMEMCTX)
 #include "rgxfwutils.h"
 #endif
 
@@ -61,21 +62,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static RGX_FW_LAYOUT_ENTRY asRGXFWLayoutTable[MAX_NUM_ENTRIES];
 static IMG_UINT32 ui32LayoutEntryNum;
 
-
-static RGX_FW_LAYOUT_ENTRY* GetTableEntry(const void *hPrivate, RGX_FW_SECTION_ID eId)
+static RGX_FW_LAYOUT_ENTRY *GetTableEntry(const void *hPrivate,
+					  RGX_FW_SECTION_ID eId)
 {
 	IMG_UINT32 i;
 
-	for (i = 0; i < ui32LayoutEntryNum; i++)
-	{
-		if (asRGXFWLayoutTable[i].eId == eId)
-		{
+	for (i = 0; i < ui32LayoutEntryNum; i++) {
+		if (asRGXFWLayoutTable[i].eId == eId) {
 			return &asRGXFWLayoutTable[i];
 		}
 	}
 
 	RGXErrorLog(hPrivate, "%s: id %u not found, returning entry 0\n",
-	            __func__, eId);
+		    __func__, eId);
 
 	return &asRGXFWLayoutTable[0];
 }
@@ -99,46 +98,41 @@ static RGX_FW_LAYOUT_ENTRY* GetTableEntry(const void *hPrivate, RGX_FW_SECTION_I
  @Return        PVRSRV_ERROR
 
 ******************************************************************************/
-static PVRSRV_ERROR FindMMUSegment(const void *hPrivate,
-                                   IMG_UINT32 ui32OffsetIn,
-                                   void *pvHostFWCodeAddr,
-                                   void *pvHostFWDataAddr,
-                                   void *pvHostFWRoDataAddr,
-                                   void *pvHostFWCorememCodeAddr,
-                                   void *pvHostFWCorememDataAddr,
-                                   void **uiHostAddrOut)
+static PVRSRV_ERROR
+FindMMUSegment(const void *hPrivate, IMG_UINT32 ui32OffsetIn,
+	       void *pvHostFWCodeAddr, void *pvHostFWDataAddr,
+	       void *pvHostFWRoDataAddr, void *pvHostFWCorememCodeAddr,
+	       void *pvHostFWCorememDataAddr, void **uiHostAddrOut)
 {
 	IMG_UINT32 i;
 
-	for (i = 0; i < ui32LayoutEntryNum; i++)
-	{
+	for (i = 0; i < ui32LayoutEntryNum; i++) {
 		if ((ui32OffsetIn >= asRGXFWLayoutTable[i].ui32BaseAddr) &&
-		    (ui32OffsetIn < (asRGXFWLayoutTable[i].ui32BaseAddr + asRGXFWLayoutTable[i].ui32AllocSize)))
-		{
-			switch (asRGXFWLayoutTable[i].eType)
-			{
-				case FW_CODE:
-					*uiHostAddrOut = pvHostFWCodeAddr;
-					break;
+		    (ui32OffsetIn < (asRGXFWLayoutTable[i].ui32BaseAddr +
+				     asRGXFWLayoutTable[i].ui32AllocSize))) {
+			switch (asRGXFWLayoutTable[i].eType) {
+			case FW_CODE:
+				*uiHostAddrOut = pvHostFWCodeAddr;
+				break;
 
-				case FW_RWDATA:
-					*uiHostAddrOut = pvHostFWDataAddr;
-					break;
+			case FW_RWDATA:
+				*uiHostAddrOut = pvHostFWDataAddr;
+				break;
 
-				case FW_RODATA:
-					*uiHostAddrOut = pvHostFWRoDataAddr;
-					break;
+			case FW_RODATA:
+				*uiHostAddrOut = pvHostFWRoDataAddr;
+				break;
 
-				case FW_COREMEM_CODE:
-					*uiHostAddrOut = pvHostFWCorememCodeAddr;
-					break;
+			case FW_COREMEM_CODE:
+				*uiHostAddrOut = pvHostFWCorememCodeAddr;
+				break;
 
-				case FW_COREMEM_DATA:
-					*uiHostAddrOut = pvHostFWCorememDataAddr;
-					break;
+			case FW_COREMEM_DATA:
+				*uiHostAddrOut = pvHostFWCorememDataAddr;
+				break;
 
-				default:
-					return PVRSRV_ERROR_INIT_FAILURE;
+			default:
+				return PVRSRV_ERROR_INIT_FAILURE;
 			}
 
 			goto found;
@@ -148,8 +142,7 @@ static PVRSRV_ERROR FindMMUSegment(const void *hPrivate,
 	return PVRSRV_ERROR_INIT_FAILURE;
 
 found:
-	if (*uiHostAddrOut == NULL)
-	{
+	if (*uiHostAddrOut == NULL) {
 		return PVRSRV_OK;
 	}
 
@@ -183,29 +176,28 @@ found:
  @Return        void
 
 ******************************************************************************/
-static void RGXFWConfigureSegID(const void *hPrivate,
-                                IMG_UINT64 ui64SegOutAddr,
-                                IMG_UINT32 ui32SegBase,
-                                IMG_UINT32 ui32SegLimit,
-                                IMG_UINT32 ui32SegID,
-                                IMG_UINT32 **ppui32BootConf)
+static void RGXFWConfigureSegID(const void *hPrivate, IMG_UINT64 ui64SegOutAddr,
+				IMG_UINT32 ui32SegBase, IMG_UINT32 ui32SegLimit,
+				IMG_UINT32 ui32SegID,
+				IMG_UINT32 **ppui32BootConf)
 {
 	IMG_UINT32 *pui32BootConf = *ppui32BootConf;
 	IMG_UINT32 ui32SegOutAddr0 = ui64SegOutAddr & 0x00000000FFFFFFFFUL;
-	IMG_UINT32 ui32SegOutAddr1 = (ui64SegOutAddr >> 32) & 0x00000000FFFFFFFFUL;
+	IMG_UINT32 ui32SegOutAddr1 = (ui64SegOutAddr >> 32) &
+				     0x00000000FFFFFFFFUL;
 
 	/* META segments have a minimum size */
 	IMG_UINT32 ui32LimitOff = (ui32SegLimit < RGXFW_SEGMMU_ALIGN) ?
-	                          RGXFW_SEGMMU_ALIGN : ui32SegLimit;
+					  RGXFW_SEGMMU_ALIGN :
+					  ui32SegLimit;
 	/* the limit is an offset, therefore off = size - 1 */
 	ui32LimitOff -= 1;
 
-	RGXCommentLog(hPrivate,
-	              "* Seg%d: meta_addr = 0x%08x, devv_addr = 0x%" IMG_UINT64_FMTSPECx ", limit = 0x%x",
-	              ui32SegID,
-	              ui32SegBase,
-	              ui64SegOutAddr,
-	              ui32LimitOff);
+	RGXCommentLog(
+		hPrivate,
+		"* Seg%d: meta_addr = 0x%08x, devv_addr = 0x%" IMG_UINT64_FMTSPECx
+		", limit = 0x%x",
+		ui32SegID, ui32SegBase, ui64SegOutAddr, ui32LimitOff);
 
 	ui32SegBase |= RGXFW_SEGMMU_ALLTHRS_WRITEABLE;
 
@@ -239,37 +231,37 @@ static void RGXFWConfigureSegID(const void *hPrivate,
  @Return        void
 
 ******************************************************************************/
-static void RGXFWConfigureSegMMU(const void       *hPrivate,
-                                 IMG_DEV_VIRTADDR *psFWCodeDevVAddrBase,
-                                 IMG_DEV_VIRTADDR *psFWDataDevVAddrBase,
-                                 IMG_DEV_VIRTADDR *psFWRoDataDevVAddrBase,
-                                 IMG_UINT32       **ppui32BootConf)
+static void RGXFWConfigureSegMMU(const void *hPrivate,
+				 IMG_DEV_VIRTADDR *psFWCodeDevVAddrBase,
+				 IMG_DEV_VIRTADDR *psFWDataDevVAddrBase,
+				 IMG_DEV_VIRTADDR *psFWRoDataDevVAddrBase,
+				 IMG_UINT32 **ppui32BootConf)
 {
-	IMG_UINT64 ui64SegOutAddrTop	= 0;
-	IMG_UINT32 ui32DataBaseAddr		= IMG_UINT32_MAX;
-	IMG_UINT32 ui32DataAllocSize	= 0;
-	IMG_UINT32 ui32DataAllocSizeMax	= 0;
-	IMG_UINT64 ui64DataSegOutAddr	= 0;
+	IMG_UINT64 ui64SegOutAddrTop = 0;
+	IMG_UINT32 ui32DataBaseAddr = IMG_UINT32_MAX;
+	IMG_UINT32 ui32DataAllocSize = 0;
+	IMG_UINT32 ui32DataAllocSizeMax = 0;
+	IMG_UINT64 ui64DataSegOutAddr = 0;
 	IMG_UINT32 i;
 
 	PVR_UNREFERENCED_PARAMETER(psFWCodeDevVAddrBase);
 
 	/* Configure Segment MMU */
-	RGXCommentLog(hPrivate, "********** FW configure Segment MMU **********");
+	RGXCommentLog(hPrivate,
+		      "********** FW configure Segment MMU **********");
 
 #if defined(RGX_FEATURE_SLC_VIVT_BIT_MASK)
-	if (RGX_DEVICE_HAS_FEATURE(hPrivate, SLC_VIVT))
-	{
-		ui64SegOutAddrTop = RGXFW_SEGMMU_OUTADDR_TOP_VIVT_SLC_CACHED(MMU_CONTEXT_MAPPING_FWPRIV);
-	}
-	else
+	if (RGX_DEVICE_HAS_FEATURE(hPrivate, SLC_VIVT)) {
+		ui64SegOutAddrTop = RGXFW_SEGMMU_OUTADDR_TOP_VIVT_SLC_CACHED(
+			MMU_CONTEXT_MAPPING_FWPRIV);
+	} else
 #endif
 	{
-		ui64SegOutAddrTop = RGXFW_SEGMMU_OUTADDR_TOP_SLC(MMU_CONTEXT_MAPPING_FWPRIV, RGXFW_SEGMMU_META_BIFDM_ID);
+		ui64SegOutAddrTop = RGXFW_SEGMMU_OUTADDR_TOP_SLC(
+			MMU_CONTEXT_MAPPING_FWPRIV, RGXFW_SEGMMU_META_BIFDM_ID);
 	}
 
-	for (i = 0; i < ui32LayoutEntryNum; i++)
-	{
+	for (i = 0; i < ui32LayoutEntryNum; i++) {
 		/*
 		 * FW code is using the bootloader segment which is already configured on boot.
 		 * FW coremem code and data don't use the segment MMU.
@@ -280,34 +272,40 @@ static void RGXFWConfigureSegMMU(const void       *hPrivate,
 		 * [-----RWMAX-----] + [--RO--] or [-----ROMAX-----] + [--RW--]
 		 */
 		if ((asRGXFWLayoutTable[i].eType == FW_RWDATA) ||
-			(asRGXFWLayoutTable[i].eType == FW_RODATA))
-		{
-			if (asRGXFWLayoutTable[i].ui32BaseAddr < ui32DataBaseAddr)
-			{
-				ui32DataBaseAddr	= asRGXFWLayoutTable[i].ui32BaseAddr;
-				ui64DataSegOutAddr	= (psFWDataDevVAddrBase->uiAddr | ui64SegOutAddrTop) +
-									   asRGXFWLayoutTable[i].ui32AllocOffset;
-				ui32DataAllocSizeMax = (asRGXFWLayoutTable[i].eType == FW_RWDATA) ? RGX_FIRMWARE_PRIV_DATA_HEAP_SIZE:
-																					RGX_FIRMWARE_PRIV_RODATA_HEAP_SIZE;
-				if (ui32DataAllocSize)
-				{
-					ui32DataAllocSize += ui32DataAllocSizeMax;
+		    (asRGXFWLayoutTable[i].eType == FW_RODATA)) {
+			if (asRGXFWLayoutTable[i].ui32BaseAddr <
+			    ui32DataBaseAddr) {
+				ui32DataBaseAddr =
+					asRGXFWLayoutTable[i].ui32BaseAddr;
+				ui64DataSegOutAddr =
+					(psFWDataDevVAddrBase->uiAddr |
+					 ui64SegOutAddrTop) +
+					asRGXFWLayoutTable[i].ui32AllocOffset;
+				ui32DataAllocSizeMax =
+					(asRGXFWLayoutTable[i].eType ==
+					 FW_RWDATA) ?
+						RGX_FIRMWARE_PRIV_DATA_HEAP_SIZE :
+						RGX_FIRMWARE_PRIV_RODATA_HEAP_SIZE;
+				if (ui32DataAllocSize) {
+					ui32DataAllocSize +=
+						ui32DataAllocSizeMax;
 					break;
+				} else {
+					ui32DataAllocSize =
+						asRGXFWLayoutTable[i]
+							.ui32AllocSize;
 				}
-				else
-				{
-					ui32DataAllocSize = asRGXFWLayoutTable[i].ui32AllocSize;
-				}
-			}
-			else
-			{
-				if (ui32DataAllocSize)
-				{
-					ui32DataAllocSize = ui32DataAllocSizeMax + asRGXFWLayoutTable[i].ui32AllocSize;
-				}
-				else
-				{
-					RGXErrorLog(hPrivate, "Invalid Base Address: %X", asRGXFWLayoutTable[i].ui32BaseAddr);
+			} else {
+				if (ui32DataAllocSize) {
+					ui32DataAllocSize =
+						ui32DataAllocSizeMax +
+						asRGXFWLayoutTable[i]
+							.ui32AllocSize;
+				} else {
+					RGXErrorLog(hPrivate,
+						    "Invalid Base Address: %X",
+						    asRGXFWLayoutTable[i]
+							    .ui32BaseAddr);
 				}
 
 				break;
@@ -315,12 +313,10 @@ static void RGXFWConfigureSegMMU(const void       *hPrivate,
 		}
 	}
 
-	RGXFWConfigureSegID(hPrivate,
-	                    ui64DataSegOutAddr,
-	                    ui32DataBaseAddr,
-	                    ui32DataAllocSize,
-	                    RGXFW_SEGMMU_DATA_ID,
-	                    ppui32BootConf); /* write the sequence to the bootldr */
+	RGXFWConfigureSegID(
+		hPrivate, ui64DataSegOutAddr, ui32DataBaseAddr,
+		ui32DataAllocSize, RGXFW_SEGMMU_DATA_ID,
+		ppui32BootConf); /* write the sequence to the bootldr */
 }
 
 /*!
@@ -338,8 +334,8 @@ static void RGXFWConfigureSegMMU(const void       *hPrivate,
 
 ******************************************************************************/
 static void RGXFWConfigureMetaCaches(const void *hPrivate,
-                                     IMG_UINT32 ui32NumThreads,
-                                     IMG_UINT32 **ppui32BootConf)
+				     IMG_UINT32 ui32NumThreads,
+				     IMG_UINT32 **ppui32BootConf)
 {
 	IMG_UINT32 *pui32BootConf = *ppui32BootConf;
 	IMG_UINT32 ui32DCacheT0, ui32ICacheT0;
@@ -347,50 +343,51 @@ static void RGXFWConfigureMetaCaches(const void *hPrivate,
 	IMG_UINT32 ui32DCacheT2, ui32ICacheT2;
 	IMG_UINT32 ui32DCacheT3, ui32ICacheT3;
 
-#define META_CR_MMCU_LOCAL_EBCTRL                        (0x04830600)
-#define META_CR_MMCU_LOCAL_EBCTRL_ICWIN                  (0x3 << 14)
-#define META_CR_MMCU_LOCAL_EBCTRL_DCWIN                  (0x3 << 6)
-#define META_CR_SYSC_DCPART(n)                           (0x04830200 + (n)*0x8)
-#define META_CR_SYSC_DCPARTX_CACHED_WRITE_ENABLE         (0x1 << 31)
-#define META_CR_SYSC_ICPART(n)                           (0x04830220 + (n)*0x8)
-#define META_CR_SYSC_XCPARTX_LOCAL_ADDR_OFFSET_TOP_HALF  (0x8 << 16)
-#define META_CR_SYSC_XCPARTX_LOCAL_ADDR_FULL_CACHE       (0xF)
-#define META_CR_SYSC_XCPARTX_LOCAL_ADDR_HALF_CACHE       (0x7)
-#define META_CR_MMCU_DCACHE_CTRL                         (0x04830018)
-#define META_CR_MMCU_ICACHE_CTRL                         (0x04830020)
-#define META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN           (0x1)
+#define META_CR_MMCU_LOCAL_EBCTRL (0x04830600)
+#define META_CR_MMCU_LOCAL_EBCTRL_ICWIN (0x3 << 14)
+#define META_CR_MMCU_LOCAL_EBCTRL_DCWIN (0x3 << 6)
+#define META_CR_SYSC_DCPART(n) (0x04830200 + (n) * 0x8)
+#define META_CR_SYSC_DCPARTX_CACHED_WRITE_ENABLE (0x1 << 31)
+#define META_CR_SYSC_ICPART(n) (0x04830220 + (n) * 0x8)
+#define META_CR_SYSC_XCPARTX_LOCAL_ADDR_OFFSET_TOP_HALF (0x8 << 16)
+#define META_CR_SYSC_XCPARTX_LOCAL_ADDR_FULL_CACHE (0xF)
+#define META_CR_SYSC_XCPARTX_LOCAL_ADDR_HALF_CACHE (0x7)
+#define META_CR_MMCU_DCACHE_CTRL (0x04830018)
+#define META_CR_MMCU_ICACHE_CTRL (0x04830020)
+#define META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN (0x1)
 
-	RGXCommentLog(hPrivate, "********** Meta caches configuration *********");
+	RGXCommentLog(hPrivate,
+		      "********** Meta caches configuration *********");
 
 	/* Initialise I/Dcache settings */
-	ui32DCacheT0 = ui32DCacheT1 = (IMG_UINT32)META_CR_SYSC_DCPARTX_CACHED_WRITE_ENABLE;
-	ui32DCacheT2 = ui32DCacheT3 = (IMG_UINT32)META_CR_SYSC_DCPARTX_CACHED_WRITE_ENABLE;
+	ui32DCacheT0 = ui32DCacheT1 =
+		(IMG_UINT32)META_CR_SYSC_DCPARTX_CACHED_WRITE_ENABLE;
+	ui32DCacheT2 = ui32DCacheT3 =
+		(IMG_UINT32)META_CR_SYSC_DCPARTX_CACHED_WRITE_ENABLE;
 	ui32ICacheT0 = ui32ICacheT1 = ui32ICacheT2 = ui32ICacheT3 = 0;
 
-	if (ui32NumThreads == 1)
-	{
+	if (ui32NumThreads == 1) {
 		ui32DCacheT0 |= META_CR_SYSC_XCPARTX_LOCAL_ADDR_FULL_CACHE;
 		ui32ICacheT0 |= META_CR_SYSC_XCPARTX_LOCAL_ADDR_FULL_CACHE;
-	}
-	else
-	{
+	} else {
 		ui32DCacheT0 |= META_CR_SYSC_XCPARTX_LOCAL_ADDR_HALF_CACHE;
 		ui32ICacheT0 |= META_CR_SYSC_XCPARTX_LOCAL_ADDR_HALF_CACHE;
 
 		ui32DCacheT1 |= META_CR_SYSC_XCPARTX_LOCAL_ADDR_HALF_CACHE |
-		                META_CR_SYSC_XCPARTX_LOCAL_ADDR_OFFSET_TOP_HALF;
+				META_CR_SYSC_XCPARTX_LOCAL_ADDR_OFFSET_TOP_HALF;
 		ui32ICacheT1 |= META_CR_SYSC_XCPARTX_LOCAL_ADDR_HALF_CACHE |
-		                META_CR_SYSC_XCPARTX_LOCAL_ADDR_OFFSET_TOP_HALF;
+				META_CR_SYSC_XCPARTX_LOCAL_ADDR_OFFSET_TOP_HALF;
 	}
 
 	/* Local region MMU enhanced bypass: WIN-3 mode for code and data caches */
 	*pui32BootConf++ = META_CR_MMCU_LOCAL_EBCTRL;
 	*pui32BootConf++ = META_CR_MMCU_LOCAL_EBCTRL_ICWIN |
-	                   META_CR_MMCU_LOCAL_EBCTRL_DCWIN;
+			   META_CR_MMCU_LOCAL_EBCTRL_DCWIN;
 
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_MMCU_LOCAL_EBCTRL,
-	              META_CR_MMCU_LOCAL_EBCTRL_ICWIN | META_CR_MMCU_LOCAL_EBCTRL_DCWIN);
+		      META_CR_MMCU_LOCAL_EBCTRL,
+		      META_CR_MMCU_LOCAL_EBCTRL_ICWIN |
+			      META_CR_MMCU_LOCAL_EBCTRL_DCWIN);
 
 	/* Data cache partitioning thread 0 to 3 */
 	*pui32BootConf++ = META_CR_SYSC_DCPART(0);
@@ -403,21 +400,21 @@ static void RGXFWConfigureMetaCaches(const void *hPrivate,
 	*pui32BootConf++ = ui32DCacheT3;
 
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_DCPART(0), ui32DCacheT0);
+		      META_CR_SYSC_DCPART(0), ui32DCacheT0);
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_DCPART(1), ui32DCacheT1);
+		      META_CR_SYSC_DCPART(1), ui32DCacheT1);
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_DCPART(2), ui32DCacheT2);
+		      META_CR_SYSC_DCPART(2), ui32DCacheT2);
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_DCPART(3), ui32DCacheT3);
+		      META_CR_SYSC_DCPART(3), ui32DCacheT3);
 
 	/* Enable data cache hits */
 	*pui32BootConf++ = META_CR_MMCU_DCACHE_CTRL;
 	*pui32BootConf++ = META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN;
 
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_MMCU_DCACHE_CTRL,
-	              META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN);
+		      META_CR_MMCU_DCACHE_CTRL,
+		      META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN);
 
 	/* Instruction cache partitioning thread 0 to 3 */
 	*pui32BootConf++ = META_CR_SYSC_ICPART(0);
@@ -430,21 +427,21 @@ static void RGXFWConfigureMetaCaches(const void *hPrivate,
 	*pui32BootConf++ = ui32ICacheT3;
 
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_ICPART(0), ui32ICacheT0);
+		      META_CR_SYSC_ICPART(0), ui32ICacheT0);
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_ICPART(1), ui32ICacheT1);
+		      META_CR_SYSC_ICPART(1), ui32ICacheT1);
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_ICPART(2), ui32ICacheT2);
+		      META_CR_SYSC_ICPART(2), ui32ICacheT2);
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_SYSC_ICPART(3), ui32ICacheT3);
+		      META_CR_SYSC_ICPART(3), ui32ICacheT3);
 
 	/* Enable instruction cache hits */
 	*pui32BootConf++ = META_CR_MMCU_ICACHE_CTRL;
 	*pui32BootConf++ = META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN;
 
 	RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-	              META_CR_MMCU_ICACHE_CTRL,
-	              META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN);
+		      META_CR_MMCU_ICACHE_CTRL,
+		      META_CR_MMCU_XCACHE_CTRL_CACHE_HITS_EN);
 
 	*pui32BootConf++ = 0x040000C0;
 	*pui32BootConf++ = 0;
@@ -474,219 +471,228 @@ static void RGXFWConfigureMetaCaches(const void *hPrivate,
  @Return        PVRSRV_ERROR
 
 ******************************************************************************/
-PVRSRV_ERROR ProcessLDRCommandStream(const void *hPrivate,
-                                     const IMG_BYTE* pbLDR,
-                                     void* pvHostFWCodeAddr,
-                                     void* pvHostFWDataAddr,
-                                     void* pvHostFWRoDataAddr,
-                                     void* pvHostFWCorememCodeAddr,
-                                     void* pvHostFWCorememDataAddr,
-                                     IMG_UINT32 **ppui32BootConf)
+PVRSRV_ERROR
+ProcessLDRCommandStream(const void *hPrivate, const IMG_BYTE *pbLDR,
+			void *pvHostFWCodeAddr, void *pvHostFWDataAddr,
+			void *pvHostFWRoDataAddr, void *pvHostFWCorememCodeAddr,
+			void *pvHostFWCorememDataAddr,
+			IMG_UINT32 **ppui32BootConf)
 {
-	RGX_META_LDR_BLOCK_HDR *psHeader = (RGX_META_LDR_BLOCK_HDR *) pbLDR;
+	RGX_META_LDR_BLOCK_HDR *psHeader = (RGX_META_LDR_BLOCK_HDR *)pbLDR;
 	RGX_META_LDR_L1_DATA_BLK *psL1Data =
-	    (RGX_META_LDR_L1_DATA_BLK*) ((IMG_UINT8 *) pbLDR + psHeader->ui32SLData);
+		(RGX_META_LDR_L1_DATA_BLK *)((IMG_UINT8 *)pbLDR +
+					     psHeader->ui32SLData);
 
-	IMG_UINT32 *pui32BootConf  = ppui32BootConf ? *ppui32BootConf : NULL;
+	IMG_UINT32 *pui32BootConf = ppui32BootConf ? *ppui32BootConf : NULL;
 	IMG_UINT32 ui32CorememSize = RGXGetFWCorememSize(hPrivate);
 
-	RGXCommentLog(hPrivate, "**********************************************");
-	RGXCommentLog(hPrivate, "************** Begin LDR Parsing *************");
-	RGXCommentLog(hPrivate, "**********************************************");
+	RGXCommentLog(hPrivate,
+		      "**********************************************");
+	RGXCommentLog(hPrivate,
+		      "************** Begin LDR Parsing *************");
+	RGXCommentLog(hPrivate,
+		      "**********************************************");
 
-	while (psL1Data != NULL)
-	{
-		if (RGX_META_LDR_BLK_IS_COMMENT(psL1Data->ui16Cmd))
-		{
+	while (psL1Data != NULL) {
+		if (RGX_META_LDR_BLK_IS_COMMENT(psL1Data->ui16Cmd)) {
 			/* Don't process comment blocks */
 			goto NextBlock;
 		}
 
-		switch (psL1Data->ui16Cmd & RGX_META_LDR_CMD_MASK)
-		{
-			case RGX_META_LDR_CMD_LOADMEM:
-			{
-				RGX_META_LDR_L2_DATA_BLK *psL2Block =
-				    (RGX_META_LDR_L2_DATA_BLK*) (((IMG_UINT8 *) pbLDR) + psL1Data->aui32CmdData[1]);
-				IMG_UINT32 ui32Offset = psL1Data->aui32CmdData[0];
-				IMG_UINT32 ui32DataSize = psL2Block->ui16Length - 6 /* L2 Tag length and checksum */;
-				void *pvWriteAddr;
-				PVRSRV_ERROR eError;
+		switch (psL1Data->ui16Cmd & RGX_META_LDR_CMD_MASK) {
+		case RGX_META_LDR_CMD_LOADMEM: {
+			RGX_META_LDR_L2_DATA_BLK *psL2Block =
+				(RGX_META_LDR_L2_DATA_BLK
+					 *)(((IMG_UINT8 *)pbLDR) +
+					    psL1Data->aui32CmdData[1]);
+			IMG_UINT32 ui32Offset = psL1Data->aui32CmdData[0];
+			IMG_UINT32 ui32DataSize =
+				psL2Block->ui16Length -
+				6 /* L2 Tag length and checksum */;
+			void *pvWriteAddr;
+			PVRSRV_ERROR eError;
 
-				if (!RGX_META_IS_COREMEM_CODE(ui32Offset, ui32CorememSize) &&
-				    !RGX_META_IS_COREMEM_DATA(ui32Offset, ui32CorememSize))
-				{
-					/* Global range is aliased to local range */
-					ui32Offset &= ~META_MEM_GLOBAL_RANGE_BIT;
-				}
-
-				eError = FindMMUSegment(hPrivate,
-				                        ui32Offset,
-				                        pvHostFWCodeAddr,
-				                        pvHostFWDataAddr,
-				                        pvHostFWRoDataAddr,
-				                        pvHostFWCorememCodeAddr,
-				                        pvHostFWCorememDataAddr,
-				                        &pvWriteAddr);
-
-				if (eError != PVRSRV_OK)
-				{
-					RGXErrorLog(hPrivate,
-					            "ProcessLDRCommandStream: Addr 0x%x (size: %d) not found in any segment",
-					            ui32Offset, ui32DataSize);
-					return eError;
-				}
-
-				/* Write to FW allocation only if available */
-				if (pvWriteAddr)
-				{
-					RGXMemCopy(hPrivate,
-					           pvWriteAddr,
-					           psL2Block->aui32BlockData,
-					           ui32DataSize);
-#if defined(CONFIG_ARM64) && defined(__linux__) && defined(SUPPORT_CPUCACHED_FWMEMCTX)
-					RGXFwSharedMemCacheOpExec(pvWriteAddr, ui32DataSize, PVRSRV_CACHE_OP_FLUSH);
-#endif
-				}
-
-				break;
-			}
-			case RGX_META_LDR_CMD_LOADCORE:
-			case RGX_META_LDR_CMD_LOADMMREG:
-			{
-				return PVRSRV_ERROR_INIT_FAILURE;
-			}
-			case RGX_META_LDR_CMD_START_THREADS:
-			{
-				/* Don't process this block */
-				break;
-			}
-			case RGX_META_LDR_CMD_ZEROMEM:
-			{
-				IMG_UINT32 ui32Offset = psL1Data->aui32CmdData[0];
-				IMG_UINT32 ui32ByteCount = psL1Data->aui32CmdData[1];
-				void *pvWriteAddr;
-				PVRSRV_ERROR  eError;
-
-				if (RGX_META_IS_COREMEM_DATA(ui32Offset, ui32CorememSize))
-				{
-					/* cannot zero coremem directly */
-					break;
-				}
-
+			if (!RGX_META_IS_COREMEM_CODE(ui32Offset,
+						      ui32CorememSize) &&
+			    !RGX_META_IS_COREMEM_DATA(ui32Offset,
+						      ui32CorememSize)) {
 				/* Global range is aliased to local range */
 				ui32Offset &= ~META_MEM_GLOBAL_RANGE_BIT;
+			}
 
-				eError = FindMMUSegment(hPrivate,
-				                        ui32Offset,
-				                        pvHostFWCodeAddr,
-				                        pvHostFWDataAddr,
-				                        pvHostFWRoDataAddr,
-				                        pvHostFWCorememCodeAddr,
-				                        pvHostFWCorememDataAddr,
-				                        &pvWriteAddr);
+			eError = FindMMUSegment(
+				hPrivate, ui32Offset, pvHostFWCodeAddr,
+				pvHostFWDataAddr, pvHostFWRoDataAddr,
+				pvHostFWCorememCodeAddr,
+				pvHostFWCorememDataAddr, &pvWriteAddr);
 
-				if (eError != PVRSRV_OK)
-				{
-					RGXErrorLog(hPrivate,
-					            "ProcessLDRCommandStream: Addr 0x%x (size: %d) not found in any segment",
-					            ui32Offset, ui32ByteCount);
-					return eError;
-				}
+			if (eError != PVRSRV_OK) {
+				RGXErrorLog(
+					hPrivate,
+					"ProcessLDRCommandStream: Addr 0x%x (size: %d) not found in any segment",
+					ui32Offset, ui32DataSize);
+				return eError;
+			}
 
-				/* Write to FW allocation only if available */
-				if (pvWriteAddr)
-				{
-					RGXMemSet(hPrivate, pvWriteAddr, 0, ui32ByteCount);
-#if defined(CONFIG_ARM64) && defined(__linux__) && defined(SUPPORT_CPUCACHED_FWMEMCTX)
-					RGXFwSharedMemCacheOpExec(pvWriteAddr, ui32ByteCount, PVRSRV_CACHE_OP_FLUSH);
+			/* Write to FW allocation only if available */
+			if (pvWriteAddr) {
+				RGXMemCopy(hPrivate, pvWriteAddr,
+					   psL2Block->aui32BlockData,
+					   ui32DataSize);
+#if defined(CONFIG_ARM64) && defined(__linux__) && \
+	defined(SUPPORT_CPUCACHED_FWMEMCTX)
+				RGXFwSharedMemCacheOpExec(
+					pvWriteAddr, ui32DataSize,
+					PVRSRV_CACHE_OP_FLUSH);
 #endif
-				}
+			}
 
+			break;
+		}
+		case RGX_META_LDR_CMD_LOADCORE:
+		case RGX_META_LDR_CMD_LOADMMREG: {
+			return PVRSRV_ERROR_INIT_FAILURE;
+		}
+		case RGX_META_LDR_CMD_START_THREADS: {
+			/* Don't process this block */
+			break;
+		}
+		case RGX_META_LDR_CMD_ZEROMEM: {
+			IMG_UINT32 ui32Offset = psL1Data->aui32CmdData[0];
+			IMG_UINT32 ui32ByteCount = psL1Data->aui32CmdData[1];
+			void *pvWriteAddr;
+			PVRSRV_ERROR eError;
+
+			if (RGX_META_IS_COREMEM_DATA(ui32Offset,
+						     ui32CorememSize)) {
+				/* cannot zero coremem directly */
 				break;
 			}
-			case RGX_META_LDR_CMD_CONFIG:
-			{
-				RGX_META_LDR_L2_DATA_BLK *psL2Block =
-				    (RGX_META_LDR_L2_DATA_BLK*) (((IMG_UINT8 *) pbLDR) + psL1Data->aui32CmdData[0]);
-				RGX_META_LDR_CFG_BLK *psConfigCommand = (RGX_META_LDR_CFG_BLK*) psL2Block->aui32BlockData;
-				IMG_UINT32 ui32L2BlockSize = psL2Block->ui16Length - 6 /* L2 Tag length and checksum */;
-				IMG_UINT32 ui32CurrBlockSize = 0;
 
-				while (ui32L2BlockSize)
-				{
-					switch (psConfigCommand->ui32Type)
-					{
-						case RGX_META_LDR_CFG_PAUSE:
-						case RGX_META_LDR_CFG_READ:
-						{
-							ui32CurrBlockSize = 8;
-							return PVRSRV_ERROR_INIT_FAILURE;
-						}
-						case RGX_META_LDR_CFG_WRITE:
-						{
-							IMG_UINT32 ui32RegisterOffset = psConfigCommand->aui32BlockData[0];
-							IMG_UINT32 ui32RegisterValue  = psConfigCommand->aui32BlockData[1];
+			/* Global range is aliased to local range */
+			ui32Offset &= ~META_MEM_GLOBAL_RANGE_BIT;
 
-							/* Only write to bootloader if we got a valid
+			eError = FindMMUSegment(
+				hPrivate, ui32Offset, pvHostFWCodeAddr,
+				pvHostFWDataAddr, pvHostFWRoDataAddr,
+				pvHostFWCorememCodeAddr,
+				pvHostFWCorememDataAddr, &pvWriteAddr);
+
+			if (eError != PVRSRV_OK) {
+				RGXErrorLog(
+					hPrivate,
+					"ProcessLDRCommandStream: Addr 0x%x (size: %d) not found in any segment",
+					ui32Offset, ui32ByteCount);
+				return eError;
+			}
+
+			/* Write to FW allocation only if available */
+			if (pvWriteAddr) {
+				RGXMemSet(hPrivate, pvWriteAddr, 0,
+					  ui32ByteCount);
+#if defined(CONFIG_ARM64) && defined(__linux__) && \
+	defined(SUPPORT_CPUCACHED_FWMEMCTX)
+				RGXFwSharedMemCacheOpExec(
+					pvWriteAddr, ui32ByteCount,
+					PVRSRV_CACHE_OP_FLUSH);
+#endif
+			}
+
+			break;
+		}
+		case RGX_META_LDR_CMD_CONFIG: {
+			RGX_META_LDR_L2_DATA_BLK *psL2Block =
+				(RGX_META_LDR_L2_DATA_BLK
+					 *)(((IMG_UINT8 *)pbLDR) +
+					    psL1Data->aui32CmdData[0]);
+			RGX_META_LDR_CFG_BLK *psConfigCommand =
+				(RGX_META_LDR_CFG_BLK *)
+					psL2Block->aui32BlockData;
+			IMG_UINT32 ui32L2BlockSize =
+				psL2Block->ui16Length -
+				6 /* L2 Tag length and checksum */;
+			IMG_UINT32 ui32CurrBlockSize = 0;
+
+			while (ui32L2BlockSize) {
+				switch (psConfigCommand->ui32Type) {
+				case RGX_META_LDR_CFG_PAUSE:
+				case RGX_META_LDR_CFG_READ: {
+					ui32CurrBlockSize = 8;
+					return PVRSRV_ERROR_INIT_FAILURE;
+				}
+				case RGX_META_LDR_CFG_WRITE: {
+					IMG_UINT32 ui32RegisterOffset =
+						psConfigCommand
+							->aui32BlockData[0];
+					IMG_UINT32 ui32RegisterValue =
+						psConfigCommand
+							->aui32BlockData[1];
+
+					/* Only write to bootloader if we got a valid
 							 * pointer to the FW code allocation
 							 */
-							if (pui32BootConf)
-							{
-								/* Do register write */
-								*pui32BootConf++ = ui32RegisterOffset;
-								*pui32BootConf++ = ui32RegisterValue;
-							}
-
-							RGXCommentLog(hPrivate, "Meta SP: [0x%08x] = 0x%08x",
-							              ui32RegisterOffset, ui32RegisterValue);
-
-							ui32CurrBlockSize = 12;
-							break;
-						}
-						case RGX_META_LDR_CFG_MEMSET:
-						case RGX_META_LDR_CFG_MEMCHECK:
-						{
-							ui32CurrBlockSize = 20;
-							return PVRSRV_ERROR_INIT_FAILURE;
-						}
-						default:
-						{
-							return PVRSRV_ERROR_INIT_FAILURE;
-						}
+					if (pui32BootConf) {
+						/* Do register write */
+						*pui32BootConf++ =
+							ui32RegisterOffset;
+						*pui32BootConf++ =
+							ui32RegisterValue;
 					}
-					ui32L2BlockSize -= ui32CurrBlockSize;
-					psConfigCommand = (RGX_META_LDR_CFG_BLK*) (((IMG_UINT8*) psConfigCommand) + ui32CurrBlockSize);
-				}
 
-				break;
+					RGXCommentLog(
+						hPrivate,
+						"Meta SP: [0x%08x] = 0x%08x",
+						ui32RegisterOffset,
+						ui32RegisterValue);
+
+					ui32CurrBlockSize = 12;
+					break;
+				}
+				case RGX_META_LDR_CFG_MEMSET:
+				case RGX_META_LDR_CFG_MEMCHECK: {
+					ui32CurrBlockSize = 20;
+					return PVRSRV_ERROR_INIT_FAILURE;
+				}
+				default: {
+					return PVRSRV_ERROR_INIT_FAILURE;
+				}
+				}
+				ui32L2BlockSize -= ui32CurrBlockSize;
+				psConfigCommand =
+					(RGX_META_LDR_CFG_BLK
+						 *)(((IMG_UINT8 *)
+							     psConfigCommand) +
+						    ui32CurrBlockSize);
 			}
-			default:
-			{
-				return PVRSRV_ERROR_INIT_FAILURE;
-			}
+
+			break;
+		}
+		default: {
+			return PVRSRV_ERROR_INIT_FAILURE;
+		}
 		}
 
 NextBlock:
 
-		if (psL1Data->ui32Next == 0xFFFFFFFF)
-		{
+		if (psL1Data->ui32Next == 0xFFFFFFFF) {
 			psL1Data = NULL;
-		}
-		else
-		{
-			psL1Data = (RGX_META_LDR_L1_DATA_BLK*) (((IMG_UINT8 *) pbLDR) + psL1Data->ui32Next);
+		} else {
+			psL1Data = (RGX_META_LDR_L1_DATA_BLK
+					    *)(((IMG_UINT8 *)pbLDR) +
+					       psL1Data->ui32Next);
 		}
 	}
 
-	if (pui32BootConf)
-	{
+	if (pui32BootConf) {
 		*ppui32BootConf = pui32BootConf;
 	}
 
-	RGXCommentLog(hPrivate, "**********************************************");
-	RGXCommentLog(hPrivate, "************** End Loader Parsing ************");
-	RGXCommentLog(hPrivate, "**********************************************");
+	RGXCommentLog(hPrivate,
+		      "**********************************************");
+	RGXCommentLog(hPrivate,
+		      "************** End Loader Parsing ************");
+	RGXCommentLog(hPrivate,
+		      "**********************************************");
 
 	return PVRSRV_OK;
 }
@@ -709,60 +715,60 @@ NextBlock:
  @Return        PVRSRV_ERROR
 
 ******************************************************************************/
-PVRSRV_ERROR ProcessELFCommandStream(const void *hPrivate,
-                                     const IMG_BYTE *pbELF,
-                                     void *pvHostFWCodeAddr,
-                                     void *pvHostFWDataAddr,
-                                     void *pvHostFWRoDataAddr,
-                                     void* pvHostFWCorememCodeAddr,
-                                     void* pvHostFWCorememDataAddr)
+PVRSRV_ERROR
+ProcessELFCommandStream(const void *hPrivate, const IMG_BYTE *pbELF,
+			void *pvHostFWCodeAddr, void *pvHostFWDataAddr,
+			void *pvHostFWRoDataAddr, void *pvHostFWCorememCodeAddr,
+			void *pvHostFWCorememDataAddr)
 {
 	IMG_UINT32 ui32Entry;
 	IMG_ELF_HDR *psHeader = (IMG_ELF_HDR *)pbELF;
 	IMG_ELF_PROGRAM_HDR *psProgramHeader =
-	    (IMG_ELF_PROGRAM_HDR *)(pbELF + psHeader->ui32Ephoff);
+		(IMG_ELF_PROGRAM_HDR *)(pbELF + psHeader->ui32Ephoff);
 	PVRSRV_ERROR eError;
 
-	for (ui32Entry = 0; ui32Entry < psHeader->ui32Ephnum; ui32Entry++, psProgramHeader++)
-	{
+	for (ui32Entry = 0; ui32Entry < psHeader->ui32Ephnum;
+	     ui32Entry++, psProgramHeader++) {
 		void *pvWriteAddr;
 
 		/* Only consider loadable entries in the ELF segment table */
-		if (psProgramHeader->ui32Ptype != ELF_PT_LOAD) continue;
+		if (psProgramHeader->ui32Ptype != ELF_PT_LOAD)
+			continue;
 
-		eError = FindMMUSegment(hPrivate,
-		                        psProgramHeader->ui32Pvaddr,
-		                        pvHostFWCodeAddr,
-		                        pvHostFWDataAddr,
-		                        pvHostFWRoDataAddr,
-		                        pvHostFWCorememCodeAddr,
-		                        pvHostFWCorememDataAddr,
-		                        &pvWriteAddr);
+		eError = FindMMUSegment(hPrivate, psProgramHeader->ui32Pvaddr,
+					pvHostFWCodeAddr, pvHostFWDataAddr,
+					pvHostFWRoDataAddr,
+					pvHostFWCorememCodeAddr,
+					pvHostFWCorememDataAddr, &pvWriteAddr);
 
-		if (eError != PVRSRV_OK)
-		{
-			RGXErrorLog(hPrivate,
-			            "%s: Addr 0x%x (size: %d) not found in any segment",__func__,
-			            psProgramHeader->ui32Pvaddr,
-			            psProgramHeader->ui32Pfilesz);
+		if (eError != PVRSRV_OK) {
+			RGXErrorLog(
+				hPrivate,
+				"%s: Addr 0x%x (size: %d) not found in any segment",
+				__func__, psProgramHeader->ui32Pvaddr,
+				psProgramHeader->ui32Pfilesz);
 			return eError;
 		}
 
 		/* Write to FW allocation only if available */
-		if (pvWriteAddr)
-		{
-			RGXMemCopy(hPrivate,
-			           pvWriteAddr,
-			           (IMG_PBYTE)(pbELF + psProgramHeader->ui32Poffset),
-			           psProgramHeader->ui32Pfilesz);
+		if (pvWriteAddr) {
+			RGXMemCopy(hPrivate, pvWriteAddr,
+				   (IMG_PBYTE)(pbELF +
+					       psProgramHeader->ui32Poffset),
+				   psProgramHeader->ui32Pfilesz);
 
 			RGXMemSet(hPrivate,
-			          (IMG_PBYTE)pvWriteAddr + psProgramHeader->ui32Pfilesz,
-			          0,
-			          psProgramHeader->ui32Pmemsz - psProgramHeader->ui32Pfilesz);
+				  (IMG_PBYTE)pvWriteAddr +
+					  psProgramHeader->ui32Pfilesz,
+				  0,
+				  psProgramHeader->ui32Pmemsz -
+					  psProgramHeader->ui32Pfilesz);
 
-#if defined(CONFIG_ARM64) && defined(__linux__) && defined(SUPPORT_CPUCACHED_FWMEMCTX)
-			RGXFwSharedMemCacheOpExec(pvWriteAddr, psProgramHeader->ui32Pmemsz, PVRSRV_CACHE_OP_FLUSH);
+#if defined(CONFIG_ARM64) && defined(__linux__) && \
+	defined(SUPPORT_CPUCACHED_FWMEMCTX)
+			RGXFwSharedMemCacheOpExec(pvWriteAddr,
+						  psProgramHeader->ui32Pmemsz,
+						  PVRSRV_CACHE_OP_FLUSH);
 #endif
 		}
 	}
@@ -770,157 +776,158 @@ PVRSRV_ERROR ProcessELFCommandStream(const void *hPrivate,
 	return PVRSRV_OK;
 }
 
-IMG_UINT32 RGXGetFWImageSectionOffset(const void *hPrivate, RGX_FW_SECTION_ID eId)
+IMG_UINT32 RGXGetFWImageSectionOffset(const void *hPrivate,
+				      RGX_FW_SECTION_ID eId)
 {
 	RGX_FW_LAYOUT_ENTRY *psEntry = GetTableEntry(hPrivate, eId);
 
 	return psEntry->ui32AllocOffset;
 }
 
-IMG_UINT32 RGXGetFWImageSectionMaxSize(const void *hPrivate, RGX_FW_SECTION_ID eId)
+IMG_UINT32 RGXGetFWImageSectionMaxSize(const void *hPrivate,
+				       RGX_FW_SECTION_ID eId)
 {
 	RGX_FW_LAYOUT_ENTRY *psEntry = GetTableEntry(hPrivate, eId);
 
 	return psEntry->ui32MaxSize;
 }
 
-IMG_UINT32 RGXGetFWImageSectionAllocSize(const void *hPrivate, RGX_FW_SECTION_ID eId)
+IMG_UINT32 RGXGetFWImageSectionAllocSize(const void *hPrivate,
+					 RGX_FW_SECTION_ID eId)
 {
 	RGX_FW_LAYOUT_ENTRY *psEntry = GetTableEntry(hPrivate, eId);
 
 	return psEntry->ui32AllocSize;
 }
 
-IMG_UINT32 RGXGetFWImageSectionAddress(const void *hPrivate, RGX_FW_SECTION_ID eId)
+IMG_UINT32 RGXGetFWImageSectionAddress(const void *hPrivate,
+				       RGX_FW_SECTION_ID eId)
 {
 	RGX_FW_LAYOUT_ENTRY *psEntry = GetTableEntry(hPrivate, eId);
 
 	return psEntry->ui32BaseAddr;
 }
 
-static inline
-PVRSRV_ERROR RGXValidateFWHeaderVersion1(const void *hPrivate,
-                                         const RGX_FW_INFO_HEADER *psInfoHeader)
+static inline PVRSRV_ERROR
+RGXValidateFWHeaderVersion1(const void *hPrivate,
+			    const RGX_FW_INFO_HEADER *psInfoHeader)
 {
 	/* Applicable to any FW_INFO_VERSION */
-	if (psInfoHeader->ui32LayoutEntrySize != sizeof(RGX_FW_LAYOUT_ENTRY))
-	{
-		RGXErrorLog(hPrivate, "%s: FW layout entry sizes mismatch (expected: %u, found: %u)",
-		            __func__,
-		            (IMG_UINT32) sizeof(RGX_FW_LAYOUT_ENTRY),
-		            psInfoHeader->ui32LayoutEntrySize);
+	if (psInfoHeader->ui32LayoutEntrySize != sizeof(RGX_FW_LAYOUT_ENTRY)) {
+		RGXErrorLog(
+			hPrivate,
+			"%s: FW layout entry sizes mismatch (expected: %u, found: %u)",
+			__func__, (IMG_UINT32)sizeof(RGX_FW_LAYOUT_ENTRY),
+			psInfoHeader->ui32LayoutEntrySize);
 	}
 
 	/* Applicable to any FW_INFO_VERSION */
-	if (psInfoHeader->ui32LayoutEntryNum > MAX_NUM_ENTRIES)
-	{
-		RGXErrorLog(hPrivate, "%s: Not enough storage for the FW layout table (max: %u entries, found: %u)",
-		            __func__,
-		            MAX_NUM_ENTRIES,
-		            psInfoHeader->ui32LayoutEntryNum);
+	if (psInfoHeader->ui32LayoutEntryNum > MAX_NUM_ENTRIES) {
+		RGXErrorLog(
+			hPrivate,
+			"%s: Not enough storage for the FW layout table (max: %u entries, found: %u)",
+			__func__, MAX_NUM_ENTRIES,
+			psInfoHeader->ui32LayoutEntryNum);
 	}
 
 #if defined(RGX_FEATURE_MIPS_BIT_MASK)
 	/* Applicable to any FW_INFO_VERSION */
-	if (RGX_DEVICE_HAS_FEATURE(hPrivate, MIPS))
-	{
-		if (psInfoHeader->ui32FwPageSize != RGXGetOSPageSize(hPrivate))
-		{
-			RGXErrorLog(hPrivate, "%s: FW page size mismatch (expected: %u, found: %u)",
-			            __func__,
-			            (IMG_UINT32) RGXGetOSPageSize(hPrivate),
-			            psInfoHeader->ui32FwPageSize);
+	if (RGX_DEVICE_HAS_FEATURE(hPrivate, MIPS)) {
+		if (psInfoHeader->ui32FwPageSize !=
+		    RGXGetOSPageSize(hPrivate)) {
+			RGXErrorLog(
+				hPrivate,
+				"%s: FW page size mismatch (expected: %u, found: %u)",
+				__func__,
+				(IMG_UINT32)RGXGetOSPageSize(hPrivate),
+				psInfoHeader->ui32FwPageSize);
 			return PVRSRV_ERROR_INVALID_PARAMS;
 		}
 	}
 #endif
 
-	if (psInfoHeader->ui32InfoVersion != FW_INFO_VERSION)
-	{
+	if (psInfoHeader->ui32InfoVersion != FW_INFO_VERSION) {
 		/* Not an error because RGX_FW_INFO_HEADER is now versioned. It can grow
 		 * incrementally and it must be backwards compatible.
 		 */
-		RGXCommentLog(hPrivate, "%s: FW info version mismatch (expected: %u, found: %u)",
-		              __func__,
-		              (IMG_UINT32) FW_INFO_VERSION,
-		              psInfoHeader->ui32InfoVersion);
+		RGXCommentLog(
+			hPrivate,
+			"%s: FW info version mismatch (expected: %u, found: %u)",
+			__func__, (IMG_UINT32)FW_INFO_VERSION,
+			psInfoHeader->ui32InfoVersion);
 		goto exit_version1_validation;
 	}
 
-	if (psInfoHeader->ui32HeaderLen != sizeof(RGX_FW_INFO_HEADER))
-	{
-		RGXErrorLog(hPrivate, "%s: FW info header sizes mismatch (expected: %u, found: %u)",
-		            __func__,
-		            (IMG_UINT32) sizeof(RGX_FW_INFO_HEADER),
-		            psInfoHeader->ui32HeaderLen);
+	if (psInfoHeader->ui32HeaderLen != sizeof(RGX_FW_INFO_HEADER)) {
+		RGXErrorLog(
+			hPrivate,
+			"%s: FW info header sizes mismatch (expected: %u, found: %u)",
+			__func__, (IMG_UINT32)sizeof(RGX_FW_INFO_HEADER),
+			psInfoHeader->ui32HeaderLen);
 	}
 
 exit_version1_validation:
 	return PVRSRV_OK;
 }
 
-static inline
-PVRSRV_ERROR RGXValidateFWHeaderVersion2(const void *hPrivate,
-                                         const RGX_FW_INFO_HEADER *psInfoHeader)
+static inline PVRSRV_ERROR
+RGXValidateFWHeaderVersion2(const void *hPrivate,
+			    const RGX_FW_INFO_HEADER *psInfoHeader)
 {
 	if (psInfoHeader->ui16PVRVersionMajor != FW_VERSION_MAJ ||
-	    psInfoHeader->ui16PVRVersionMinor != FW_VERSION_MIN)
-	{
-		RGXErrorLog(hPrivate, "%s: KM and FW version mismatch (expected: %u.%u, found: %u.%u)",
-		            __func__,
-		            FW_VERSION_MAJ,
-		            FW_VERSION_MIN,
-		            psInfoHeader->ui16PVRVersionMajor,
-		            psInfoHeader->ui16PVRVersionMinor);
+	    psInfoHeader->ui16PVRVersionMinor != FW_VERSION_MIN) {
+		RGXErrorLog(
+			hPrivate,
+			"%s: KM and FW version mismatch (expected: %u.%u, found: %u.%u)",
+			__func__, FW_VERSION_MAJ, FW_VERSION_MIN,
+			psInfoHeader->ui16PVRVersionMajor,
+			psInfoHeader->ui16PVRVersionMinor);
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
 	return PVRSRV_OK;
 }
 
-static inline
-PVRSRV_ERROR RGXValidateFWHeaderVersion(const void *hPrivate,
-                                        const RGX_FW_INFO_HEADER *psInfoHeader)
+static inline PVRSRV_ERROR
+RGXValidateFWHeaderVersion(const void *hPrivate,
+			   const RGX_FW_INFO_HEADER *psInfoHeader)
 {
 	PVRSRV_ERROR eError;
 
-	switch (psInfoHeader->ui32InfoVersion)
-	{
-		default:
-			__fallthrough;
-		case 2:
-			eError = RGXValidateFWHeaderVersion2(hPrivate, psInfoHeader);
-			if (eError != PVRSRV_OK)
-			{
-				return eError;
-			}
+	switch (psInfoHeader->ui32InfoVersion) {
+	default:
+		__fallthrough;
+	case 2:
+		eError = RGXValidateFWHeaderVersion2(hPrivate, psInfoHeader);
+		if (eError != PVRSRV_OK) {
+			return eError;
+		}
 
-			__fallthrough;
-		case 1:
-			eError = RGXValidateFWHeaderVersion1(hPrivate, psInfoHeader);
-			if (eError != PVRSRV_OK)
-			{
-				return eError;
-			}
+		__fallthrough;
+	case 1:
+		eError = RGXValidateFWHeaderVersion1(hPrivate, psInfoHeader);
+		if (eError != PVRSRV_OK) {
+			return eError;
+		}
 
-			break;
-		case 0:
-			RGXErrorLog(hPrivate, "%s: invalid FW_INFO_VERSION", __func__);
-			return PVRSRV_ERROR_INVALID_PARAMS;
+		break;
+	case 0:
+		RGXErrorLog(hPrivate, "%s: invalid FW_INFO_VERSION", __func__);
+		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
 	return PVRSRV_OK;
 }
 
-PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
-                                    const IMG_BYTE    *pbRGXFirmware,
-                                    const IMG_UINT32  ui32RGXFirmwareSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWCodeAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWDataAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWRoDataAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWCorememCodeAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWCorememDataAllocSize,
-                                    RGX_FW_INFO_HEADER *psFWInfoHeader)
+PVRSRV_ERROR
+RGXGetFWImageAllocSize(const void *hPrivate, const IMG_BYTE *pbRGXFirmware,
+		       const IMG_UINT32 ui32RGXFirmwareSize,
+		       IMG_DEVMEM_SIZE_T *puiFWCodeAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWDataAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWRoDataAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWCorememCodeAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWCorememDataAllocSize,
+		       RGX_FW_INFO_HEADER *psFWInfoHeader)
 {
 	RGX_FW_INFO_HEADER *psInfoHeader;
 	const IMG_BYTE *pbRGXFirmwareInfo;
@@ -928,10 +935,10 @@ PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
 	PVRSRV_ERROR eError;
 	IMG_UINT32 i;
 
-	if (pbRGXFirmware == NULL || ui32RGXFirmwareSize == 0 || ui32RGXFirmwareSize <= FW_BLOCK_SIZE)
-	{
+	if (pbRGXFirmware == NULL || ui32RGXFirmwareSize == 0 ||
+	    ui32RGXFirmwareSize <= FW_BLOCK_SIZE) {
 		RGXErrorLog(hPrivate, "%s: Invalid FW binary at %p, size %u",
-		            __func__, pbRGXFirmware, ui32RGXFirmwareSize);
+			    __func__, pbRGXFirmware, ui32RGXFirmwareSize);
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
@@ -944,11 +951,10 @@ PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
 	 */
 
 	pbRGXFirmwareInfo = pbRGXFirmware + ui32RGXFirmwareSize - FW_BLOCK_SIZE;
-	psInfoHeader = (RGX_FW_INFO_HEADER*)pbRGXFirmwareInfo;
+	psInfoHeader = (RGX_FW_INFO_HEADER *)pbRGXFirmwareInfo;
 
 	eError = RGXValidateFWHeaderVersion(hPrivate, psInfoHeader);
-	if (eError != PVRSRV_OK)
-	{
+	if (eError != PVRSRV_OK) {
 		return eError;
 	}
 
@@ -964,26 +970,26 @@ PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
 
 	ui32LayoutEntryNum = 0;
 
-	for (i = 0; i < MAX_NUM_ENTRIES && ui32LayoutEntryNum < psInfoHeader->ui32LayoutEntryNum; i++)
-	{
-		RGX_FW_LAYOUT_ENTRY *psOutEntry = &asRGXFWLayoutTable[ui32LayoutEntryNum];
+	for (i = 0; i < MAX_NUM_ENTRIES &&
+		    ui32LayoutEntryNum < psInfoHeader->ui32LayoutEntryNum;
+	     i++) {
+		RGX_FW_LAYOUT_ENTRY *psOutEntry =
+			&asRGXFWLayoutTable[ui32LayoutEntryNum];
 
-		RGX_FW_LAYOUT_ENTRY *psInEntry = (RGX_FW_LAYOUT_ENTRY*)
-			(pbRGXFirmwareLayout + i * psInfoHeader->ui32LayoutEntrySize);
+		RGX_FW_LAYOUT_ENTRY *psInEntry =
+			(RGX_FW_LAYOUT_ENTRY
+				 *)(pbRGXFirmwareLayout +
+				    i * psInfoHeader->ui32LayoutEntrySize);
 
-		if (psInEntry->ui32AllocSize == 0U)
-		{
+		if (psInEntry->ui32AllocSize == 0U) {
 			continue;
 		}
 
-		RGXMemCopy(hPrivate,
-		           (void*)psOutEntry,
-		           (void*)psInEntry,
-		           sizeof(RGX_FW_LAYOUT_ENTRY));
+		RGXMemCopy(hPrivate, (void *)psOutEntry, (void *)psInEntry,
+			   sizeof(RGX_FW_LAYOUT_ENTRY));
 
 		ui32LayoutEntryNum++;
 	}
-
 
 	/* Calculate how much memory the FW needs for its code and data segments */
 
@@ -993,34 +999,38 @@ PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
 	*puiFWCorememCodeAllocSize = 0;
 	*puiFWCorememDataAllocSize = 0;
 
-	for (i = 0; i < ui32LayoutEntryNum; i++)
-	{
-		switch (asRGXFWLayoutTable[i].eType)
-		{
-			case FW_CODE:
-				*puiFWCodeAllocSize += asRGXFWLayoutTable[i].ui32AllocSize;
-				break;
+	for (i = 0; i < ui32LayoutEntryNum; i++) {
+		switch (asRGXFWLayoutTable[i].eType) {
+		case FW_CODE:
+			*puiFWCodeAllocSize +=
+				asRGXFWLayoutTable[i].ui32AllocSize;
+			break;
 
-			case FW_RWDATA:
-				*puiFWDataAllocSize += asRGXFWLayoutTable[i].ui32AllocSize;
-				break;
+		case FW_RWDATA:
+			*puiFWDataAllocSize +=
+				asRGXFWLayoutTable[i].ui32AllocSize;
+			break;
 
-			case FW_RODATA:
-				*puiFWRoDataAllocSize += asRGXFWLayoutTable[i].ui32AllocSize;
-				break;
+		case FW_RODATA:
+			*puiFWRoDataAllocSize +=
+				asRGXFWLayoutTable[i].ui32AllocSize;
+			break;
 
-			case FW_COREMEM_CODE:
-				*puiFWCorememCodeAllocSize += asRGXFWLayoutTable[i].ui32AllocSize;
-				break;
+		case FW_COREMEM_CODE:
+			*puiFWCorememCodeAllocSize +=
+				asRGXFWLayoutTable[i].ui32AllocSize;
+			break;
 
-			case FW_COREMEM_DATA:
-				*puiFWCorememDataAllocSize += asRGXFWLayoutTable[i].ui32AllocSize;
-				break;
+		case FW_COREMEM_DATA:
+			*puiFWCorememDataAllocSize +=
+				asRGXFWLayoutTable[i].ui32AllocSize;
+			break;
 
-			default:
-				RGXErrorLog(hPrivate, "%s: Unknown FW section type %u\n",
-				            __func__, asRGXFWLayoutTable[i].eType);
-				break;
+		default:
+			RGXErrorLog(hPrivate,
+				    "%s: Unknown FW section type %u\n",
+				    __func__, asRGXFWLayoutTable[i].eType);
+			break;
 		}
 	}
 
@@ -1028,15 +1038,11 @@ PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
 	return PVRSRV_OK;
 }
 
-
 PVRSRV_ERROR RGXProcessFWImage(const void *hPrivate,
-                               const IMG_BYTE *pbRGXFirmware,
-                               void *pvFWCode,
-                               void *pvFWData,
-                               void *pvFWRoData,
-                               void *pvFWCorememCode,
-                               void *pvFWCorememData,
-                               PVRSRV_FW_BOOT_PARAMS *puFWParams)
+			       const IMG_BYTE *pbRGXFirmware, void *pvFWCode,
+			       void *pvFWData, void *pvFWRoData,
+			       void *pvFWCorememCode, void *pvFWCorememData,
+			       PVRSRV_FW_BOOT_PARAMS *puFWParams)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	IMG_BOOL bMIPS = IMG_FALSE;
@@ -1048,18 +1054,17 @@ PVRSRV_ERROR RGXProcessFWImage(const void *hPrivate,
 #endif
 	bMETA = (IMG_BOOL)(!bMIPS && !bRISCV);
 
-	if (bMETA)
-	{
+	if (bMETA) {
 		IMG_UINT32 *pui32BootConf = NULL;
 		/* Skip bootloader configuration if a pointer to the FW code
 		 * allocation is not available
 		 */
-		if (pvFWCode)
-		{
+		if (pvFWCode) {
 			/* This variable points to the bootloader code which is mostly
 			 * a sequence of <register address,register value> pairs
 			 */
-			pui32BootConf = ((IMG_UINT32*) pvFWCode) + RGXFW_BOOTLDR_CONF_OFFSET;
+			pui32BootConf = ((IMG_UINT32 *)pvFWCode) +
+					RGXFW_BOOTLDR_CONF_OFFSET;
 
 			*pui32BootConf = 0;
 			pui32BootConf++;
@@ -1070,69 +1075,71 @@ PVRSRV_ERROR RGXProcessFWImage(const void *hPrivate,
 			*pui32BootConf++ = META_CR_SYSC_JTAG_THREAD;
 			*pui32BootConf++ = META_CR_SYSC_JTAG_THREAD_PRIV_EN;
 
-			RGXFWConfigureSegMMU(hPrivate,
-			                     &puFWParams->sMeta.sFWCodeDevVAddr,
-			                     &puFWParams->sMeta.sFWDataDevVAddr,
-			                     &puFWParams->sMeta.sFWRoDataDevVAddr,
-			                     &pui32BootConf);
+			RGXFWConfigureSegMMU(
+				hPrivate, &puFWParams->sMeta.sFWCodeDevVAddr,
+				&puFWParams->sMeta.sFWDataDevVAddr,
+				&puFWParams->sMeta.sFWRoDataDevVAddr,
+				&pui32BootConf);
 		}
 
 		/* Process FW image data stream */
-		eError = ProcessLDRCommandStream(hPrivate,
-		                                 pbRGXFirmware,
-		                                 pvFWCode,
-		                                 pvFWData,
-		                                 pvFWRoData,
-		                                 pvFWCorememCode,
-		                                 pvFWCorememData,
-		                                 &pui32BootConf);
-		if (eError != PVRSRV_OK)
-		{
-			RGXErrorLog(hPrivate, "RGXProcessFWImage: Processing FW image failed (%d)", eError);
+		eError = ProcessLDRCommandStream(
+			hPrivate, pbRGXFirmware, pvFWCode, pvFWData, pvFWRoData,
+			pvFWCorememCode, pvFWCorememData, &pui32BootConf);
+		if (eError != PVRSRV_OK) {
+			RGXErrorLog(
+				hPrivate,
+				"RGXProcessFWImage: Processing FW image failed (%d)",
+				eError);
 			return eError;
 		}
 
 		/* Skip bootloader configuration if a pointer to the FW code
 		 * allocation is not available
 		 */
-		if (pvFWCode)
-		{
-			IMG_UINT32 ui32NumThreads   = puFWParams->sMeta.ui32NumThreads;
+		if (pvFWCode) {
+			IMG_UINT32 ui32NumThreads =
+				puFWParams->sMeta.ui32NumThreads;
 
-			if ((ui32NumThreads == 0) || (ui32NumThreads > 2))
-			{
-				RGXErrorLog(hPrivate,
-				            "ProcessFWImage: Wrong Meta threads configuration, using one thread only");
+			if ((ui32NumThreads == 0) || (ui32NumThreads > 2)) {
+				RGXErrorLog(
+					hPrivate,
+					"ProcessFWImage: Wrong Meta threads configuration, using one thread only");
 
 				ui32NumThreads = 1;
 			}
 
-			RGXFWConfigureMetaCaches(hPrivate,
-			                         ui32NumThreads,
-			                         &pui32BootConf);
+			RGXFWConfigureMetaCaches(hPrivate, ui32NumThreads,
+						 &pui32BootConf);
 
 			/* Signal the end of the conf sequence */
 			*pui32BootConf++ = 0x0;
 			*pui32BootConf++ = 0x0;
 
-			if (puFWParams->sMeta.uiFWCorememCodeSize && (puFWParams->sMeta.sFWCorememCodeFWAddr.ui32Addr != 0))
-			{
-				*pui32BootConf++ = puFWParams->sMeta.sFWCorememCodeFWAddr.ui32Addr;
-				*pui32BootConf++ = puFWParams->sMeta.uiFWCorememCodeSize;
-			}
-			else
-			{
+			if (puFWParams->sMeta.uiFWCorememCodeSize &&
+			    (puFWParams->sMeta.sFWCorememCodeFWAddr.ui32Addr !=
+			     0)) {
+				*pui32BootConf++ =
+					puFWParams->sMeta.sFWCorememCodeFWAddr
+						.ui32Addr;
+				*pui32BootConf++ =
+					puFWParams->sMeta.uiFWCorememCodeSize;
+			} else {
 				*pui32BootConf++ = 0;
 				*pui32BootConf++ = 0;
 			}
 
 #if defined(RGX_FEATURE_META_DMA_BIT_MASK)
-			if (RGX_DEVICE_HAS_FEATURE(hPrivate, META_DMA))
-			{
-				*pui32BootConf++ = (IMG_UINT32) (puFWParams->sMeta.sFWCorememCodeDevVAddr.uiAddr >> 32);
-				*pui32BootConf++ = (IMG_UINT32) puFWParams->sMeta.sFWCorememCodeDevVAddr.uiAddr;
-			}
-			else
+			if (RGX_DEVICE_HAS_FEATURE(hPrivate, META_DMA)) {
+				*pui32BootConf++ =
+					(IMG_UINT32)(puFWParams->sMeta
+							     .sFWCorememCodeDevVAddr
+							     .uiAddr >>
+						     32);
+				*pui32BootConf++ =
+					(IMG_UINT32)puFWParams->sMeta
+						.sFWCorememCodeDevVAddr.uiAddr;
+			} else
 #endif
 			{
 				*pui32BootConf++ = 0;
@@ -1141,45 +1148,52 @@ PVRSRV_ERROR RGXProcessFWImage(const void *hPrivate,
 		}
 	}
 #if defined(RGXMIPSFW_MAX_NUM_PAGETABLE_PAGES)
-	else if (bMIPS)
-	{
+	else if (bMIPS) {
 		/* Process FW image data stream */
-		eError = ProcessELFCommandStream(hPrivate,
-		                                 pbRGXFirmware,
-		                                 pvFWCode,
-		                                 pvFWData,
-		                                 pvFWRoData,
-		                                 NULL,
-		                                 NULL);
-		if (eError != PVRSRV_OK)
-		{
-			RGXErrorLog(hPrivate, "RGXProcessFWImage: Processing FW image failed (%d)", eError);
+		eError = ProcessELFCommandStream(hPrivate, pbRGXFirmware,
+						 pvFWCode, pvFWData, pvFWRoData,
+						 NULL, NULL);
+		if (eError != PVRSRV_OK) {
+			RGXErrorLog(
+				hPrivate,
+				"RGXProcessFWImage: Processing FW image failed (%d)",
+				eError);
 			return eError;
 		}
 
-		if (pvFWData)
-		{
-			RGXMIPSFW_BOOT_DATA *psBootData = (RGXMIPSFW_BOOT_DATA*)
+		if (pvFWData) {
+			RGXMIPSFW_BOOT_DATA *psBootData =
+				(RGXMIPSFW_BOOT_DATA *)
 				/* To get a pointer to the bootloader configuration data start from a pointer to the FW image... */
-				IMG_OFFSET_ADDR(pvFWData,
-				/* ... jump to the boot/NMI data page... */
-				(RGXGetFWImageSectionOffset(NULL, MIPS_BOOT_DATA)
-				/* ... and then jump to the bootloader data offset within the page */
-				+ RGXMIPSFW_BOOTLDR_CONF_OFFSET));
+				IMG_OFFSET_ADDR(
+					pvFWData,
+					/* ... jump to the boot/NMI data page... */
+					(RGXGetFWImageSectionOffset(
+						 NULL, MIPS_BOOT_DATA)
+					 /* ... and then jump to the bootloader data offset within the page */
+					 + RGXMIPSFW_BOOTLDR_CONF_OFFSET));
 
 			/* Rogue Registers physical address */
-			psBootData->ui64RegBase = puFWParams->sMips.sGPURegAddr.uiAddr;
+			psBootData->ui64RegBase =
+				puFWParams->sMips.sGPURegAddr.uiAddr;
 
 			/* MIPS Page Table physical address */
-			psBootData->ui32PTLog2PageSize = puFWParams->sMips.ui32FWPageTableLog2PageSize;
-			psBootData->ui32PTNumPages     = puFWParams->sMips.ui32FWPageTableNumPages;
-			psBootData->aui64PTPhyAddr[0U] = puFWParams->sMips.asFWPageTableAddr[0U].uiAddr;
-			psBootData->aui64PTPhyAddr[1U] = puFWParams->sMips.asFWPageTableAddr[1U].uiAddr;
-			psBootData->aui64PTPhyAddr[2U] = puFWParams->sMips.asFWPageTableAddr[2U].uiAddr;
-			psBootData->aui64PTPhyAddr[3U] = puFWParams->sMips.asFWPageTableAddr[3U].uiAddr;
+			psBootData->ui32PTLog2PageSize =
+				puFWParams->sMips.ui32FWPageTableLog2PageSize;
+			psBootData->ui32PTNumPages =
+				puFWParams->sMips.ui32FWPageTableNumPages;
+			psBootData->aui64PTPhyAddr[0U] =
+				puFWParams->sMips.asFWPageTableAddr[0U].uiAddr;
+			psBootData->aui64PTPhyAddr[1U] =
+				puFWParams->sMips.asFWPageTableAddr[1U].uiAddr;
+			psBootData->aui64PTPhyAddr[2U] =
+				puFWParams->sMips.asFWPageTableAddr[2U].uiAddr;
+			psBootData->aui64PTPhyAddr[3U] =
+				puFWParams->sMips.asFWPageTableAddr[3U].uiAddr;
 
 			/* MIPS Stack Pointer Physical Address */
-			psBootData->ui64StackPhyAddr = puFWParams->sMips.sFWStackAddr.uiAddr;
+			psBootData->ui64StackPhyAddr =
+				puFWParams->sMips.sFWStackAddr.uiAddr;
 
 			/* Reserved for future use */
 			psBootData->ui32Reserved1 = 0;
@@ -1187,36 +1201,41 @@ PVRSRV_ERROR RGXProcessFWImage(const void *hPrivate,
 		}
 	}
 #endif /* #if defined(RGXMIPSFW_MAX_NUM_PAGETABLE_PAGES) */
-	else
-	{
+	else {
 		/* Process FW image data stream */
-		eError = ProcessELFCommandStream(hPrivate,
-		                                 pbRGXFirmware,
-		                                 pvFWCode,
-		                                 pvFWData,
-		                                 pvFWRoData,
-		                                 pvFWCorememCode,
-		                                 pvFWCorememData);
-		if (eError != PVRSRV_OK)
-		{
-			RGXErrorLog(hPrivate, "RGXProcessFWImage: Processing FW image failed (%d)", eError);
+		eError = ProcessELFCommandStream(hPrivate, pbRGXFirmware,
+						 pvFWCode, pvFWData, pvFWRoData,
+						 pvFWCorememCode,
+						 pvFWCorememData);
+		if (eError != PVRSRV_OK) {
+			RGXErrorLog(
+				hPrivate,
+				"RGXProcessFWImage: Processing FW image failed (%d)",
+				eError);
 			return eError;
 		}
 
-		if (pvFWData)
-		{
-			RGXRISCVFW_BOOT_DATA *psBootData = (RGXRISCVFW_BOOT_DATA*)
-				IMG_OFFSET_ADDR(pvFWData, RGXRISCVFW_BOOTLDR_CONF_OFFSET);
+		if (pvFWData) {
+			RGXRISCVFW_BOOT_DATA *psBootData =
+				(RGXRISCVFW_BOOT_DATA *)IMG_OFFSET_ADDR(
+					pvFWData,
+					RGXRISCVFW_BOOTLDR_CONF_OFFSET);
 
-			psBootData->ui64CorememCodeDevVAddr = puFWParams->sRISCV.sFWCorememCodeDevVAddr.uiAddr;
-			psBootData->ui32CorememCodeFWAddr   = puFWParams->sRISCV.sFWCorememCodeFWAddr.ui32Addr;
-			psBootData->ui32CorememCodeSize     = puFWParams->sRISCV.uiFWCorememCodeSize;
+			psBootData->ui64CorememCodeDevVAddr =
+				puFWParams->sRISCV.sFWCorememCodeDevVAddr.uiAddr;
+			psBootData->ui32CorememCodeFWAddr =
+				puFWParams->sRISCV.sFWCorememCodeFWAddr.ui32Addr;
+			psBootData->ui32CorememCodeSize =
+				puFWParams->sRISCV.uiFWCorememCodeSize;
 
-			psBootData->ui64CorememDataDevVAddr = puFWParams->sRISCV.sFWCorememDataDevVAddr.uiAddr;
-			psBootData->ui32CorememDataFWAddr   = puFWParams->sRISCV.sFWCorememDataFWAddr.ui32Addr;
-			psBootData->ui32CorememDataSize     = puFWParams->sRISCV.uiFWCorememDataSize;
+			psBootData->ui64CorememDataDevVAddr =
+				puFWParams->sRISCV.sFWCorememDataDevVAddr.uiAddr;
+			psBootData->ui32CorememDataFWAddr =
+				puFWParams->sRISCV.sFWCorememDataFWAddr.ui32Addr;
+			psBootData->ui32CorememDataSize =
+				puFWParams->sRISCV.uiFWCorememDataSize;
 
-			psBootData->ui32Flags				= 0;
+			psBootData->ui32Flags = 0;
 		}
 	}
 

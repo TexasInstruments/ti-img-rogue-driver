@@ -74,19 +74,15 @@ struct pdp_mode_data {
 	bool margins;
 };
 
-static const struct pdp_mode_data pdp_extra_modes[] = {
-};
+static const struct pdp_mode_data pdp_extra_modes[] = {};
 
 static char preferred_mode_name[DRM_DISPLAY_MODE_LEN] = "\0";
 
-module_param_string(dvi_preferred_mode,
-		    preferred_mode_name,
-		    DRM_DISPLAY_MODE_LEN,
-		    0444);
+module_param_string(dvi_preferred_mode, preferred_mode_name,
+		    DRM_DISPLAY_MODE_LEN, 0444);
 
 MODULE_PARM_DESC(dvi_preferred_mode,
 		 "Specify the preferred mode (if supported), e.g. 1280x1024.");
-
 
 static int pdp_dvi_add_extra_modes(struct drm_connector *connector)
 {
@@ -95,8 +91,7 @@ static int pdp_dvi_add_extra_modes(struct drm_connector *connector)
 	int i;
 
 	for (i = 0, num_modes = 0; i < ARRAY_SIZE(pdp_extra_modes); i++) {
-		mode = drm_cvt_mode(connector->dev,
-				    pdp_extra_modes[i].hdisplay,
+		mode = drm_cvt_mode(connector->dev, pdp_extra_modes[i].hdisplay,
 				    pdp_extra_modes[i].vdisplay,
 				    pdp_extra_modes[i].vrefresh,
 				    pdp_extra_modes[i].reduced_blanking,
@@ -119,12 +114,11 @@ static int pdp_dvi_connector_helper_get_modes(struct drm_connector *connector)
 
 	if (len)
 		dev_info(dev->dev, "detected dvi_preferred_mode=%s\n",
-					preferred_mode_name);
+			 preferred_mode_name);
 	else
 		dev_info(dev->dev, "no dvi_preferred_mode\n");
 
-	num_modes = drm_add_modes_noedid(connector,
-					 dev->mode_config.max_width,
+	num_modes = drm_add_modes_noedid(connector, dev->mode_config.max_width,
 					 dev->mode_config.max_height);
 
 	num_modes += pdp_dvi_add_extra_modes(connector);
@@ -136,9 +130,8 @@ static int pdp_dvi_connector_helper_get_modes(struct drm_connector *connector)
 			struct list_head *entry;
 
 			list_for_each(entry, &connector->probed_modes) {
-				mode = list_entry(entry,
-						  struct drm_display_mode,
-						  head);
+				mode = list_entry(
+					entry, struct drm_display_mode, head);
 				if (!strcmp(mode->name, preferred_mode_name)) {
 					pref_mode = mode;
 					break;
@@ -157,9 +150,7 @@ static int pdp_dvi_connector_helper_get_modes(struct drm_connector *connector)
 	drm_mode_sort(&connector->probed_modes);
 
 	DRM_DEBUG_DRIVER("[CONNECTOR:%d:%s] found %d modes\n",
-			 connector->base.id,
-			 connector->name,
-			 num_modes);
+			 connector->base.id, connector->name, num_modes);
 
 	return num_modes;
 }
@@ -182,14 +173,11 @@ pdp_dvi_connector_helper_mode_valid(struct drm_connector *connector,
 	return MODE_OK;
 }
 
-
-
 static void pdp_dvi_connector_destroy(struct drm_connector *connector)
 {
 	struct pdp_drm_private *dev_priv = connector->dev->dev_private;
 
-	DRM_DEBUG_DRIVER("[CONNECTOR:%d:%s]\n",
-			 connector->base.id,
+	DRM_DEBUG_DRIVER("[CONNECTOR:%d:%s]\n", connector->base.id,
 			 connector->name);
 
 	drm_connector_cleanup(connector);
@@ -221,9 +209,7 @@ static const struct drm_connector_funcs pdp_dvi_connector_funcs = {
 	.atomic_destroy_state = drm_atomic_helper_connector_destroy_state,
 };
 
-
-struct drm_connector *
-pdp_dvi_connector_create(struct drm_device *dev)
+struct drm_connector *pdp_dvi_connector_create(struct drm_device *dev)
 {
 	struct drm_connector *connector;
 
@@ -231,9 +217,7 @@ pdp_dvi_connector_create(struct drm_device *dev)
 	if (!connector)
 		return ERR_PTR(-ENOMEM);
 
-	drm_connector_init(dev,
-			   connector,
-			   &pdp_dvi_connector_funcs,
+	drm_connector_init(dev, connector, &pdp_dvi_connector_funcs,
 			   DRM_MODE_CONNECTOR_DVID);
 	drm_connector_helper_add(connector, &pdp_dvi_connector_helper_funcs);
 
@@ -242,8 +226,7 @@ pdp_dvi_connector_create(struct drm_device *dev)
 	connector->doublescan_allowed = false;
 	connector->display_info.subpixel_order = SubPixelHorizontalRGB;
 
-	DRM_DEBUG_DRIVER("[CONNECTOR:%d:%s]\n",
-			 connector->base.id,
+	DRM_DEBUG_DRIVER("[CONNECTOR:%d:%s]\n", connector->base.id,
 			 connector->name);
 
 	return connector;

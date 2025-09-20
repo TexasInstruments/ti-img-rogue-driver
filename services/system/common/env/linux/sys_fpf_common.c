@@ -50,16 +50,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sys_fpf_custom.h"
 #endif
 
-#define DMA_FENCE_EXTRACT_USER_BITS(user_bits) (user_bits >> DMA_FENCE_FLAG_USER_BITS)
+#define DMA_FENCE_EXTRACT_USER_BITS(user_bits) \
+	(user_bits >> DMA_FENCE_FLAG_USER_BITS)
 
-static IMG_BOOL SysDevExtractFPFToken(IMG_HANDLE hSysData, IMG_HANDLE hEnvFenceObjPtr, IMG_UINT16 *pui16FFToken)
+static IMG_BOOL SysDevExtractFPFToken(IMG_HANDLE hSysData,
+				      IMG_HANDLE hEnvFenceObjPtr,
+				      IMG_UINT16 *pui16FFToken)
 {
 	struct dma_fence *fence = hEnvFenceObjPtr;
 	unsigned long flags = DMA_FENCE_EXTRACT_USER_BITS(fence->flags);
 
 	/* Check validity bit (FAST_PATH_FENCE_TOKEN_VALID_EN). */
-	if (SYNC_CHECKPOINT_FPF_CHECK_TOKEN_VALID(flags))
-	{
+	if (SYNC_CHECKPOINT_FPF_CHECK_TOKEN_VALID(flags)) {
 		*pui16FFToken = SYNC_CHECKPOINT_FPF_EXTRACT_TOKEN(flags);
 
 		return IMG_TRUE;
@@ -71,11 +73,15 @@ static IMG_BOOL SysDevExtractFPFToken(IMG_HANDLE hSysData, IMG_HANDLE hEnvFenceO
 void FPFCommonDeviceInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
 {
 #if !defined(SUPPORT_FASTPATH_FENCE_CUSTOM_COMMS)
-	psDeviceConfig->pfnInitFPFKickAndCommunicate = SysFpfFptCbCommunicationInit;
-	psDeviceConfig->pfnDeInitFPFKickAndCommunicate = SysFpfFptCbCommunicationDeInit;
+	psDeviceConfig->pfnInitFPFKickAndCommunicate =
+		SysFpfFptCbCommunicationInit;
+	psDeviceConfig->pfnDeInitFPFKickAndCommunicate =
+		SysFpfFptCbCommunicationDeInit;
 #else
-	psDeviceConfig->pfnInitFPFKickAndCommunicate = SysFpfCustomCommunicationInit;
-	psDeviceConfig->pfnDeInitFPFKickAndCommunicate = SysFpfCustomCommunicationDeInit;
+	psDeviceConfig->pfnInitFPFKickAndCommunicate =
+		SysFpfCustomCommunicationInit;
+	psDeviceConfig->pfnDeInitFPFKickAndCommunicate =
+		SysFpfCustomCommunicationDeInit;
 #endif
 	psDeviceConfig->pfnSysDevExtractFFToken = SysDevExtractFPFToken;
 }

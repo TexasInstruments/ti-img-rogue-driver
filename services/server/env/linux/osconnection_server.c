@@ -51,15 +51,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <linux/sched.h>
 
-PVRSRV_ERROR OSConnectionPrivateDataInit(IMG_HANDLE *phOsPrivateData, void *pvOSData)
+PVRSRV_ERROR OSConnectionPrivateDataInit(IMG_HANDLE *phOsPrivateData,
+					 void *pvOSData)
 {
 	ENV_CONNECTION_PRIVATE_DATA *psPrivData = pvOSData;
 	ENV_CONNECTION_DATA *psEnvConnection;
 
 	*phOsPrivateData = OSAllocZMem(sizeof(ENV_CONNECTION_DATA));
 
-	if (*phOsPrivateData == NULL)
-	{
+	if (*phOsPrivateData == NULL) {
 		PVR_DPF((PVR_DBG_ERROR, "%s: OSAllocMem failed", __func__));
 		return PVRSRV_ERROR_OUT_OF_MEMORY;
 	}
@@ -80,18 +80,15 @@ PVRSRV_ERROR OSConnectionPrivateDataInit(IMG_HANDLE *phOsPrivateData, void *pvOS
 
 PVRSRV_ERROR OSConnectionPrivateDataDeInit(IMG_HANDLE hOsPrivateData)
 {
-	if (hOsPrivateData == NULL)
-	{
+	if (hOsPrivateData == NULL) {
 		return PVRSRV_OK;
 	}
-
 
 	OSFreeMem(hOsPrivateData);
 	/* not nulling pointer, copy on stack */
 
 	return PVRSRV_OK;
 }
-
 
 PVRSRV_DEVICE_NODE *OSGetDevNode(CONNECTION_DATA *psConnection)
 {

@@ -57,31 +57,53 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <linux/version.h>
 #include <linux/spinlock.h>
 
-#define OSLockCreateNoStats(phLock) ({ \
-	PVRSRV_ERROR e = PVRSRV_ERROR_OUT_OF_MEMORY; \
-	*(phLock) = OSAllocMemNoStats(sizeof(struct mutex)); \
-	if (*(phLock)) { mutex_init(*(phLock)); e = PVRSRV_OK; }; \
-	e;})
-#define OSLockCreate(phLock) ({ \
-	PVRSRV_ERROR e = PVRSRV_ERROR_OUT_OF_MEMORY; \
-	*(phLock) = OSAllocMem(sizeof(struct mutex)); \
-	if (*(phLock)) { mutex_init(*(phLock)); e = PVRSRV_OK; }; \
-	e;})
-#define OSLockDestroy(hLock) ({mutex_destroy((hLock)); OSFreeMem((hLock));})
-#define OSLockDestroyNoStats(hLock) ({mutex_destroy((hLock)); OSFreeMemNoStats((hLock));})
+#define OSLockCreateNoStats(phLock)                                  \
+	({                                                           \
+		PVRSRV_ERROR e = PVRSRV_ERROR_OUT_OF_MEMORY;         \
+		*(phLock) = OSAllocMemNoStats(sizeof(struct mutex)); \
+		if (*(phLock)) {                                     \
+			mutex_init(*(phLock));                       \
+			e = PVRSRV_OK;                               \
+		};                                                   \
+		e;                                                   \
+	})
+#define OSLockCreate(phLock)                                  \
+	({                                                    \
+		PVRSRV_ERROR e = PVRSRV_ERROR_OUT_OF_MEMORY;  \
+		*(phLock) = OSAllocMem(sizeof(struct mutex)); \
+		if (*(phLock)) {                              \
+			mutex_init(*(phLock));                \
+			e = PVRSRV_OK;                        \
+		};                                            \
+		e;                                            \
+	})
+#define OSLockDestroy(hLock)            \
+	({                              \
+		mutex_destroy((hLock)); \
+		OSFreeMem((hLock));     \
+	})
+#define OSLockDestroyNoStats(hLock)        \
+	({                                 \
+		mutex_destroy((hLock));    \
+		OSFreeMemNoStats((hLock)); \
+	})
 
-#define OSLockAcquire(hLock) ({mutex_lock((hLock));})
-#define OSLockAcquireNested(hLock, subclass) ({mutex_lock_nested((hLock), (subclass));})
-#define OSLockRelease(hLock) ({mutex_unlock((hLock));})
+#define OSLockAcquire(hLock) ({ mutex_lock((hLock)); })
+#define OSLockAcquireNested(hLock, subclass) \
+	({ mutex_lock_nested((hLock), (subclass)); })
+#define OSLockRelease(hLock) ({ mutex_unlock((hLock)); })
 
-#define OSLockIsLocked(hLock) ((mutex_is_locked((hLock)) == 1) ? IMG_TRUE : IMG_FALSE)
-#define OSTryLockAcquire(hLock) ((mutex_trylock(hLock) == 1) ? IMG_TRUE : IMG_FALSE)
+#define OSLockIsLocked(hLock) \
+	((mutex_is_locked((hLock)) == 1) ? IMG_TRUE : IMG_FALSE)
+#define OSTryLockAcquire(hLock) \
+	((mutex_trylock(hLock) == 1) ? IMG_TRUE : IMG_FALSE)
 
 #if defined(DEBUG)
 #if defined(CONFIG_LOCKDEP)
 #define OSLockHeldAssert(hLock) ({ lockdep_assert_held((hLock)); })
 #else
-#define OSLockHeldAssert(hLock) ({ PVR_ASSERT(OSLockIsLocked((hLock)) == IMG_TRUE); })
+#define OSLockHeldAssert(hLock) \
+	({ PVR_ASSERT(OSLockIsLocked((hLock)) == IMG_TRUE); })
 #endif
 #else
 #define OSLockHeldAssert(hLock)
@@ -102,18 +124,19 @@ static INLINE void OSSpinLockDestroy(POS_SPINLOCK psSpinLock)
 }
 
 #define OSSpinLockAcquire(_pLock, _flags) spin_lock_irqsave(&_pLock, _flags)
-#define OSSpinLockRelease(_pLock, _flags) spin_unlock_irqrestore(&_pLock, _flags)
-
+#define OSSpinLockRelease(_pLock, _flags) \
+	spin_unlock_irqrestore(&_pLock, _flags)
 
 /* These _may_ be reordered or optimized away entirely by the compiler/hw */
-#define OSAtomicRead(pCounter)	atomic_read(pCounter)
-#define OSAtomicWrite(pCounter, i)	atomic_set(pCounter, i)
+#define OSAtomicRead(pCounter) atomic_read(pCounter)
+#define OSAtomicWrite(pCounter, i) atomic_set(pCounter, i)
 
 /* The following atomic operations, in addition to being SMP-safe, also
    imply a memory barrier around the operation */
 #define OSAtomicIncrement(pCounter) atomic_inc_return(pCounter)
 #define OSAtomicDecrement(pCounter) atomic_dec_return(pCounter)
-#define OSAtomicCompareExchange(pCounter, oldv, newv) atomic_cmpxchg(pCounter,oldv,newv)
+#define OSAtomicCompareExchange(pCounter, oldv, newv) \
+	atomic_cmpxchg(pCounter, oldv, newv)
 #define OSAtomicExchange(pCounter, iNewVal) atomic_xchg(pCounter, iNewVal)
 
 static inline IMG_INT OSAtomicOr(ATOMIC_T *pCounter, IMG_INT iVal)
@@ -121,27 +144,28 @@ static inline IMG_INT OSAtomicOr(ATOMIC_T *pCounter, IMG_INT iVal)
 	IMG_INT iOldVal, iLastVal, iNewVal;
 
 	iLastVal = OSAtomicRead(pCounter);
-	do
-	{
+	do {
 		iOldVal = iLastVal;
 		iNewVal = iOldVal | iVal;
 
 		iLastVal = OSAtomicCompareExchange(pCounter, iOldVal, iNewVal);
-	}
-	while (iOldVal != iLastVal);
+	} while (iOldVal != iLastVal);
 
 	return iNewVal;
 }
 
-#define OSAtomicAdd(pCounter, incr) atomic_add_return(incr,pCounter)
+#define OSAtomicAdd(pCounter, incr) atomic_add_return(incr, pCounter)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
-#define OSAtomicAddUnless(pCounter, incr, test) atomic_fetch_add_unless(pCounter, (incr), (test))
+#define OSAtomicAddUnless(pCounter, incr, test) \
+	atomic_fetch_add_unless(pCounter, (incr), (test))
 #else
-#define OSAtomicAddUnless(pCounter, incr, test) __atomic_add_unless(pCounter,incr,test)
+#define OSAtomicAddUnless(pCounter, incr, test) \
+	__atomic_add_unless(pCounter, incr, test)
 #endif
 
-#define OSAtomicSubtract(pCounter, incr) atomic_add_return(-(incr),pCounter)
-#define OSAtomicSubtractUnless(pCounter, incr, test) OSAtomicAddUnless(pCounter, -(incr), (test))
+#define OSAtomicSubtract(pCounter, incr) atomic_add_return(-(incr), pCounter)
+#define OSAtomicSubtractUnless(pCounter, incr, test) \
+	OSAtomicAddUnless(pCounter, -(incr), (test))
 
 #else /* defined(__linux__) && defined(__KERNEL__) */
 
@@ -287,7 +311,9 @@ static inline IMG_INT32 OSAtomicDecrement(ATOMIC_T *pCounter)
                                 equals 'iCompareVal'
 @Return         The old value of *pCounter
 */ /**************************************************************************/
-static inline IMG_INT32 OSAtomicCompareExchange(ATOMIC_T *pCounter, IMG_INT32 iCompareVal, IMG_INT32 iNewVal)
+static inline IMG_INT32 OSAtomicCompareExchange(ATOMIC_T *pCounter,
+						IMG_INT32 iCompareVal,
+						IMG_INT32 iNewVal)
 {
 	IMG_INT32 iTemp = iCompareVal;
 	atomic_compare_exchange_strong((&(pCounter)->counter), &iTemp, iNewVal);
@@ -323,7 +349,8 @@ static inline IMG_INT32 OSAtomicOr(ATOMIC_T *pCounter, IMG_INT32 iVal)
 @Input          iNewVal         The value to write to the atomic variable
 @Return         The previous value of *pCounter.
 */ /**************************************************************************/
-static inline IMG_UINT32 OSAtomicExchange(ATOMIC_T *pCounter, IMG_UINT32 iNewVal)
+static inline IMG_UINT32 OSAtomicExchange(ATOMIC_T *pCounter,
+					  IMG_UINT32 iNewVal)
 {
 	return atomic_exchange(&(pCounter)->counter, iNewVal);
 }
@@ -344,18 +371,26 @@ static inline IMG_INT32 OSAtomicAdd(ATOMIC_T *pCounter, IMG_INT32 incr)
 	return iOldVal + incr;
 }
 
-#define OSAtomicAddUnless(pCounter, incr, test) ({ \
-	IMG_INT32 c; IMG_INT32 old; \
-	c = OSAtomicRead(pCounter); \
-	while (1) { \
-		if (c == (test)) break; \
-		old = OSAtomicCompareExchange(pCounter, c, c+(incr)); \
-		if (old == c) break; \
-		c = old; \
-	} c; })
+#define OSAtomicAddUnless(pCounter, incr, test)                    \
+	({                                                         \
+		IMG_INT32 c;                                       \
+		IMG_INT32 old;                                     \
+		c = OSAtomicRead(pCounter);                        \
+		while (1) {                                        \
+			if (c == (test))                           \
+				break;                             \
+			old = OSAtomicCompareExchange(pCounter, c, \
+						      c + (incr)); \
+			if (old == c)                              \
+				break;                             \
+			c = old;                                   \
+		}                                                  \
+		c;                                                 \
+	})
 
 #define OSAtomicSubtract(pCounter, incr) OSAtomicAdd(pCounter, -(incr))
-#define OSAtomicSubtractUnless(pCounter, incr, test) OSAtomicAddUnless(pCounter, -(incr), test)
+#define OSAtomicSubtractUnless(pCounter, incr, test) \
+	OSAtomicAddUnless(pCounter, -(incr), test)
 
 #else
 
@@ -484,7 +519,8 @@ IMG_INT32 OSAtomicSubtractUnless(ATOMIC_T *pCounter, IMG_INT32 v, IMG_INT32 t);
 @Return         The old value of *pCounter
 */ /**************************************************************************/
 IMG_INTERNAL
-IMG_INT32 OSAtomicCompareExchange(ATOMIC_T *pCounter, IMG_INT32 oldv, IMG_INT32 newv);
+IMG_INT32 OSAtomicCompareExchange(ATOMIC_T *pCounter, IMG_INT32 oldv,
+				  IMG_INT32 newv);
 
 /*************************************************************************/ /*!
 @Function       OSAtomicExchange
@@ -526,87 +562,91 @@ typedef unsigned long OS_SPINLOCK_FLAGS;
 /*! Wrapper for OSLockDestroy() */
 #define OSSpinLockDestroy(pLock) OSLockDestroy(pLock)
 /*! Wrapper for OSLockAcquire() */
-#define OSSpinLockAcquire(pLock, flags) {flags = 0; OSLockAcquire(pLock);}
+#define OSSpinLockAcquire(pLock, flags) \
+	{                               \
+		flags = 0;              \
+		OSLockAcquire(pLock);   \
+	}
 /*! Wrapper for OSLockRelease() */
-#define OSSpinLockRelease(pLock, flags) {flags = 0; OSLockRelease(pLock);}
+#define OSSpinLockRelease(pLock, flags) \
+	{                               \
+		flags = 0;              \
+		OSLockRelease(pLock);   \
+	}
 
 #endif /* defined(__linux__) */
 #endif /* defined(__linux__) && defined(__KERNEL__) */
 
-static inline PVRSRV_ERROR OSAtomicAddUnlessOverflow(ATOMIC_T *pCounter, IMG_INT iAdd, IMG_INT iMax)
+static inline PVRSRV_ERROR OSAtomicAddUnlessOverflow(ATOMIC_T *pCounter,
+						     IMG_INT iAdd, IMG_INT iMax)
 {
 	IMG_INT iCurrent;
 	IMG_INT iOld, iNew;
 	PVRSRV_ERROR eError = PVRSRV_OK;
 
 	/* Should be using subtract function */
-	if (iAdd <= 0)
-	{
+	if (iAdd <= 0) {
 		PVR_ASSERT(!"Attempt to add negative number, rejecting.");
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
 	iCurrent = OSAtomicRead(pCounter);
 
-	do
-	{
+	do {
 		iOld = iCurrent;
 #if defined(__GNUC__) || defined(__clang__)
-		if (iAdd > (iMax - iCurrent) || __builtin_sadd_overflow(iCurrent, iAdd, &iNew))
-		{
+		if (iAdd > (iMax - iCurrent) ||
+		    __builtin_sadd_overflow(iCurrent, iAdd, &iNew)) {
 			/* We would overflow so return error and do nothing */
 			return PVRSRV_ERROR_ATOMIC_OVERFLOW;
 		}
 #else
-		if (iAdd > (iMax - iCurrent) || iAdd > (IMG_INT_MAX - iCurrent))
-		{
+		if (iAdd > (iMax - iCurrent) ||
+		    iAdd > (IMG_INT_MAX - iCurrent)) {
 			/* We would overflow so return error and do nothing */
 			return PVRSRV_ERROR_ATOMIC_OVERFLOW;
 		}
 		iNew = iCurrent + iAdd;
 #endif
 		iCurrent = OSAtomicCompareExchange(pCounter, iOld, iNew);
-	}
-	while (iOld != iCurrent);
+	} while (iOld != iCurrent);
 
 	return eError;
 }
 
-static inline PVRSRV_ERROR OSAtomicSubtractUnlessUnderflow(ATOMIC_T *pCounter, IMG_INT iSub, IMG_INT iMin)
+static inline PVRSRV_ERROR
+OSAtomicSubtractUnlessUnderflow(ATOMIC_T *pCounter, IMG_INT iSub, IMG_INT iMin)
 {
 	IMG_INT iCurrent;
 	IMG_INT iOld, iNew;
 	PVRSRV_ERROR eError = PVRSRV_OK;
 
 	/* Should be using add function */
-	if (iSub <= 0)
-	{
+	if (iSub <= 0) {
 		PVR_ASSERT(!"Attempt to subtract negative number, rejecting.");
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
 	iCurrent = OSAtomicRead(pCounter);
 
-	do
-	{
+	do {
 		iOld = iCurrent;
 #if defined(__GNUC__) || defined(__clang__)
-		if (iSub < (iMin + iCurrent) || __builtin_ssub_overflow(iCurrent, iSub, &iNew))
-		{
+		if (iSub < (iMin + iCurrent) ||
+		    __builtin_ssub_overflow(iCurrent, iSub, &iNew)) {
 			/* We would underflow so return error and do nothing */
 			return PVRSRV_ERROR_ATOMIC_UNDERFLOW;
 		}
 #else
-		if (iCurrent < (iMin + iSub) || iCurrent < (IMG_INT_MIN + iSub))
-		{
+		if (iCurrent < (iMin + iSub) ||
+		    iCurrent < (IMG_INT_MIN + iSub)) {
 			/* We would underflow so return error and do nothing */
 			return PVRSRV_ERROR_ATOMIC_UNDERFLOW;
 		}
 		iNew = iCurrent - iSub;
 #endif
 		iCurrent = OSAtomicCompareExchange(pCounter, iOld, iNew);
-	}
-	while (iOld != iCurrent);
+	} while (iOld != iCurrent);
 
 	return eError;
 }

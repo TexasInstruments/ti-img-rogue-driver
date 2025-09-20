@@ -50,8 +50,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "connection_server.h"
 #include "rgxdevice.h"
 
-typedef enum
-{
+typedef enum {
 	RGXTIMECORR_CLOCK_MONO,
 	RGXTIMECORR_CLOCK_MONO_RAW,
 	RGXTIMECORR_CLOCK_SCHED,
@@ -59,8 +58,7 @@ typedef enum
 	RGXTIMECORR_CLOCK_LAST
 } RGXTIMECORR_CLOCK_TYPE;
 
-typedef enum
-{
+typedef enum {
 	RGXTIMECORR_EVENT_POWER,
 	RGXTIMECORR_EVENT_DVFS,
 	RGXTIMECORR_EVENT_PERIODIC,
@@ -74,23 +72,25 @@ typedef enum
  * time, GPU CR timer incrementing only once every 256 GPU cycles).
  * This also helps reducing the variation between consecutive calculations.
  */
-#define RGX_CONVERT_TO_KHZ(freq)   (((freq) + 500) / 1000)
-#define RGX_ROUND_TO_KHZ(freq)    ((((freq) + 500) / 1000) * 1000)
+#define RGX_CONVERT_TO_KHZ(freq) (((freq) + 500) / 1000)
+#define RGX_ROUND_TO_KHZ(freq) ((((freq) + 500) / 1000) * 1000)
 
 /* Constants used in different calculations */
-#define SECONDS_TO_MICROSECONDS          (1000000ULL)
-#define CRTIME_TO_CYCLES_WITH_US_SCALE   (RGX_CRTIME_TICK_IN_CYCLES * SECONDS_TO_MICROSECONDS)
+#define SECONDS_TO_MICROSECONDS (1000000ULL)
+#define CRTIME_TO_CYCLES_WITH_US_SCALE \
+	(RGX_CRTIME_TICK_IN_CYCLES * SECONDS_TO_MICROSECONDS)
 
 /*
  * Use this macro to get a more realistic GPU core clock speed than the one
  * given by the upper layers (used when doing GPU frequency calibration)
  */
 #define RGX_GET_GPU_CLOCK_FREQUENCY_HZ(deltacr_us, deltaos_us, remainder) \
-    OSDivide64((deltacr_us) * CRTIME_TO_CYCLES_WITH_US_SCALE, (deltaos_us), &(remainder))
+	OSDivide64((deltacr_us) * CRTIME_TO_CYCLES_WITH_US_SCALE,         \
+		   (deltaos_us), &(remainder))
 
 #define RGX_GET_SOC_CLOCK_FREQUENCY_HZ(deltasoc_us, deltaos_us, remainder) \
-    OSDivide64((deltasoc_us) * SECONDS_TO_MICROSECONDS, (deltaos_us), &(remainder))
-
+	OSDivide64((deltasoc_us) * SECONDS_TO_MICROSECONDS, (deltaos_us),  \
+		   &(remainder))
 
 /*!
 ******************************************************************************
@@ -105,21 +105,23 @@ typedef enum
  @Return      0 on failure, conversion factor otherwise
 
 ******************************************************************************/
-static inline IMG_UINT64 RGXTimeCorrGetConversionFactor(IMG_UINT32 ui32ClockSpeed)
+static inline IMG_UINT64
+RGXTimeCorrGetConversionFactor(IMG_UINT32 ui32ClockSpeed)
 {
 	IMG_UINT32 ui32Remainder;
 	IMG_UINT32 ui32KHZ = RGX_CONVERT_TO_KHZ(ui32ClockSpeed);
 
-	if (ui32KHZ == 0)
-	{
+	if (ui32KHZ == 0) {
 		PVR_DPF((PVR_DBG_ERROR, "%s: GPU clock frequency %u is too low",
-				 __func__, ui32ClockSpeed));
+			 __func__, ui32ClockSpeed));
 
 		return 0;
 	}
 
-	return OSDivide64r64(CRTIME_TO_CYCLES_WITH_US_SCALE << RGXFWIF_CRDELTA_TO_OSDELTA_ACCURACY_SHIFT,
-	                     ui32KHZ, &ui32Remainder);
+	return OSDivide64r64(
+		CRTIME_TO_CYCLES_WITH_US_SCALE
+			<< RGXFWIF_CRDELTA_TO_OSDELTA_ACCURACY_SHIFT,
+		ui32KHZ, &ui32Remainder);
 }
 
 /*!
@@ -134,7 +136,9 @@ static inline IMG_UINT64 RGXTimeCorrGetConversionFactor(IMG_UINT32 ui32ClockSpee
  @Return      0 on failure, deltaCR otherwise
 
 ******************************************************************************/
-static inline IMG_UINT64 RGXTimeCorrDeltaOSNsToDeltaCR(PVRSRV_DEVICE_NODE *psDeviceNode, IMG_UINT64 ui64DeltaOSNs)
+static inline IMG_UINT64
+RGXTimeCorrDeltaOSNsToDeltaCR(PVRSRV_DEVICE_NODE *psDeviceNode,
+			      IMG_UINT64 ui64DeltaOSNs)
 {
 	RGXFWIF_GPU_UTIL_FW *psGpuUtilFW;
 	PVRSRV_RGXDEV_INFO *psDevInfo;
@@ -146,23 +150,24 @@ static inline IMG_UINT64 RGXTimeCorrDeltaOSNsToDeltaCR(PVRSRV_DEVICE_NODE *psDev
 	psDevInfo = psDeviceNode->pvDevice;
 	psGpuUtilFW = psDevInfo->psRGXFWIfGpuUtilFW;
 
-	if (!psGpuUtilFW)
-	{
+	if (!psGpuUtilFW) {
 		PVR_ASSERT(psGpuUtilFW);
 		return 0;
 	}
 
-	psTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psGpuUtilFW->ui32TimeCorrSeqCount)];
+	psTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+		psGpuUtilFW->ui32TimeCorrSeqCount)];
 
 	ui32KNs = psTimeCorr->ui64CRDeltaToOSDeltaKNs;
-	if (ui32KNs == 0)
-	{
-		PVR_DPF((PVR_DBG_WARNING, "%s: ui64CRDeltaToOSDeltaKNs is 0", __func__));
+	if (ui32KNs == 0) {
+		PVR_DPF((PVR_DBG_WARNING, "%s: ui64CRDeltaToOSDeltaKNs is 0",
+			 __func__));
 		return 0;
 	}
 
-	return OSDivide64r64(ui64DeltaOSNs << RGXFWIF_CRDELTA_TO_OSDELTA_ACCURACY_SHIFT,
-	                     ui32KNs, &ui32Remainder);
+	return OSDivide64r64(
+		ui64DeltaOSNs << RGXFWIF_CRDELTA_TO_OSDELTA_ACCURACY_SHIFT,
+		ui32KNs, &ui32Remainder);
 }
 
 /*!
@@ -253,7 +258,8 @@ IMG_UINT64 RGXTimeCorrGetClockus64(const PVRSRV_DEVICE_NODE *psDeviceNode);
  @Return      clock source type
 
 ******************************************************************************/
-RGXTIMECORR_CLOCK_TYPE RGXTimeCorrGetClockSource(const PVRSRV_DEVICE_NODE *psDeviceNode);
+RGXTIMECORR_CLOCK_TYPE
+RGXTimeCorrGetClockSource(const PVRSRV_DEVICE_NODE *psDeviceNode);
 
 /*!
 ******************************************************************************
@@ -269,7 +275,7 @@ RGXTIMECORR_CLOCK_TYPE RGXTimeCorrGetClockSource(const PVRSRV_DEVICE_NODE *psDev
 
 ******************************************************************************/
 PVRSRV_ERROR RGXTimeCorrSetClockSource(PVRSRV_DEVICE_NODE *psDeviceNode,
-                                       RGXTIMECORR_CLOCK_TYPE eClockType);
+				       RGXTIMECORR_CLOCK_TYPE eClockType);
 
 /*!
 ******************************************************************************
@@ -302,8 +308,7 @@ void RGXTimeCorrInitAppHintCallbacks(const PVRSRV_DEVICE_NODE *psDeviceNode);
 
 ******************************************************************************/
 void RGXGetTimeCorrData(PVRSRV_DEVICE_NODE *psDeviceNode,
-							RGXFWIF_TIME_CORR *psTimeCorrs,
-							IMG_UINT32 ui32NumOut);
+			RGXFWIF_TIME_CORR *psTimeCorrs, IMG_UINT32 ui32NumOut);
 
 /*!
 ******************************************************************************
@@ -321,8 +326,7 @@ void RGXGetTimeCorrData(PVRSRV_DEVICE_NODE *psDeviceNode,
 
 ******************************************************************************/
 PVRSRV_ERROR
-PVRSRVRGXCurrentTime(CONNECTION_DATA    *psConnection,
-                     PVRSRV_DEVICE_NODE *psDeviceNode,
-                     IMG_UINT8           ui8TimestampType,
-                     IMG_UINT64         *pui64Time);
+PVRSRVRGXCurrentTime(CONNECTION_DATA *psConnection,
+		     PVRSRV_DEVICE_NODE *psDeviceNode,
+		     IMG_UINT8 ui8TimestampType, IMG_UINT64 *pui64Time);
 #endif /* RGXTIMECORR_H */

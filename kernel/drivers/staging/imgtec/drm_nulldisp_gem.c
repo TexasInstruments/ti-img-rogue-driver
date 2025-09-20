@@ -70,8 +70,7 @@ struct nulldisp_gem_object {
 	struct sg_table *import_sgt;
 };
 
-#define to_nulldisp_obj(obj) \
-	container_of(obj, struct nulldisp_gem_object, base)
+#define to_nulldisp_obj(obj) container_of(obj, struct nulldisp_gem_object, base)
 
 int nulldisp_gem_object_get_pages(struct drm_gem_object *obj)
 {
@@ -96,13 +95,16 @@ int nulldisp_gem_object_get_pages(struct drm_gem_object *obj)
 	}
 
 	for (i = 0; i < nr_pages; i++) {
-		dma_addr_t dma_addr = dma_map_page(dev->dev, nulldisp_obj->pages[i], 0, PAGE_SIZE, DMA_FROM_DEVICE);
+		dma_addr_t dma_addr = dma_map_page(dev->dev,
+						   nulldisp_obj->pages[i], 0,
+						   PAGE_SIZE, DMA_FROM_DEVICE);
 		int error = dma_mapping_error(dev->dev, dma_addr);
 
 		if (error)
 			return error;
 
-		dma_unmap_page_attrs(dev->dev, dma_addr, PAGE_SIZE, DMA_FROM_DEVICE, DMA_ATTR_SKIP_CPU_SYNC);
+		dma_unmap_page_attrs(dev->dev, dma_addr, PAGE_SIZE,
+				     DMA_FROM_DEVICE, DMA_ATTR_SKIP_CPU_SYNC);
 	}
 
 	return 0;
@@ -162,7 +164,7 @@ static void nulldisp_gem_vm_open(struct vm_area_struct *vma)
 		struct drm_device *dev = obj->dev;
 
 		mutex_lock(&dev->struct_mutex);
-		(void) nulldisp_gem_object_get_pages(obj);
+		(void)nulldisp_gem_object_get_pages(obj);
 		mutex_unlock(&dev->struct_mutex);
 	}
 }
@@ -175,7 +177,7 @@ static void nulldisp_gem_vm_close(struct vm_area_struct *vma)
 		struct drm_device *dev = obj->dev;
 
 		mutex_lock(&dev->struct_mutex);
-		(void) nulldisp_gem_object_put_pages(obj);
+		(void)nulldisp_gem_object_put_pages(obj);
 		mutex_unlock(&dev->struct_mutex);
 	}
 
@@ -185,7 +187,8 @@ static void nulldisp_gem_vm_close(struct vm_area_struct *vma)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 static
 #endif
-void nulldisp_gem_object_free(struct drm_gem_object *obj)
+	void
+	nulldisp_gem_object_free(struct drm_gem_object *obj)
 {
 	struct nulldisp_gem_object *nulldisp_obj = to_nulldisp_obj(obj);
 
@@ -208,7 +211,8 @@ void nulldisp_gem_object_free(struct drm_gem_object *obj)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 static
 #endif
-int nulldisp_gem_prime_pin(struct drm_gem_object *obj)
+	int
+	nulldisp_gem_prime_pin(struct drm_gem_object *obj)
 {
 	struct drm_device *dev = obj->dev;
 	int err;
@@ -223,7 +227,8 @@ int nulldisp_gem_prime_pin(struct drm_gem_object *obj)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 static
 #endif
-void nulldisp_gem_prime_unpin(struct drm_gem_object *obj)
+	void
+	nulldisp_gem_prime_unpin(struct drm_gem_object *obj)
 {
 	struct drm_device *dev = obj->dev;
 
@@ -235,8 +240,8 @@ void nulldisp_gem_prime_unpin(struct drm_gem_object *obj)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 static
 #endif
-struct sg_table *
-nulldisp_gem_prime_get_sg_table(struct drm_gem_object *obj)
+	struct sg_table *
+	nulldisp_gem_prime_get_sg_table(struct drm_gem_object *obj)
 {
 	struct nulldisp_gem_object *nulldisp_obj = to_nulldisp_obj(obj);
 	int nr_pages = obj->size >> PAGE_SHIFT;
@@ -252,10 +257,8 @@ nulldisp_gem_prime_get_sg_table(struct drm_gem_object *obj)
 }
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
-struct dma_buf *nulldisp_gem_prime_export(
-					  struct drm_device *dev,
-					  struct drm_gem_object *obj,
-					  int flags)
+struct dma_buf *nulldisp_gem_prime_export(struct drm_device *dev,
+					  struct drm_gem_object *obj, int flags)
 {
 	return drm_gem_prime_export(dev, obj, flags);
 }
@@ -273,7 +276,6 @@ static void *nulldisp_gem_vmap(struct drm_gem_object *obj)
 	if (WARN_ON(atomic_read(&nulldisp_obj->pg_refcnt) == 0))
 		return NULL;
 
-
 	return vmap(nulldisp_obj->pages, nr_pages, VM_MAP, PAGE_KERNEL);
 }
 
@@ -286,7 +288,8 @@ static void nulldisp_gem_vunmap(struct drm_gem_object *obj, void *vaddr)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 static
 #endif
-void *nulldisp_gem_prime_vmap(struct drm_gem_object *obj)
+	void *
+	nulldisp_gem_prime_vmap(struct drm_gem_object *obj)
 {
 	return nulldisp_gem_vmap(obj);
 }
@@ -294,13 +297,14 @@ void *nulldisp_gem_prime_vmap(struct drm_gem_object *obj)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 static
 #endif
-void nulldisp_gem_prime_vunmap(struct drm_gem_object *obj, void *vaddr)
+	void
+	nulldisp_gem_prime_vunmap(struct drm_gem_object *obj, void *vaddr)
 {
 	nulldisp_gem_vunmap(obj, vaddr);
 }
 #else
-static
-int nulldisp_gem_prime_vmap(struct drm_gem_object *obj, struct iosys_map *map)
+static int nulldisp_gem_prime_vmap(struct drm_gem_object *obj,
+				   struct iosys_map *map)
 {
 	void *vaddr = nulldisp_gem_vmap(obj);
 
@@ -308,8 +312,8 @@ int nulldisp_gem_prime_vmap(struct drm_gem_object *obj, struct iosys_map *map)
 	return (vaddr == NULL) ? -ENOMEM : 0;
 }
 
-static
-void nulldisp_gem_prime_vunmap(struct drm_gem_object *obj, struct iosys_map *map)
+static void nulldisp_gem_prime_vunmap(struct drm_gem_object *obj,
+				      struct iosys_map *map)
 {
 	nulldisp_gem_vunmap(obj, map->vaddr);
 	iosys_map_clear(map);
@@ -319,11 +323,11 @@ void nulldisp_gem_prime_vunmap(struct drm_gem_object *obj, struct iosys_map *map
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0))
 static
 #endif
-const struct vm_operations_struct nulldisp_gem_vm_ops = {
-	.fault	= nulldisp_gem_object_vm_fault,
-	.open	= nulldisp_gem_vm_open,
-	.close	= nulldisp_gem_vm_close,
-};
+	const struct vm_operations_struct nulldisp_gem_vm_ops = {
+		.fault = nulldisp_gem_object_vm_fault,
+		.open = nulldisp_gem_vm_open,
+		.close = nulldisp_gem_vm_close,
+	};
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0))
 int nulldisp_gem_prime_mmap(struct drm_gem_object *obj,
@@ -351,7 +355,8 @@ static int nulldisp_gem_obj_mmap(struct drm_gem_object *obj,
 	vma->vm_ops = &nulldisp_gem_vm_ops;
 	/* This is what used to be done in drm_gem_mmap_obj() before */
 	pvr_vm_flags_set(vma, VM_IO | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP);
-	vma->vm_page_prot = pgprot_writecombine(vm_get_page_prot(vma->vm_flags));
+	vma->vm_page_prot =
+		pgprot_writecombine(vm_get_page_prot(vma->vm_flags));
 	vma->vm_page_prot = pgprot_decrypted(vma->vm_page_prot);
 	mutex_unlock(&obj->dev->struct_mutex);
 
@@ -419,10 +424,8 @@ exit_free_arrays:
 	return NULL;
 }
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
-struct dma_resv *
-nulldisp_gem_prime_res_obj(struct drm_gem_object *obj)
+struct dma_resv *nulldisp_gem_prime_res_obj(struct drm_gem_object *obj)
 {
 	struct nulldisp_gem_object *nulldisp_obj = to_nulldisp_obj(obj);
 
@@ -462,9 +465,9 @@ int nulldisp_gem_object_cpu_prep_ioctl(struct drm_device *dev, void *data,
 	bool wait = !(args->flags & NULLDISP_GEM_CPU_PREP_NOWAIT);
 	int err;
 
-	if (args->flags & ~(NULLDISP_GEM_CPU_PREP_READ |
-			    NULLDISP_GEM_CPU_PREP_WRITE |
-			    NULLDISP_GEM_CPU_PREP_NOWAIT)) {
+	if (args->flags &
+	    ~(NULLDISP_GEM_CPU_PREP_READ | NULLDISP_GEM_CPU_PREP_WRITE |
+	      NULLDISP_GEM_CPU_PREP_NOWAIT)) {
 		DRM_ERROR("invalid flags: %#08x\n", args->flags);
 		return -EINVAL;
 	}
@@ -487,10 +490,8 @@ int nulldisp_gem_object_cpu_prep_ioctl(struct drm_device *dev, void *data,
 	if (wait) {
 		long lerr;
 
-		lerr = dma_resv_wait_timeout(nulldisp_obj->resv,
-						 write,
-						 true,
-						 30 * HZ);
+		lerr = dma_resv_wait_timeout(nulldisp_obj->resv, write, true,
+					     30 * HZ);
 
 		/* Remap return value (0 indicates busy state, > 0 success) */
 		if (lerr > 0)
@@ -504,8 +505,7 @@ int nulldisp_gem_object_cpu_prep_ioctl(struct drm_device *dev, void *data,
 		 * Remap return value (false indicates busy state,
 		 * true success).
 		 */
-		if (!dma_resv_test_signaled(nulldisp_obj->resv,
-						write))
+		if (!dma_resv_test_signaled(nulldisp_obj->resv, write))
 			err = -EBUSY;
 		else
 			err = 0;
@@ -560,8 +560,7 @@ exit_unlock:
 }
 
 static int nulldisp_gem_object_create_priv(struct drm_file *file,
-					   struct drm_device *dev,
-					   u64 size,
+					   struct drm_device *dev, u64 size,
 					   u32 *handle)
 {
 	struct nulldisp_gem_object *nulldisp_obj;
@@ -587,9 +586,9 @@ static int nulldisp_gem_object_create_priv(struct drm_file *file,
 	mapping = file_inode(obj->filp)->i_mapping;
 	mapping_set_gfp_mask(mapping, GFP_USER |
 #if !defined(NULLDISP_PHYS_BUS_WIDTH) || NULLDISP_PHYS_BUS_WIDTH <= 32
-				      __GFP_DMA32 |
+					      __GFP_DMA32 |
 #endif
-				      __GFP_NORETRY);
+					      __GFP_NORETRY);
 
 	err = drm_gem_handle_create(file, obj, handle);
 	if (err)
@@ -607,8 +606,7 @@ exit:
 	return err;
 }
 
-int nulldisp_gem_object_create_ioctl(struct drm_device *dev,
-				     void *data,
+int nulldisp_gem_object_create_ioctl(struct drm_device *dev, void *data,
 				     struct drm_file *file)
 {
 	struct drm_nulldisp_gem_create *args = data;
@@ -635,8 +633,7 @@ int nulldisp_gem_object_create_ioctl(struct drm_device *dev,
 	return err;
 }
 
-int nulldisp_gem_dumb_create(struct drm_file *file,
-			     struct drm_device *dev,
+int nulldisp_gem_dumb_create(struct drm_file *file, struct drm_device *dev,
 			     struct drm_mode_create_dumb *args)
 {
 	u32 handle;
@@ -657,10 +654,8 @@ int nulldisp_gem_dumb_create(struct drm_file *file,
 	return err;
 }
 
-int nulldisp_gem_dumb_map_offset(struct drm_file *file,
-				 struct drm_device *dev,
-				 uint32_t handle,
-				 uint64_t *offset)
+int nulldisp_gem_dumb_map_offset(struct drm_file *file, struct drm_device *dev,
+				 uint32_t handle, uint64_t *offset)
 {
 	struct drm_gem_object *obj;
 	int err;

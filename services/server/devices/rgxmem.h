@@ -58,8 +58,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /* this PID denotes the PM */
 #define RGXMEM_SERVER_PID_PM 0xEFFFFFFF
 
-typedef struct _RGXMEM_PROCESS_INFO_
-{
+typedef struct _RGXMEM_PROCESS_INFO_ {
 	IMG_PID uiPID;
 	IMG_CHAR szProcessName[RGXMEM_SERVER_MMU_CONTEXT_MAX_NAME];
 	IMG_BOOL bUnregistered;
@@ -104,26 +103,26 @@ PVRSRV_ERROR RGXServerMMUContextRef(SERVER_MMU_CONTEXT *psServerMMUContext);
 */ /**************************************************************************/
 void RGXServerMMUContextUnref(SERVER_MMU_CONTEXT *psServerMMUContext);
 
-IMG_DEV_PHYADDR GetPC(MMU_CONTEXT * psContext);
+IMG_DEV_PHYADDR GetPC(MMU_CONTEXT *psContext);
 
 void RGXSetFWMemContextDevVirtAddr(SERVER_MMU_CONTEXT *psServerMMUContext,
-			RGXFWIF_DEV_VIRTADDR	sFWMemContextAddr);
+				   RGXFWIF_DEV_VIRTADDR sFWMemContextAddr);
 
 void RGXMMUSyncPrimAlloc(PVRSRV_DEVICE_NODE *psDevNode);
 void RGXMMUSyncPrimFree(void);
 
 PVRSRV_ERROR RGXInvalidateFBSCTable(PVRSRV_DEVICE_NODE *psDeviceNode,
-									MMU_CONTEXT *psMMUContext,
-									IMG_UINT64 ui64FBSCEntryMask);
+				    MMU_CONTEXT *psMMUContext,
+				    IMG_UINT64 ui64FBSCEntryMask);
 
-PVRSRV_ERROR RGXExtractFBSCEntryMaskFromMMUContext(PVRSRV_DEVICE_NODE *psDeviceNode,
-												   SERVER_MMU_CONTEXT *psServerMMUContext,
-												   IMG_UINT64 *pui64FBSCEntryMask);
+PVRSRV_ERROR
+RGXExtractFBSCEntryMaskFromMMUContext(PVRSRV_DEVICE_NODE *psDeviceNode,
+				      SERVER_MMU_CONTEXT *psServerMMUContext,
+				      IMG_UINT64 *pui64FBSCEntryMask);
 
 void RGXMMUCacheInvalidate(PVRSRV_DEVICE_NODE *psDevNode,
-						   MMU_CONTEXT *psMMUContext,
-						   MMU_LEVEL eMMULevel,
-						   IMG_BOOL bUnmap);
+			   MMU_CONTEXT *psMMUContext, MMU_LEVEL eMMULevel,
+			   IMG_BOOL bUnmap);
 
 /*************************************************************************/ /*!
 @Function       RGXMMUCacheInvalidateKick
@@ -136,8 +135,9 @@ void RGXMMUCacheInvalidate(PVRSRV_DEVICE_NODE *psDevNode,
 
 @Return			PVRSRV_ERROR
 */ /**************************************************************************/
-PVRSRV_ERROR RGXMMUCacheInvalidateKick(PVRSRV_DEVICE_NODE *psDevNode,
-                                       IMG_UINT32 *pui32NextMMUInvalidateUpdate);
+PVRSRV_ERROR
+RGXMMUCacheInvalidateKick(PVRSRV_DEVICE_NODE *psDevNode,
+			  IMG_UINT32 *pui32NextMMUInvalidateUpdate);
 
 /*************************************************************************/ /*!
 @Function       RGXMMUCacheInvalidateKickAndWait
@@ -165,30 +165,30 @@ PVRSRV_ERROR RGXMMUCacheInvalidateKickAndWait(PVRSRV_DEVICE_NODE *psDevNode);
 @Return			PVRSRV_ERROR
 */ /**************************************************************************/
 PVRSRV_ERROR RGXPreKickCacheCommand(PVRSRV_RGXDEV_INFO *psDevInfo,
-									RGXFWIF_DM eDM,
-									IMG_UINT32 *pui32MMUInvalidateUpdate);
+				    RGXFWIF_DM eDM,
+				    IMG_UINT32 *pui32MMUInvalidateUpdate);
 
 /* Needed for Volcanic architectures with BRN71422 */
 #if defined(RGX_BRN71422_TARGET_HARDWARE_PHYSICAL_ADDR)
 void RGXMapBRN71422TargetPhysicalAddress(struct _CONNECTION_DATA_ *psConnection,
-		                                 struct _PVRSRV_DEVICE_NODE_ *psDevNode,
-		                                 IMG_DEV_PHYADDR sPhysAddrL1Px,
-		                                 void *pxL1PxCpuVAddr);
+					 struct _PVRSRV_DEVICE_NODE_ *psDevNode,
+					 IMG_DEV_PHYADDR sPhysAddrL1Px,
+					 void *pxL1PxCpuVAddr);
 #endif
 
 /* Needed for Rogue architecture where a MIPS FW CPU is used */
 #if defined(RGX_FEATURE_MIPS_BIT_MASK)
 void RGXMMUTweakProtFlags(struct _PVRSRV_DEVICE_NODE_ *psDevNode,
-		                  MMU_DEVICEATTRIBS *psDevAttrs,
-		                  PVRSRV_MEMALLOCFLAGS_T uiMappingFlags,
-		                  MMU_PROTFLAGS_T *uiMMUProtFlags);
+			  MMU_DEVICEATTRIBS *psDevAttrs,
+			  PVRSRV_MEMALLOCFLAGS_T uiMappingFlags,
+			  MMU_PROTFLAGS_T *uiMMUProtFlags);
 #endif
 
 void RGXUnregisterMemoryContext(IMG_HANDLE hPrivData);
 PVRSRV_ERROR RGXRegisterMemoryContext(PVRSRV_DEVICE_NODE *psDevNode,
-									  MMU_CONTEXT *psMMUContext,
-									  DEVMEMINT_CTX *psDevMemCtx,
-									  IMG_HANDLE *hPrivData);
+				      MMU_CONTEXT *psMMUContext,
+				      DEVMEMINT_CTX *psDevMemCtx,
+				      IMG_HANDLE *hPrivData);
 
 DEVMEM_MEMDESC *RGXGetFWMemDescFromMemoryContextHandle(IMG_HANDLE hPriv);
 
@@ -207,9 +207,9 @@ DEVMEM_MEMDESC *RGXGetFWMemDescFromMemoryContextHandle(IMG_HANDLE hPriv);
 @Return         IMG_TRUE if the address is valid, IMG_FALSE otherwise.
 */ /**************************************************************************/
 IMG_BOOL RGXValidateAddressPermissions(PVRSRV_DEVICE_NODE *psDevNode,
-                                       MMU_CONTEXT *psMMUContext,
-                                       IMG_DEV_VIRTADDR sVDevAddr,
-                                       PVRSRV_MEMALLOCFLAGS_T uiFlags);
+				       MMU_CONTEXT *psMMUContext,
+				       IMG_DEV_VIRTADDR sVDevAddr,
+				       PVRSRV_MEMALLOCFLAGS_T uiFlags);
 
 /*************************************************************************/ /*!
 @Function       RGXValidateExportableFlags
@@ -224,15 +224,16 @@ IMG_BOOL RGXValidateAddressPermissions(PVRSRV_DEVICE_NODE *psDevNode,
 IMG_BOOL RGXValidateExportableFlags(PVRSRV_MEMALLOCFLAGS_T uiFlags);
 
 void RGXCheckFaultAddress(PVRSRV_RGXDEV_INFO *psDevInfo,
-				IMG_DEV_VIRTADDR *psDevVAddr,
-				IMG_DEV_PHYADDR *psDevPAddr,
-				MMU_FAULT_DATA *psOutFaultData);
+			  IMG_DEV_VIRTADDR *psDevVAddr,
+			  IMG_DEV_PHYADDR *psDevPAddr,
+			  MMU_FAULT_DATA *psOutFaultData);
 
-IMG_BOOL RGXPCAddrToProcessInfo(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_DEV_PHYADDR sPCAddress,
-								RGXMEM_PROCESS_INFO *psInfo);
+IMG_BOOL RGXPCAddrToProcessInfo(PVRSRV_RGXDEV_INFO *psDevInfo,
+				IMG_DEV_PHYADDR sPCAddress,
+				RGXMEM_PROCESS_INFO *psInfo);
 
 IMG_BOOL RGXPCPIDToProcessInfo(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_PID uiPID,
-                               RGXMEM_PROCESS_INFO *psInfo);
+			       RGXMEM_PROCESS_INFO *psInfo);
 
 IMG_PID RGXGetPIDFromServerMMUContext(SERVER_MMU_CONTEXT *psServerMMUContext);
 

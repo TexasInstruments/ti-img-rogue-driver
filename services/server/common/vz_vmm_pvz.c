@@ -112,7 +112,8 @@ PVRSRV_ERROR PvzConfigInit(void)
 	PVR_DPF((PVR_DBG_MESSAGE, "%s: Using dynamic memory setup", __func__));
 #endif
 
-	psPVRSRVData->psPvzConfig = OSAllocZMemNoStats(sizeof(PVRSRV_PVZ_CONFIG));
+	psPVRSRVData->psPvzConfig =
+		OSAllocZMemNoStats(sizeof(PVRSRV_PVZ_CONFIG));
 	PVR_GOTO_IF_NOMEM(psPVRSRVData->psPvzConfig, eError, Error);
 
 	eError = OSLockCreate(&psPVRSRVData->psPvzConfig->hPvzServerLock);
@@ -133,28 +134,25 @@ void PvzConfigDeInit(void)
 	PVRSRV_DATA *psPVRSRVData = PVRSRVGetPVRSRVData();
 	PVRSRV_PVZ_CONFIG *psPvzConfig = psPVRSRVData->psPvzConfig;
 
-	if (psPvzConfig != NULL)
-	{
-		if (psPvzConfig->hPvzServerLock != NULL)
-		{
+	if (psPvzConfig != NULL) {
+		if (psPvzConfig->hPvzServerLock != NULL) {
 			OSLockDestroy(psPvzConfig->hPvzServerLock);
 			psPvzConfig->hPvzServerLock = NULL;
 		}
 
-		if (psPvzConfig->hPvzClientLock != NULL)
-		{
+		if (psPvzConfig->hPvzClientLock != NULL) {
 			OSLockDestroy(psPvzConfig->hPvzClientLock);
 			psPvzConfig->hPvzClientLock = NULL;
 		}
 
-		if (psPvzConfig->hPvzServerConnection != NULL)
-		{
-			VMMDestroyPvzServerConnection(&psPvzConfig->hPvzServerConnection);
+		if (psPvzConfig->hPvzServerConnection != NULL) {
+			VMMDestroyPvzServerConnection(
+				&psPvzConfig->hPvzServerConnection);
 		}
 
-		if (psPvzConfig->hPvzClientConnection != NULL)
-		{
-			VMMDestroyPvzClientConnection(&psPvzConfig->hPvzClientConnection);
+		if (psPvzConfig->hPvzClientConnection != NULL) {
+			VMMDestroyPvzClientConnection(
+				&psPvzConfig->hPvzClientConnection);
 		}
 
 		OSFreeMemNoStats(psPvzConfig);
@@ -167,30 +165,28 @@ PVRSRV_ERROR PvzConnectionInit(PVRSRV_DRIVER_MODE eDriverMode)
 	PVRSRV_DATA *psPVRSRVData = PVRSRVGetPVRSRVData();
 	PVRSRV_PVZ_CONFIG *psPvzConfig = psPVRSRVData->psPvzConfig;
 
-	switch (eDriverMode)
-	{
-		case DRIVER_MODE_HOST:
-			if (psPvzConfig->hPvzServerConnection == NULL)
-			{
-				eError = VMMCreatePvzServerConnection(&psPvzConfig->hPvzServerConnection);
-			}
-			PVR_LOG_RETURN_IF_ERROR(eError, "VMMCreatePvzServerConnection");
-			break;
-		case DRIVER_MODE_GUEST:
-			if (psPvzConfig->hPvzClientConnection == NULL)
-			{
-				eError = VMMCreatePvzClientConnection(&psPvzConfig->hPvzClientConnection);
-			}
-			PVR_LOG_RETURN_IF_ERROR(eError, "VMMCreatePvzClientConnection");
-			break;
-		default:
-			/* Virtualization services not needed */
-			break;
+	switch (eDriverMode) {
+	case DRIVER_MODE_HOST:
+		if (psPvzConfig->hPvzServerConnection == NULL) {
+			eError = VMMCreatePvzServerConnection(
+				&psPvzConfig->hPvzServerConnection);
+		}
+		PVR_LOG_RETURN_IF_ERROR(eError, "VMMCreatePvzServerConnection");
+		break;
+	case DRIVER_MODE_GUEST:
+		if (psPvzConfig->hPvzClientConnection == NULL) {
+			eError = VMMCreatePvzClientConnection(
+				&psPvzConfig->hPvzClientConnection);
+		}
+		PVR_LOG_RETURN_IF_ERROR(eError, "VMMCreatePvzClientConnection");
+		break;
+	default:
+		/* Virtualization services not needed */
+		break;
 	}
 
 	return eError;
 }
-
 
 /******************************************************************************
  End of file (vz_vmm_pvz.c)

@@ -66,7 +66,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ******************************************************************************/
 IMG_UINT32 RGXGetFWImageSectionOffset(const void *hPrivate,
-                                      RGX_FW_SECTION_ID eId);
+				      RGX_FW_SECTION_ID eId);
 
 /*!
 *******************************************************************************
@@ -80,7 +80,7 @@ IMG_UINT32 RGXGetFWImageSectionOffset(const void *hPrivate,
 
 ******************************************************************************/
 IMG_UINT32 RGXGetFWImageSectionMaxSize(const void *hPrivate,
-                                       RGX_FW_SECTION_ID eId);
+				       RGX_FW_SECTION_ID eId);
 
 /*!
 *******************************************************************************
@@ -94,7 +94,7 @@ IMG_UINT32 RGXGetFWImageSectionMaxSize(const void *hPrivate,
 
 ******************************************************************************/
 IMG_UINT32 RGXGetFWImageSectionAllocSize(const void *hPrivate,
-                                         RGX_FW_SECTION_ID eId);
+					 RGX_FW_SECTION_ID eId);
 
 /*!
 *******************************************************************************
@@ -108,7 +108,7 @@ IMG_UINT32 RGXGetFWImageSectionAllocSize(const void *hPrivate,
 
 ******************************************************************************/
 IMG_UINT32 RGXGetFWImageSectionAddress(const void *hPrivate,
-                                       RGX_FW_SECTION_ID eId);
+				       RGX_FW_SECTION_ID eId);
 
 /*!
 *******************************************************************************
@@ -128,15 +128,15 @@ IMG_UINT32 RGXGetFWImageSectionAddress(const void *hPrivate,
  @Return       PVRSRV_ERROR
 
 ******************************************************************************/
-PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
-                                    const IMG_BYTE    *pbRGXFirmware,
-                                    const IMG_UINT32  ui32RGXFirmwareSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWCodeAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWDataAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWRoDataAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWCorememCodeAllocSize,
-                                    IMG_DEVMEM_SIZE_T *puiFWCorememDataAllocSize,
-                                    RGX_FW_INFO_HEADER *psFWInfoHeader);
+PVRSRV_ERROR
+RGXGetFWImageAllocSize(const void *hPrivate, const IMG_BYTE *pbRGXFirmware,
+		       const IMG_UINT32 ui32RGXFirmwareSize,
+		       IMG_DEVMEM_SIZE_T *puiFWCodeAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWDataAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWRoDataAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWCorememCodeAllocSize,
+		       IMG_DEVMEM_SIZE_T *puiFWCorememDataAllocSize,
+		       RGX_FW_INFO_HEADER *psFWInfoHeader);
 
 /*!
 *******************************************************************************
@@ -158,14 +158,12 @@ PVRSRV_ERROR RGXGetFWImageAllocSize(const void *hPrivate,
  @Return        PVRSRV_ERROR
 
 ******************************************************************************/
-PVRSRV_ERROR ProcessLDRCommandStream(const void *hPrivate,
-                                     const IMG_BYTE* pbLDR,
-                                     void* pvHostFWCodeAddr,
-                                     void* pvHostFWDataAddr,
-                                     void* pvHostFWRoDataAddr,
-                                     void* pvHostFWCorememCodeAddr,
-                                     void* pvHostFWCorememDataAddr,
-                                     IMG_UINT32 **ppui32BootConf);
+PVRSRV_ERROR
+ProcessLDRCommandStream(const void *hPrivate, const IMG_BYTE *pbLDR,
+			void *pvHostFWCodeAddr, void *pvHostFWDataAddr,
+			void *pvHostFWRoDataAddr, void *pvHostFWCorememCodeAddr,
+			void *pvHostFWCorememDataAddr,
+			IMG_UINT32 **ppui32BootConf);
 
 /*!
 *******************************************************************************
@@ -185,13 +183,11 @@ PVRSRV_ERROR ProcessLDRCommandStream(const void *hPrivate,
  @Return        PVRSRV_ERROR
 
 ******************************************************************************/
-PVRSRV_ERROR ProcessELFCommandStream(const void *hPrivate,
-                                     const IMG_BYTE *pbELF,
-                                     void *pvHostFWCodeAddr,
-                                     void *pvHostFWDataAddr,
-                                     void *pvHostFWRoDataAddr,
-                                     void* pvHostFWCorememCodeAddr,
-                                     void* pvHostFWCorememDataAddr);
+PVRSRV_ERROR
+ProcessELFCommandStream(const void *hPrivate, const IMG_BYTE *pbELF,
+			void *pvHostFWCodeAddr, void *pvHostFWDataAddr,
+			void *pvHostFWRoDataAddr, void *pvHostFWCorememCodeAddr,
+			void *pvHostFWCorememDataAddr);
 
 /*!
 *******************************************************************************
@@ -217,12 +213,9 @@ PVRSRV_ERROR ProcessELFCommandStream(const void *hPrivate,
 
 ******************************************************************************/
 PVRSRV_ERROR RGXProcessFWImage(const void *hPrivate,
-                               const IMG_BYTE *pbRGXFirmware,
-                               void *pvFWCode,
-                               void *pvFWData,
-                               void *pvFWRoData,
-                               void *pvFWCorememCode,
-                               void *pvFWCorememData,
-                               PVRSRV_FW_BOOT_PARAMS *puFWParams);
+			       const IMG_BYTE *pbRGXFirmware, void *pvFWCode,
+			       void *pvFWData, void *pvFWRoData,
+			       void *pvFWCorememCode, void *pvFWCorememData,
+			       PVRSRV_FW_BOOT_PARAMS *puFWParams);
 
 #endif /* RGXFWIMAGEUTILS_H */

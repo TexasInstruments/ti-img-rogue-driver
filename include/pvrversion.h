@@ -44,24 +44,27 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef PVRVERSION_H
 #define PVRVERSION_H
 
-#define PVRVERSION_MAJ               25U
-#define PVRVERSION_MIN               2U
+#define PVRVERSION_MAJ 25U
+#define PVRVERSION_MIN 2U
 
-#define PVRVERSION_FAMILY           "rogueddk"
-#define PVRVERSION_BRANCHNAME       "25.2"
-#define PVRVERSION_BUILD             6850647
-#define PVRVERSION_BSCONTROL        "Rogue_DDK_Linux+Linux_WS"
+#define PVRVERSION_FAMILY "rogueddk"
+#define PVRVERSION_BRANCHNAME "25.2"
+#define PVRVERSION_BUILD 6850647
+#define PVRVERSION_BSCONTROL "Rogue_DDK_Linux+Linux_WS"
 
-#define PVRVERSION_STRING           "Rogue_DDK_Linux+Linux_WS rogueddk 25.2@6850647"
-#define PVRVERSION_STRING_SHORT     "25.2@6850647"
+#define PVRVERSION_STRING "Rogue_DDK_Linux+Linux_WS rogueddk 25.2@6850647"
+#define PVRVERSION_STRING_SHORT "25.2@6850647"
 
-#define COPYRIGHT_TXT               "Copyright (c) Imagination Technologies Ltd. All Rights Reserved."
+#define COPYRIGHT_TXT \
+	"Copyright (c) Imagination Technologies Ltd. All Rights Reserved."
 
-#define PVRVERSION_BUILD_HI          685
-#define PVRVERSION_BUILD_LO          647
-#define PVRVERSION_STRING_NUMERIC   "25.2.685.647"
+#define PVRVERSION_BUILD_HI 685
+#define PVRVERSION_BUILD_LO 647
+#define PVRVERSION_STRING_NUMERIC "25.2.685.647"
 
-#define PVRVERSION_PACK(MAJOR,MINOR) (((IMG_UINT32)((IMG_UINT32)(MAJOR) & 0xFFFFU) << 16U) | (((MINOR) & 0xFFFFU) << 0U))
+#define PVRVERSION_PACK(MAJOR, MINOR)                           \
+	(((IMG_UINT32)((IMG_UINT32)(MAJOR) & 0xFFFFU) << 16U) | \
+	 (((MINOR) & 0xFFFFU) << 0U))
 #define PVRVERSION_UNPACK_MAJ(VERSION) (((VERSION) >> 16U) & 0xFFFFU)
 #define PVRVERSION_UNPACK_MIN(VERSION) (((VERSION) >> 0U) & 0xFFFFU)
 

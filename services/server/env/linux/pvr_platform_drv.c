@@ -62,7 +62,6 @@
 #include "pvrmodule.h"
 #include "sysinfo.h"
 
-
 /* This header must always be included last */
 #include "kernel_compatibility.h"
 
@@ -99,9 +98,10 @@ static const struct kernel_param_ops pvr_num_devices_ops = {
 #define STRINGIFY(s) STR_MACRO(s)
 
 module_param_cb(num_devices, &pvr_num_devices_ops, &pvr_num_devices, 0444);
-MODULE_PARM_DESC(num_devices,
-		 "Number of platform devices to register (default: 1 - max: "
-		 STRINGIFY(PVRSRV_MAX_DEVICES) ")");
+MODULE_PARM_DESC(
+	num_devices,
+	"Number of platform devices to register (default: 1 - max: " STRINGIFY(
+		PVRSRV_MAX_DEVICES) ")");
 #endif /* defined(NO_HARDWARE) */
 #endif /* defined(MODULE) && !defined(PVR_LDM_PLATFORM_PRE_REGISTERED) */
 
@@ -121,7 +121,7 @@ static struct platform_device_id pvr_platform_ids[] = {
 #if defined(SYS_RGX_DEV_NAME_3)
 	{ SYS_RGX_DEV_NAME_3, 0 },
 #endif
-	{ }
+	{}
 };
 
 static int pvr_devices_register(void)
@@ -150,19 +150,17 @@ static int pvr_devices_register(void)
 		return -ENOMEM;
 
 	for (i = 0; i < pvr_num_devices; i++) {
-		if (i < ARRAY_SIZE(pvr_platform_ids) && pvr_platform_ids[i].name[0])
-		{
+		if (i < ARRAY_SIZE(pvr_platform_ids) &&
+		    pvr_platform_ids[i].name[0]) {
 			pvr_dev_info.name = pvr_platform_ids[i].name;
-		}
-		else
-		{
+		} else {
 			pvr_dev_info.name = pvr_platform_ids[0].name;
 		}
 		pvr_dev_info.id = i;
 		pvr_devices[i] = platform_device_register_full(&pvr_dev_info);
 		if (IS_ERR(pvr_devices[i])) {
-			DRM_ERROR("unable to register device %u (err=%ld)\n",
-				  i, PTR_ERR(pvr_devices[i]));
+			DRM_ERROR("unable to register device %u (err=%ld)\n", i,
+				  PTR_ERR(pvr_devices[i]));
 			pvr_devices[i] = NULL;
 			return -ENODEV;
 		}
@@ -198,7 +196,6 @@ static int pvr_probe(struct platform_device *pdev)
 	if (IS_ERR(ddev))
 		return PTR_ERR(ddev);
 
-
 	/*
 	 * The load callback, called from drm_dev_register, is deprecated,
 	 * because of potential race conditions. Calling the function here,
@@ -219,7 +216,7 @@ err_drm_dev_unload:
 	pvr_drm_unload(ddev);
 err_drm_dev_put:
 	drm_dev_put(ddev);
-	return	ret;
+	return ret;
 }
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))

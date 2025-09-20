@@ -96,15 +96,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define DC_EXAMPLE_DEBUGFS_NUM_DEVICES "num_devices"
 
-#define DEVNAME	DRVNAME
+#define DEVNAME DRVNAME
 
-static struct dentry	*g_psDebugFSEntryDir;	/* Top-level handle */
-static struct dentry	*g_psNumDevicesEntry;	/* 'num_devices' entry */
+static struct dentry *g_psDebugFSEntryDir; /* Top-level handle */
+static struct dentry *g_psNumDevicesEntry; /* 'num_devices' entry */
 
-static IMG_UINT32 g_uiNumDCEXDevs;			/* Number of valid devices */
+static IMG_UINT32 g_uiNumDCEXDevs; /* Number of valid devices */
 
-DC_EXAMPLE_MODULE_PARAMETERS sModuleParams =
-{
+DC_EXAMPLE_MODULE_PARAMETERS sModuleParams = {
 	.ui32Width = DC_EXAMPLE_WIDTH,
 	.ui32Height = DC_EXAMPLE_HEIGHT,
 	.ui32Depth = DC_EXAMPLE_BIT_DEPTH,
@@ -117,23 +116,23 @@ DC_EXAMPLE_MODULE_PARAMETERS sModuleParams =
 	.ui32NumDevices = DC_EXAMPLE_NUM_DEVICES_DEFAULT
 };
 
-#define STR(s)	#s
-#define STRINGIFY(s)	STR(s)
+#define STR(s) #s
+#define STRINGIFY(s) STR(s)
 
-module_param_named(width,	sModuleParams.ui32Width, uint, S_IRUGO);
-module_param_named(height,	sModuleParams.ui32Height, uint, S_IRUGO);
-module_param_named(depth,	sModuleParams.ui32Depth, uint, S_IRUGO);
-module_param_named(format,	sModuleParams.ui32Format, uint, S_IRUGO);
-module_param_named(memlayout,	sModuleParams.ui32MemLayout, uint, S_IRUGO);
-module_param_named(fbcformat,	sModuleParams.ui32FBCFormat, uint, S_IRUGO);
-module_param_named(refreshrate,	sModuleParams.ui32RefreshRate, uint, S_IRUGO);
-module_param_named(xdpi,	sModuleParams.ui32XDpi, uint, S_IRUGO);
-module_param_named(ydpi,	sModuleParams.ui32YDpi, uint, S_IRUGO);
-module_param_named(num_devices,	sModuleParams.ui32NumDevices, uint, S_IRUGO);
-MODULE_PARM_DESC(num_devices,
-        "Number of display devices to register (default: "
-		STRINGIFY(DC_EXAMPLE_NUM_DEVICES_DEFAULT) " - max: "
-		STRINGIFY(PVRSRV_MAX_DEVICES) ")");
+module_param_named(width, sModuleParams.ui32Width, uint, S_IRUGO);
+module_param_named(height, sModuleParams.ui32Height, uint, S_IRUGO);
+module_param_named(depth, sModuleParams.ui32Depth, uint, S_IRUGO);
+module_param_named(format, sModuleParams.ui32Format, uint, S_IRUGO);
+module_param_named(memlayout, sModuleParams.ui32MemLayout, uint, S_IRUGO);
+module_param_named(fbcformat, sModuleParams.ui32FBCFormat, uint, S_IRUGO);
+module_param_named(refreshrate, sModuleParams.ui32RefreshRate, uint, S_IRUGO);
+module_param_named(xdpi, sModuleParams.ui32XDpi, uint, S_IRUGO);
+module_param_named(ydpi, sModuleParams.ui32YDpi, uint, S_IRUGO);
+module_param_named(num_devices, sModuleParams.ui32NumDevices, uint, S_IRUGO);
+MODULE_PARM_DESC(
+	num_devices,
+	"Number of display devices to register (default: " STRINGIFY(
+		DC_EXAMPLE_NUM_DEVICES_DEFAULT) " - max: " STRINGIFY(PVRSRV_MAX_DEVICES) ")");
 
 static struct platform_device *dc_example;
 
@@ -149,40 +148,33 @@ static int NumDevicesOpen(struct inode *psInode, struct file *psFile)
 	return 0;
 }
 
-static ssize_t NumDevicesRead(struct file *psFile,
-                              char __user *psUserBuffer,
-                              size_t uiCount, loff_t *puiPosition)
+static ssize_t NumDevicesRead(struct file *psFile, char __user *psUserBuffer,
+			      size_t uiCount, loff_t *puiPosition)
 {
-	char aszBuffer[]="XX\n";
+	char aszBuffer[] = "XX\n";
 	loff_t uiPosition = *puiPosition;
 	size_t uiBufferSize = ARRAY_SIZE(aszBuffer);
 	size_t uiLocCount;
 
 	PVR_UNREFERENCED_PARAMETER(psFile);
 
-	if (uiPosition < 0)
-	{
+	if (uiPosition < 0) {
 		return -EINVAL;
-	}
-	else if ((uiPosition >= (loff_t)uiBufferSize) || (uiCount == 0U))
-	{
+	} else if ((uiPosition >= (loff_t)uiBufferSize) || (uiCount == 0U)) {
 		return 0;
 	}
 
-	(void) DC_OSSNPrintf(aszBuffer, sizeof(aszBuffer), "%u", g_uiNumDCEXDevs);
+	(void)DC_OSSNPrintf(aszBuffer, sizeof(aszBuffer), "%u",
+			    g_uiNumDCEXDevs);
 
-	if (uiCount > (uiBufferSize - (size_t)uiPosition))
-	{
+	if (uiCount > (uiBufferSize - (size_t)uiPosition)) {
 		uiLocCount = uiBufferSize - (size_t)uiPosition;
-	}
-	else
-	{
+	} else {
 		uiLocCount = uiCount;
 	}
 
-
-	if (copy_to_user(psUserBuffer, &aszBuffer[uiPosition], uiLocCount) != 0)
-	{
+	if (copy_to_user(psUserBuffer, &aszBuffer[uiPosition], uiLocCount) !=
+	    0) {
 		return -EFAULT;
 	}
 
@@ -191,18 +183,16 @@ static ssize_t NumDevicesRead(struct file *psFile,
 	return (ssize_t)uiLocCount;
 }
 
-static const struct file_operations gsDCEXNumDevicesFileOps =
-{
+static const struct file_operations gsDCEXNumDevicesFileOps = {
 	.owner = THIS_MODULE,
 	.open = NumDevicesOpen,
 	.read = NumDevicesRead,
 	.llseek = default_llseek
 };
 
-typedef struct _DC_EXAMPLE_PAGE_MAPPING
-{
-	void         *pvVirtAddr;
-	unsigned int  uiPageCnt;
+typedef struct _DC_EXAMPLE_PAGE_MAPPING {
+	void *pvVirtAddr;
+	unsigned int uiPageCnt;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
 	struct page **ppsPageArray;
 #endif
@@ -214,8 +204,7 @@ static void pvr_vfree(DC_EXAMPLE_PAGE_MAPPING *psMap)
 	unsigned int i;
 #endif
 
-	if (!psMap)
-	{
+	if (!psMap) {
 		return;
 	}
 
@@ -223,10 +212,8 @@ static void pvr_vfree(DC_EXAMPLE_PAGE_MAPPING *psMap)
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
 	/* Free up all the pages. */
-	for (i = 0; i < psMap->uiPageCnt; i++)
-	{
-		if (psMap->ppsPageArray[i])
-		{
+	for (i = 0; i < psMap->uiPageCnt; i++) {
+		if (psMap->ppsPageArray[i]) {
 			__free_page(psMap->ppsPageArray[i]);
 		}
 	}
@@ -245,51 +232,51 @@ static void *pvr_vmalloc(size_t uiSize, gfp_t gfp_mask, pgprot_t prot)
 #endif
 
 	psMap = kzalloc(sizeof(*psMap), GFP_KERNEL);
-	if (!psMap)
-	{
+	if (!psMap) {
 		return NULL;
 	}
 
 	psMap->uiPageCnt = DIV_ROUND_UP(uiSize, PAGE_SIZE);
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0))
-	psMap->ppsPageArray = kcalloc(psMap->uiPageCnt, sizeof(*psMap->ppsPageArray), GFP_KERNEL);
-	if (!psMap->ppsPageArray)
-	{
+	psMap->ppsPageArray = kcalloc(psMap->uiPageCnt,
+				      sizeof(*psMap->ppsPageArray), GFP_KERNEL);
+	if (!psMap->ppsPageArray) {
 		goto err_pvr_vfree;
 	}
 
 	/* Allocate kernel pages 1 by 1 - Keep reference in the "pages" struct. */
-	for (i = 0; i < psMap->uiPageCnt; i++)
-	{
+	for (i = 0; i < psMap->uiPageCnt; i++) {
 		dma_addr_t sDmaAddr;
 		psMap->ppsPageArray[i] = alloc_page(gfp_mask);
-		if (!psMap->ppsPageArray[i])
-		{
+		if (!psMap->ppsPageArray[i]) {
 			goto err_pvr_vfree;
 		}
 		/* Take care of any stale cache data */
-		sDmaAddr = dma_map_page(&dc_example->dev, psMap->ppsPageArray[i], 0, PAGE_SIZE, DMA_FROM_DEVICE);
-		if (dma_mapping_error(&dc_example->dev, sDmaAddr))
-		{
+		sDmaAddr = dma_map_page(&dc_example->dev,
+					psMap->ppsPageArray[i], 0, PAGE_SIZE,
+					DMA_FROM_DEVICE);
+		if (dma_mapping_error(&dc_example->dev, sDmaAddr)) {
 			goto err_pvr_vfree;
 		}
-		dma_sync_single_for_cpu(&dc_example->dev, sDmaAddr, PAGE_SIZE, DMA_FROM_DEVICE);
-		dma_unmap_page(&dc_example->dev, sDmaAddr, PAGE_SIZE, DMA_FROM_DEVICE);
+		dma_sync_single_for_cpu(&dc_example->dev, sDmaAddr, PAGE_SIZE,
+					DMA_FROM_DEVICE);
+		dma_unmap_page(&dc_example->dev, sDmaAddr, PAGE_SIZE,
+			       DMA_FROM_DEVICE);
 	}
 
 	/* Map the pages into contiguous VM space. */
-	psMap->pvVirtAddr = vmap(psMap->ppsPageArray, psMap->uiPageCnt, VM_MAP, prot);
+	psMap->pvVirtAddr =
+		vmap(psMap->ppsPageArray, psMap->uiPageCnt, VM_MAP, prot);
 #else
 	psMap->pvVirtAddr = __vmalloc(uiSize, gfp_mask, prot);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0) */
 
-	if (!psMap->pvVirtAddr)
-	{
+	if (!psMap->pvVirtAddr) {
 		goto err_pvr_vfree;
 	}
 
-	return (void *) psMap;
+	return (void *)psMap;
 
 err_pvr_vfree:
 	pvr_vfree(psMap);
@@ -309,49 +296,52 @@ void *DCExampleVirtualAllocUncached(size_t uiSize)
 
 IMG_BOOL DCExampleVirtualFree(void *pvAllocHandle)
 {
-	pvr_vfree((DC_EXAMPLE_PAGE_MAPPING *) pvAllocHandle);
+	pvr_vfree((DC_EXAMPLE_PAGE_MAPPING *)pvAllocHandle);
 
 	/* vfree does not return a value, so all we can do is hard code IMG_TRUE */
 	return IMG_TRUE;
 }
 
-#define	VMALLOC_TO_PAGE_PHYS(vAddr) page_to_phys(vmalloc_to_page(vAddr))
+#define VMALLOC_TO_PAGE_PHYS(vAddr) page_to_phys(vmalloc_to_page(vAddr))
 
-PVRSRV_ERROR DCExampleGetLinAddr(void *pvAllocHandle, IMG_CPU_VIRTADDR *ppvLinAddr)
+PVRSRV_ERROR DCExampleGetLinAddr(void *pvAllocHandle,
+				 IMG_CPU_VIRTADDR *ppvLinAddr)
 {
-	DC_EXAMPLE_PAGE_MAPPING *psMap     = (DC_EXAMPLE_PAGE_MAPPING *) pvAllocHandle;
-	IMG_CPU_VIRTADDR         pvLinAddr = psMap->pvVirtAddr;
+	DC_EXAMPLE_PAGE_MAPPING *psMap =
+		(DC_EXAMPLE_PAGE_MAPPING *)pvAllocHandle;
+	IMG_CPU_VIRTADDR pvLinAddr = psMap->pvVirtAddr;
 
-	if (ppvLinAddr != NULL)
-	{
+	if (ppvLinAddr != NULL) {
 		*ppvLinAddr = pvLinAddr;
 	}
 
 	return PVRSRV_OK;
 }
 
-PVRSRV_ERROR DCExampleGetDevPAddrs(void *pvAllocHandle, IMG_DEV_PHYADDR *pasDevPAddr,
+PVRSRV_ERROR DCExampleGetDevPAddrs(void *pvAllocHandle,
+				   IMG_DEV_PHYADDR *pasDevPAddr,
 				   uint32_t uiPageNo, size_t uiSize)
 {
-	DC_EXAMPLE_PAGE_MAPPING *psMap = (DC_EXAMPLE_PAGE_MAPPING *) pvAllocHandle;
-	unsigned long ulPages      = DC_OS_BYTES_TO_PAGES(uiSize);
+	DC_EXAMPLE_PAGE_MAPPING *psMap =
+		(DC_EXAMPLE_PAGE_MAPPING *)pvAllocHandle;
+	unsigned long ulPages = DC_OS_BYTES_TO_PAGES(uiSize);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
-	IMG_CPU_VIRTADDR pvLinAddr = (IMG_CPU_VIRTADDR) IMG_OFFSET_ADDR(psMap->pvVirtAddr, uiPageNo * PAGE_SIZE);
+	IMG_CPU_VIRTADDR pvLinAddr = (IMG_CPU_VIRTADDR)IMG_OFFSET_ADDR(
+		psMap->pvVirtAddr, uiPageNo * PAGE_SIZE);
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)) */
-	int           i;
+	int i;
 
-	if (ulPages > psMap->uiPageCnt)
-	{
+	if (ulPages > psMap->uiPageCnt) {
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
-	for (i = 0; i < ulPages; i++)
-	{
+	for (i = 0; i < ulPages; i++) {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
 		pasDevPAddr[i].uiAddr = VMALLOC_TO_PAGE_PHYS(pvLinAddr);
 		pvLinAddr += PAGE_SIZE;
 #else
-		pasDevPAddr[i].uiAddr = page_to_phys(psMap->ppsPageArray[uiPageNo + i]);
+		pasDevPAddr[i].uiAddr =
+			page_to_phys(psMap->ppsPageArray[uiPageNo + i]);
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)) */
 	}
 
@@ -360,31 +350,30 @@ PVRSRV_ERROR DCExampleGetDevPAddrs(void *pvAllocHandle, IMG_DEV_PHYADDR *pasDevP
 
 static int dc_example_probe(struct platform_device *psDev)
 {
-	if (DCExampleInit(&g_uiNumDCEXDevs) != PVRSRV_OK)
-	{
+	if (DCExampleInit(&g_uiNumDCEXDevs) != PVRSRV_OK) {
 		return -ENODEV;
 	}
 
 	/* Create a debugfs entry to return the number of devices discovered */
 	g_psDebugFSEntryDir = debugfs_create_dir(MODNAME, NULL);
-	if (IS_ERR_OR_NULL(g_psDebugFSEntryDir))
-	{
-		printk(KERN_WARNING DRVNAME " - %s: Failed to create '%s' debugfs root directory "
-		       "(debugfs entries won't be available)\n", __func__, MODNAME);
+	if (IS_ERR_OR_NULL(g_psDebugFSEntryDir)) {
+		printk(KERN_WARNING DRVNAME
+		       " - %s: Failed to create '%s' debugfs root directory "
+		       "(debugfs entries won't be available)\n",
+		       __func__, MODNAME);
 		g_psDebugFSEntryDir = NULL;
 	}
 
-	g_psNumDevicesEntry = debugfs_create_file(DC_EXAMPLE_DEBUGFS_NUM_DEVICES,
-	                                          S_IFREG | S_IRUGO,
-	                                          g_psDebugFSEntryDir,
-	                                          &sModuleParams.ui32NumDevices,
-	                                          &gsDCEXNumDevicesFileOps);
+	g_psNumDevicesEntry = debugfs_create_file(
+		DC_EXAMPLE_DEBUGFS_NUM_DEVICES, S_IFREG | S_IRUGO,
+		g_psDebugFSEntryDir, &sModuleParams.ui32NumDevices,
+		&gsDCEXNumDevicesFileOps);
 
-	if (IS_ERR_OR_NULL(g_psNumDevicesEntry))
-	{
-		printk(KERN_WARNING DRVNAME " - %s: Failed to create '%s' debugfs file "
-		       "(debugfs entries won't be available)\n", __func__,
-		       DC_EXAMPLE_DEBUGFS_NUM_DEVICES);
+	if (IS_ERR_OR_NULL(g_psNumDevicesEntry)) {
+		printk(KERN_WARNING DRVNAME
+		       " - %s: Failed to create '%s' debugfs file "
+		       "(debugfs entries won't be available)\n",
+		       __func__, DC_EXAMPLE_DEBUGFS_NUM_DEVICES);
 		g_psNumDevicesEntry = NULL;
 	}
 
@@ -400,14 +389,12 @@ static void dc_example_remove(struct platform_device *psDev)
 	DCExampleDeinit();
 
 	/* Remove the debugfs entry for the number of devices */
-	if (g_psNumDevicesEntry != NULL)
-	{
+	if (g_psNumDevicesEntry != NULL) {
 		debugfs_remove(g_psNumDevicesEntry);
 		g_psNumDevicesEntry = NULL;
 	}
 
-	if (g_psDebugFSEntryDir != NULL)
-	{
+	if (g_psDebugFSEntryDir != NULL) {
 		debugfs_remove(g_psDebugFSEntryDir);
 		g_psDebugFSEntryDir = NULL;
 	}
@@ -417,10 +404,9 @@ static void dc_example_remove(struct platform_device *psDev)
 #endif
 }
 
-static struct platform_device_id dc_example_platform_device_id_table[] =
-{
+static struct platform_device_id dc_example_platform_device_id_table[] = {
 	{ .name = DEVNAME, .driver_data = 0 },
-	{ },
+	{},
 };
 
 static struct platform_driver dc_example_platform_driver =
@@ -435,10 +421,9 @@ static struct platform_driver dc_example_platform_driver =
 	.id_table      = dc_example_platform_device_id_table,
 };
 
-static struct platform_device_info dc_example_device_info =
-{
+static struct platform_device_info dc_example_device_info = {
 	.name = DEVNAME,
-	.id   = -1,
+	.id = -1,
 };
 
 static int __init dc_example_init(void)
@@ -446,15 +431,13 @@ static int __init dc_example_init(void)
 	int err;
 
 	dc_example = platform_device_register_full(&dc_example_device_info);
-	if (IS_ERR(dc_example))
-	{
+	if (IS_ERR(dc_example)) {
 		err = PTR_ERR(dc_example);
 		goto err_clear_device;
 	}
 
 	err = platform_driver_register(&dc_example_platform_driver);
-	if (err)
-	{
+	if (err) {
 		goto err_device_unregister;
 	}
 
@@ -469,8 +452,7 @@ err_clear_device:
 
 static void __exit dc_example_deinit(void)
 {
-	if (dc_example)
-	{
+	if (dc_example) {
 		platform_device_unregister(dc_example);
 	}
 

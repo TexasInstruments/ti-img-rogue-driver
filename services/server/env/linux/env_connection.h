@@ -54,15 +54,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 struct drm_file;
 
-typedef struct _ENV_CONNECTION_PRIVATE_DATA_
-{
+typedef struct _ENV_CONNECTION_PRIVATE_DATA_ {
 	PVRSRV_DEVICE_NODE *psDevNode;
 	struct drm_file *psDRMFile;
 } ENV_CONNECTION_PRIVATE_DATA;
 
-
-typedef struct _ENV_CONNECTION_DATA_
-{
+typedef struct _ENV_CONNECTION_DATA_ {
 	pid_t owner;
 
 	PVRSRV_DEVICE_NODE *psDevNode;

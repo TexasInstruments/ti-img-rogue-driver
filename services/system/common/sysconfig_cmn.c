@@ -51,7 +51,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //#include "physmem.h"
 
 void SysRGXErrorNotify(IMG_HANDLE hSysData,
-                       PVRSRV_ROBUSTNESS_NOTIFY_DATA *psErrorData)
+		       PVRSRV_ROBUSTNESS_NOTIFY_DATA *psErrorData)
 {
 	PVR_UNREFERENCED_PARAMETER(hSysData);
 
@@ -59,75 +59,70 @@ void SysRGXErrorNotify(IMG_HANDLE hSysData,
 	{
 		IMG_UINT32 ui32DgbLvl;
 
-		switch (psErrorData->eResetReason)
-		{
-			case RGX_CONTEXT_RESET_REASON_NONE:
-			case RGX_CONTEXT_RESET_REASON_GUILTY_LOCKUP:
-			case RGX_CONTEXT_RESET_REASON_INNOCENT_LOCKUP:
-			case RGX_CONTEXT_RESET_REASON_GUILTY_OVERRUNING:
-			case RGX_CONTEXT_RESET_REASON_INNOCENT_OVERRUNING:
-			case RGX_CONTEXT_RESET_REASON_HARD_CONTEXT_SWITCH:
-			case RGX_CONTEXT_RESET_REASON_GPU_ECC_OK:
-			case RGX_CONTEXT_RESET_REASON_FW_ECC_OK:
-			{
-				ui32DgbLvl = PVR_DBG_MESSAGE;
-				break;
-			}
-			case RGX_CONTEXT_RESET_REASON_GPU_ECC_HWR:
-			case RGX_CONTEXT_RESET_REASON_FW_EXEC_ERR:
-			case RGX_CONTEXT_RESET_REASON_GPU_PARITY_HWR:
-			case RGX_CONTEXT_RESET_REASON_GPU_LATENT_HWR:
-			{
-				ui32DgbLvl = PVR_DBG_WARNING;
-				break;
-			}
-			case RGX_CONTEXT_RESET_REASON_WGP_CHECKSUM:
-			case RGX_CONTEXT_RESET_REASON_TRP_CHECKSUM:
-			case RGX_CONTEXT_RESET_REASON_FW_ECC_ERR:
-			case RGX_CONTEXT_RESET_REASON_FW_PTE_PARITY_ERR:
-			case RGX_CONTEXT_RESET_REASON_FW_PARITY_ERR:
-			case RGX_CONTEXT_RESET_REASON_FW_WATCHDOG:
-			case RGX_CONTEXT_RESET_REASON_FW_PAGEFAULT:
-			case RGX_CONTEXT_RESET_REASON_HOST_WDG_FW_ERR:
-			case RGX_CONTEXT_PVRIC_SIGNATURE_MISMATCH:
-			case RGX_CONTEXT_RESET_REASON_DCLS_ERR:
-			{
-				ui32DgbLvl = PVR_DBG_ERROR;
-				break;
-			}
-			default:
-			{
-				PVR_ASSERT(false && "Unhandled reset reason");
-				ui32DgbLvl = PVR_DBG_ERROR;
-				break;
-			}
-		}
-
-		if (psErrorData->pid > 0)
-		{
-			PVRSRVDebugPrintf(ui32DgbLvl, __FILE__, __LINE__, " PID %d experienced error %d",
-					 psErrorData->pid, psErrorData->eResetReason);
-		}
-		else
-		{
-			PVRSRVDebugPrintf(ui32DgbLvl, __FILE__, __LINE__, " Device experienced error %d",
-					 psErrorData->eResetReason);
-		}
-
-		switch (psErrorData->eResetReason)
-		{
-			case RGX_CONTEXT_RESET_REASON_WGP_CHECKSUM:
-			case RGX_CONTEXT_RESET_REASON_TRP_CHECKSUM:
-			{
-				PVRSRVDebugPrintf(ui32DgbLvl, __FILE__, __LINE__, "   ExtJobRef 0x%x, DM %d",
-						 psErrorData->uErrData.sChecksumErrData.ui32ExtJobRef,
-						 psErrorData->uErrData.sChecksumErrData.eDM);
+		switch (psErrorData->eResetReason) {
+		case RGX_CONTEXT_RESET_REASON_NONE:
+		case RGX_CONTEXT_RESET_REASON_GUILTY_LOCKUP:
+		case RGX_CONTEXT_RESET_REASON_INNOCENT_LOCKUP:
+		case RGX_CONTEXT_RESET_REASON_GUILTY_OVERRUNING:
+		case RGX_CONTEXT_RESET_REASON_INNOCENT_OVERRUNING:
+		case RGX_CONTEXT_RESET_REASON_HARD_CONTEXT_SWITCH:
+		case RGX_CONTEXT_RESET_REASON_GPU_ECC_OK:
+		case RGX_CONTEXT_RESET_REASON_FW_ECC_OK: {
+			ui32DgbLvl = PVR_DBG_MESSAGE;
 			break;
-			}
-			default:
-			{
-				break;
-			}
+		}
+		case RGX_CONTEXT_RESET_REASON_GPU_ECC_HWR:
+		case RGX_CONTEXT_RESET_REASON_FW_EXEC_ERR:
+		case RGX_CONTEXT_RESET_REASON_GPU_PARITY_HWR:
+		case RGX_CONTEXT_RESET_REASON_GPU_LATENT_HWR: {
+			ui32DgbLvl = PVR_DBG_WARNING;
+			break;
+		}
+		case RGX_CONTEXT_RESET_REASON_WGP_CHECKSUM:
+		case RGX_CONTEXT_RESET_REASON_TRP_CHECKSUM:
+		case RGX_CONTEXT_RESET_REASON_FW_ECC_ERR:
+		case RGX_CONTEXT_RESET_REASON_FW_PTE_PARITY_ERR:
+		case RGX_CONTEXT_RESET_REASON_FW_PARITY_ERR:
+		case RGX_CONTEXT_RESET_REASON_FW_WATCHDOG:
+		case RGX_CONTEXT_RESET_REASON_FW_PAGEFAULT:
+		case RGX_CONTEXT_RESET_REASON_HOST_WDG_FW_ERR:
+		case RGX_CONTEXT_PVRIC_SIGNATURE_MISMATCH:
+		case RGX_CONTEXT_RESET_REASON_DCLS_ERR: {
+			ui32DgbLvl = PVR_DBG_ERROR;
+			break;
+		}
+		default: {
+			PVR_ASSERT(false && "Unhandled reset reason");
+			ui32DgbLvl = PVR_DBG_ERROR;
+			break;
+		}
+		}
+
+		if (psErrorData->pid > 0) {
+			PVRSRVDebugPrintf(ui32DgbLvl, __FILE__, __LINE__,
+					  " PID %d experienced error %d",
+					  psErrorData->pid,
+					  psErrorData->eResetReason);
+		} else {
+			PVRSRVDebugPrintf(ui32DgbLvl, __FILE__, __LINE__,
+					  " Device experienced error %d",
+					  psErrorData->eResetReason);
+		}
+
+		switch (psErrorData->eResetReason) {
+		case RGX_CONTEXT_RESET_REASON_WGP_CHECKSUM:
+		case RGX_CONTEXT_RESET_REASON_TRP_CHECKSUM: {
+			PVRSRVDebugPrintf(
+				ui32DgbLvl, __FILE__, __LINE__,
+				"   ExtJobRef 0x%x, DM %d",
+				psErrorData->uErrData.sChecksumErrData
+					.ui32ExtJobRef,
+				psErrorData->uErrData.sChecksumErrData.eDM);
+			break;
+		}
+		default: {
+			break;
+		}
 		}
 	}
 #else
@@ -147,45 +142,42 @@ IMG_BOOL SysRestrictGpuLocalAddPrivateHeap(void)
 
 IMG_BOOL SysDefaultToCpuLocalHeap(void)
 {
-//#if (TC_MEMORY_CONFIG == TC_MEMORY_HYBRID)
+	//#if (TC_MEMORY_CONFIG == TC_MEMORY_HYBRID)
 	void *pvAppHintState = NULL;
 	IMG_BOOL bAppHintDefault = IMG_FALSE;
 	IMG_BOOL bSetToCPULocal = IMG_FALSE;
 
 	OSCreateAppHintState(&pvAppHintState);
 	OSGetAppHintBOOL(APPHINT_NO_DEVICE, pvAppHintState,
-			PhysHeapHybridDefault2CpuLocal, &bAppHintDefault, &bSetToCPULocal);
+			 PhysHeapHybridDefault2CpuLocal, &bAppHintDefault,
+			 &bSetToCPULocal);
 	OSFreeAppHintState(pvAppHintState);
 
 	return bSetToCPULocal;
-//#else
-//	return IMG_FALSE;
-//#endif
+	//#else
+	//	return IMG_FALSE;
+	//#endif
 }
 
 /*
  * CPU to Device physical address translation
  */
-static
-void UMAPhysHeapCpuPAddrToDevPAddr(IMG_HANDLE hPrivData,
-				   IMG_UINT32 ui32NumOfAddr,
-				   IMG_DEV_PHYADDR *psDevPAddr,
-				   IMG_CPU_PHYADDR *psCpuPAddr)
+static void UMAPhysHeapCpuPAddrToDevPAddr(IMG_HANDLE hPrivData,
+					  IMG_UINT32 ui32NumOfAddr,
+					  IMG_DEV_PHYADDR *psDevPAddr,
+					  IMG_CPU_PHYADDR *psCpuPAddr)
 {
 	PVR_UNREFERENCED_PARAMETER(hPrivData);
 
-	if (!ui32NumOfAddr)
-	{
+	if (!ui32NumOfAddr) {
 		return;
 	}
 
 	/* Optimise common case */
 	psDevPAddr[0].uiAddr = psCpuPAddr[0].uiAddr;
-	if (ui32NumOfAddr > 1)
-	{
+	if (ui32NumOfAddr > 1) {
 		IMG_UINT32 ui32Idx;
-		for (ui32Idx = 1; ui32Idx < ui32NumOfAddr; ++ui32Idx)
-		{
+		for (ui32Idx = 1; ui32Idx < ui32NumOfAddr; ++ui32Idx) {
 			psDevPAddr[ui32Idx].uiAddr = psCpuPAddr[ui32Idx].uiAddr;
 		}
 	}
@@ -193,33 +185,31 @@ void UMAPhysHeapCpuPAddrToDevPAddr(IMG_HANDLE hPrivData,
 /*
  * Device to CPU physical address translation
  */
-static
-void UMAPhysHeapDevPAddrToCpuPAddr(IMG_HANDLE hPrivData,
-				   IMG_UINT32 ui32NumOfAddr,
-				   IMG_CPU_PHYADDR *psCpuPAddr,
-				   IMG_DEV_PHYADDR *psDevPAddr)
+static void UMAPhysHeapDevPAddrToCpuPAddr(IMG_HANDLE hPrivData,
+					  IMG_UINT32 ui32NumOfAddr,
+					  IMG_CPU_PHYADDR *psCpuPAddr,
+					  IMG_DEV_PHYADDR *psDevPAddr)
 {
 	PVR_UNREFERENCED_PARAMETER(hPrivData);
 
-	if (!ui32NumOfAddr)
-	{
+	if (!ui32NumOfAddr) {
 		return;
 	}
 
-	if (sizeof(*psCpuPAddr) < sizeof(*psDevPAddr))
-	{
+	if (sizeof(*psCpuPAddr) < sizeof(*psDevPAddr)) {
 		/* Check we are not dropping any data from the 64bit dev addr */
 		PVR_ASSERT(!(psDevPAddr[0].uiAddr >> 32));
 	}
 
 	/* Optimise common case */
-	psCpuPAddr[0].uiAddr = IMG_CAST_TO_CPUPHYADDR_UINT(psDevPAddr[0].uiAddr);
-	if (ui32NumOfAddr > 1)
-	{
+	psCpuPAddr[0].uiAddr =
+		IMG_CAST_TO_CPUPHYADDR_UINT(psDevPAddr[0].uiAddr);
+	if (ui32NumOfAddr > 1) {
 		IMG_UINT32 ui32Idx;
-		for (ui32Idx = 1; ui32Idx < ui32NumOfAddr; ++ui32Idx)
-		{
-			psCpuPAddr[ui32Idx].uiAddr = IMG_CAST_TO_CPUPHYADDR_UINT(psDevPAddr[ui32Idx].uiAddr);
+		for (ui32Idx = 1; ui32Idx < ui32NumOfAddr; ++ui32Idx) {
+			psCpuPAddr[ui32Idx].uiAddr =
+				IMG_CAST_TO_CPUPHYADDR_UINT(
+					psDevPAddr[ui32Idx].uiAddr);
 		}
 	}
 }
@@ -231,17 +221,16 @@ PHYS_HEAP_FUNCTIONS g_sUmaHeapFns = {
 
 #if defined(SUPPORT_NATIVE_FENCE_SYNC)
 
-IMG_BOOL SysDevExtractFFToken(IMG_HANDLE hSysData, IMG_HANDLE hEnvFenceObjPtr, IMG_UINT16 *pui16FFToken)
+IMG_BOOL SysDevExtractFFToken(IMG_HANDLE hSysData, IMG_HANDLE hEnvFenceObjPtr,
+			      IMG_UINT16 *pui16FFToken)
 {
 	struct dma_fence *fence = hEnvFenceObjPtr;
 	unsigned long flags = fence->flags;
 
 	// Check validity bit (SYNC_CHECKPOINT_FW_UD_FF_TOKEN_VALID_EN).
-	if (flags & (0x00010000 << DMA_FENCE_FLAG_USER_BITS))
-	{
+	if (flags & (0x00010000 << DMA_FENCE_FLAG_USER_BITS)) {
 		flags >>= DMA_FENCE_FLAG_USER_BITS;
 		*pui16FFToken = flags & 0xffff;
-
 
 		return IMG_TRUE;
 	}

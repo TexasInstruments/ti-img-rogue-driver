@@ -67,7 +67,9 @@ extern "C" {
  * PVRSRV_DEBUG_LINUX_MEMORY_STATS_ON is defined to encompass both memory
  *     allocation statistics functionalities described above in a single macro
  */
-#if defined(PVRSRV_ENABLE_PROCESS_STATS) && defined(PVRSRV_ENABLE_MEMORY_STATS) && defined(PVRSRV_DEBUG_LINUX_MEMORY_STATS) && defined(DEBUG)
+#if defined(PVRSRV_ENABLE_PROCESS_STATS) &&    \
+	defined(PVRSRV_ENABLE_MEMORY_STATS) && \
+	defined(PVRSRV_DEBUG_LINUX_MEMORY_STATS) && defined(DEBUG)
 #define PVRSRV_DEBUG_LINUX_MEMORY_STATS_ON
 #endif
 
@@ -77,29 +79,32 @@ extern "C" {
  * When this feature is not used, these parameters are not needed.
  */
 #if defined(PVRSRV_DEBUG_LINUX_MEMORY_STATS_ON)
-#define DEBUG_MEMSTATS_PARAMS ,void *pvAllocFromFile, IMG_UINT32 ui32AllocFromLine
-#define DEBUG_MEMSTATS_ARGS   ,pvAllocFromFile, ui32AllocFromLine
-#define DEBUG_MEMSTATS_UNREF  (void)pvAllocFromFile; (void)ui32AllocFromLine;
-#define DEBUG_MEMSTATS_VALUES ,__FILE__, __LINE__
+#define DEBUG_MEMSTATS_PARAMS \
+	, void *pvAllocFromFile, IMG_UINT32 ui32AllocFromLine
+#define DEBUG_MEMSTATS_ARGS , pvAllocFromFile, ui32AllocFromLine
+#define DEBUG_MEMSTATS_UNREF   \
+	(void)pvAllocFromFile; \
+	(void)ui32AllocFromLine;
+#define DEBUG_MEMSTATS_VALUES , __FILE__, __LINE__
 #else
 #define DEBUG_MEMSTATS_PARAMS /*!<
                                  * Used for PVRSRV_DEBUG_LINUX_MEMORY_STATS_ON
                                  * build option. */
-#define DEBUG_MEMSTATS_ARGS   /*!<
+#define DEBUG_MEMSTATS_ARGS /*!<
                                  * Used for PVRSRV_DEBUG_LINUX_MEMORY_STATS_ON
                                  * build option. */
-#define DEBUG_MEMSTATS_UNREF  /*!<
+#define DEBUG_MEMSTATS_UNREF /*!<
                                  * Used for PVRSRV_DEBUG_LINUX_MEMORY_STATS_ON
                                  * build option. */
-#define DEBUG_MEMSTATS_VALUES  /*!<
+#define DEBUG_MEMSTATS_VALUES /*!<
                                  * Used for PVRSRV_DEBUG_LINUX_MEMORY_STATS_ON
                                  * build option. */
 #endif
 
 #if defined(__linux__) && defined(__KERNEL__)
-	#define IMG_ZERO_SIZE_PTR ZERO_SIZE_PTR
+#define IMG_ZERO_SIZE_PTR ZERO_SIZE_PTR
 #else
-	#define IMG_ZERO_SIZE_PTR ((void*)16)
+#define IMG_ZERO_SIZE_PTR ((void *)16)
 #endif
 
 /**************************************************************************/ /*!
@@ -121,12 +126,13 @@ void *OSAllocMem(size_t uiSize);
 #else
 void *OSAllocMem(size_t uiSize DEBUG_MEMSTATS_PARAMS);
 #if defined(__GNUC__)
-#define OSAllocMem(_size) ({ \
-		PVR_ASSERT((_size) > 0); \
-		(OSAllocMem)((_size) DEBUG_MEMSTATS_VALUES); \
+#define OSAllocMem(_size)                                   \
+	({                                                  \
+		PVR_ASSERT((_size) > 0);                    \
+		(OSAllocMem)((_size)DEBUG_MEMSTATS_VALUES); \
 	})
 #else
-#define OSAllocMem(_size)	(OSAllocMem)((_size) DEBUG_MEMSTATS_VALUES)
+#define OSAllocMem(_size) (OSAllocMem)((_size)DEBUG_MEMSTATS_VALUES)
 #endif
 #endif
 
@@ -149,15 +155,15 @@ void *OSAllocZMem(size_t uiSize);
 #else
 void *OSAllocZMem(size_t uiSize DEBUG_MEMSTATS_PARAMS);
 #if defined(__GNUC__)
-#define OSAllocZMem(_size) ({ \
-		PVR_ASSERT((_size) > 0); \
-		(OSAllocZMem)((_size) DEBUG_MEMSTATS_VALUES); \
+#define OSAllocZMem(_size)                                   \
+	({                                                   \
+		PVR_ASSERT((_size) > 0);                     \
+		(OSAllocZMem)((_size)DEBUG_MEMSTATS_VALUES); \
 	})
 #else
-#define OSAllocZMem(_size) (OSAllocZMem)((_size) DEBUG_MEMSTATS_VALUES)
+#define OSAllocZMem(_size) (OSAllocZMem)((_size)DEBUG_MEMSTATS_VALUES)
 #endif
 #endif
-
 
 /**************************************************************************/ /*!
 @Function       OSAllocMemNoStats
@@ -231,14 +237,15 @@ void OSFreeMemNoStats(void *pvCpuVAddr);
 #if defined(PVRSRV_NEED_PVR_ASSERT)
 #define ALLOCMEM_ASSERT(exp) PVR_ASSERT(exp)
 #else /* !defined(PVRSRV_NEED_PVR_ASSERT) */
-#define ALLOCMEM_ASSERT(exp) do { \
-	if (unlikely (!(exp))) \
-	{ \
-		PVRSRVDebugPrintf(DBGPRIV_FATAL, __FILE__, __LINE__,    \
-		                  "Double-free detected '%s' !", #exp); \
-		WARN_ON(1); \
-	} \
-} while (0)
+#define ALLOCMEM_ASSERT(exp)                                                 \
+	do {                                                                 \
+		if (unlikely(!(exp))) {                                      \
+			PVRSRVDebugPrintf(DBGPRIV_FATAL, __FILE__, __LINE__, \
+					  "Double-free detected '%s' !",     \
+					  #exp);                             \
+			WARN_ON(1);                                          \
+		}                                                            \
+	} while (0)
 #endif /* defined(PVRSRV_NEED_PVR_ASSERT) */
 #else /* !defined(__linux__) && defined(__KERNEL__)) */
 #if defined(PVRSRV_NEED_PVR_ASSERT)
@@ -246,29 +253,35 @@ void OSFreeMemNoStats(void *pvCpuVAddr);
 #define ALLOCMEM_ASSERT(exp) PVR_ASSERT(exp)
 #else /* !defined(PVRSRV_NEED_PVR_ASSERT) */
 #define double_free_sentinel NULL
-#define ALLOCMEM_ASSERT(exp) do {} while (0)
+#define ALLOCMEM_ASSERT(exp) \
+	do {                 \
+	} while (0)
 #endif /* defined(PVRSRV_NEED_PVR_ASSERT) */
 #endif /* defined(__linux__) && defined(__KERNEL__) */
 #else /* !defined(SUPPORT_DOUBLE_FREE_SENTINEL) */
 #define double_free_sentinel NULL
-#define ALLOCMEM_ASSERT(exp) do {} while (0)
+#define ALLOCMEM_ASSERT(exp) \
+	do {                 \
+	} while (0)
 #endif /* defined(SUPPORT_DOUBLE_FREE_SENTINEL) */
 /*! @endcond */
 
 /*! Frees memory allocated by OSAllocMem(). */
-#define OSFreeMem(_ptr) do { \
+#define OSFreeMem(_ptr)                                          \
+	do {                                                     \
 		ALLOCMEM_ASSERT((_ptr) != double_free_sentinel); \
-		(OSFreeMem)(_ptr); \
-		(_ptr) = double_free_sentinel; \
-		MSC_SUPPRESS_4127 \
+		(OSFreeMem)(_ptr);                               \
+		(_ptr) = double_free_sentinel;                   \
+		MSC_SUPPRESS_4127                                \
 	} while (0)
 
 /*! Frees memory allocated by OSAllocMemNoStats(). */
-#define OSFreeMemNoStats(_ptr) do { \
+#define OSFreeMemNoStats(_ptr)                                   \
+	do {                                                     \
 		ALLOCMEM_ASSERT((_ptr) != double_free_sentinel); \
-		(OSFreeMemNoStats)(_ptr); \
-		(_ptr) = double_free_sentinel; \
-		MSC_SUPPRESS_4127 \
+		(OSFreeMemNoStats)(_ptr);                        \
+		(_ptr) = double_free_sentinel;                   \
+		MSC_SUPPRESS_4127                                \
 	} while (0)
 
 #if defined(__cplusplus)

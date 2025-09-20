@@ -50,8 +50,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "device.h"
 #include "rgx_fwif_fpf.h"
 
-
-
 /***************************************************************************/ /*!
 @Function       FPFSyncCheckpointAlloc
 @Description    Allocate a new FPF synchronisation checkpoint on the specified
@@ -77,11 +75,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /***************************************************************************/
 PVRSRV_ERROR
 FPFSyncCheckpointAlloc(PSYNC_CHECKPOINT_CONTEXT psSyncContext,
-                       PVRSRV_TIMELINE hTimeline,
-                       PVRSRV_FENCE hFence,
-                       const IMG_CHAR *pszCheckpointName,
-                       PVRSRV_FAST_PATH_FENCE_TOKEN uiToken,
-                       PSYNC_CHECKPOINT *ppsSyncCheckpoint);
+		       PVRSRV_TIMELINE hTimeline, PVRSRV_FENCE hFence,
+		       const IMG_CHAR *pszCheckpointName,
+		       PVRSRV_FAST_PATH_FENCE_TOKEN uiToken,
+		       PSYNC_CHECKPOINT *ppsSyncCheckpoint);
 
 /***************************************************************************/ /*!
 @Function       FPFSyncCheckpointFree
@@ -93,6 +90,5 @@ FPFSyncCheckpointAlloc(PSYNC_CHECKPOINT_CONTEXT psSyncContext,
 */ /***************************************************************************/
 PVRSRV_ERROR
 FPFSyncCheckpointFree(PSYNC_CHECKPOINT psSyncCheckpoint);
-
 
 #endif /* SYNC_FPF_H */

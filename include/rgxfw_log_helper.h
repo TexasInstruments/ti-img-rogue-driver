@@ -48,8 +48,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "rgx_fwif_sf.h"
 
-static const IMG_CHAR *const groups[]= {
-#define X(A,B) #B,
+static const IMG_CHAR *const groups[] = {
+#define X(A, B) #B,
 	RGXFW_LOG_SFGROUPLIST
 #undef X
 };
@@ -58,32 +58,32 @@ static const IMG_CHAR *const groups[]= {
  * Return index to array if found or RGXFW_SF_LAST if none found.
  * bsearch could be used as ids are in increasing order. */
 #if defined(RGX_FIRMWARE)
-static IMG_UINT32 idToStringID(IMG_UINT32 ui32CheckData, RGXFWIF_DEV_VIRTADDR sTBIBuf)
+static IMG_UINT32 idToStringID(IMG_UINT32 ui32CheckData,
+			       RGXFWIF_DEV_VIRTADDR sTBIBuf)
 #else
-static IMG_UINT32 idToStringID(IMG_UINT32 ui32CheckData, const RGXKM_STID_FMT *const psSFs)
+static IMG_UINT32 idToStringID(IMG_UINT32 ui32CheckData,
+			       const RGXKM_STID_FMT *const psSFs)
 #endif
 {
 	IMG_UINT32 i = 0, ui32Id = (IMG_UINT32)RGXFW_SF_LAST;
 
-	for (i = 0; ; i++)
-	{
+	for (i = 0;; i++) {
 #if defined(RGX_FIRMWARE)
-		RGXFW_STID_FMT *psSFs = RGXFW_TO_ARRAY_PTR(sTBIBuf, RGXFW_STID_FMT, i + 1, RGXFW_HOST_DRIVER_ID);
+		RGXFW_STID_FMT *psSFs = RGXFW_TO_ARRAY_PTR(
+			sTBIBuf, RGXFW_STID_FMT, i + 1, RGXFW_HOST_DRIVER_ID);
 
-		if (!RGXFW_KM_PTR_CHECK(psSFs, RGXFW_HOST_DRIVER_ID))
-		{
-			RGXFW_ASSERT(RGXFW_KM_PTR_CHECK(psSFs, RGXFW_HOST_DRIVER_ID));
+		if (!RGXFW_KM_PTR_CHECK(psSFs, RGXFW_HOST_DRIVER_ID)) {
+			RGXFW_ASSERT(RGXFW_KM_PTR_CHECK(psSFs,
+							RGXFW_HOST_DRIVER_ID));
 			break;
 		}
 #endif
 
-		if ((IMG_UINT32)RGXFW_SF_LAST == psSFs[i].ui32Id)
-		{
+		if ((IMG_UINT32)RGXFW_SF_LAST == psSFs[i].ui32Id) {
 			break;
 		}
 
-		if ( ui32CheckData == psSFs[i].ui32Id )
-		{
+		if (ui32CheckData == psSFs[i].ui32Id) {
 			ui32Id = i;
 			break;
 		}

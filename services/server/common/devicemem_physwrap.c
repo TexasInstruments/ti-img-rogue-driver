@@ -47,19 +47,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "physmem_physwrap.h"
 
 IMG_INTERNAL PVRSRV_ERROR
-DevmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode,
-                  IMG_CPU_PHYADDR *psPhysAddrs,
-                  IMG_UINT32 uiLog2PageSize,
-                  IMG_DEVMEM_SIZE_T uiSize,
-                  IMG_DEVMEM_ALIGN_T uiAlign,
-                  PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                  const IMG_CHAR *pszText,
-                  DEVMEM_MEMDESC **ppsMemDescPtr)
+DevmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode, IMG_CPU_PHYADDR *psPhysAddrs,
+		  IMG_UINT32 uiLog2PageSize, IMG_DEVMEM_SIZE_T uiSize,
+		  IMG_DEVMEM_ALIGN_T uiAlign, PVRSRV_MEMALLOCFLAGS_T uiFlags,
+		  const IMG_CHAR *pszText, DEVMEM_MEMDESC **ppsMemDescPtr)
 {
 	PVRSRV_ERROR eError;
-	PVRSRV_MEMALLOCFLAGS_T uiPMRFlags = uiFlags & PVRSRV_MEMALLOCFLAGS_PMRFLAGSMASK;
-	DEVMEM_PROPERTIES_T uiDevMemProperties = DEVMEM_PROPERTIES_EXPORTABLE |
-	    DEVMEM_PROPERTIES_NO_LAYOUT_CHANGE;
+	PVRSRV_MEMALLOCFLAGS_T uiPMRFlags = uiFlags &
+					    PVRSRV_MEMALLOCFLAGS_PMRFLAGSMASK;
+	DEVMEM_PROPERTIES_T uiDevMemProperties =
+		DEVMEM_PROPERTIES_EXPORTABLE |
+		DEVMEM_PROPERTIES_NO_LAYOUT_CHANGE;
 	IMG_UINT32 uiNumPages;
 
 	PMR *psWrappedPMR;
@@ -69,45 +67,31 @@ DevmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode,
 	/* Use of cast below is justified by the assertion that follows to
 	prove that no significant bits have been truncated */
 	uiNumPages = (IMG_UINT32)(((uiSize - 1) >> uiLog2PageSize) + 1);
-	PVR_LOG_IF_FALSE(((PMR_SIZE_T)uiNumPages << uiLog2PageSize) == uiSize, "Size not multiple of log2 page size.");
+	PVR_LOG_IF_FALSE(((PMR_SIZE_T)uiNumPages << uiLog2PageSize) == uiSize,
+			 "Size not multiple of log2 page size.");
 
-	eError = DevmemImportStructAlloc(psDevNode,
-	                                  &psImport);
+	eError = DevmemImportStructAlloc(psDevNode, &psImport);
 	PVR_LOG_GOTO_IF_ERROR(eError, "DevmemImportStructAlloc", failAlloc);
 
 	eError = DevmemMemDescAlloc(&psMemDesc);
 	PVR_LOG_GOTO_IF_ERROR(eError, "DevmemMemDescAlloc", failMemDescAlloc);
 
-	eError = PhysmemPhysWrapMem(psDevNode,
-	                            psPhysAddrs,
-	                            uiLog2PageSize,
-	                            uiSize,
-	                            uiPMRFlags,
-	                            &psWrappedPMR);
+	eError = PhysmemPhysWrapMem(psDevNode, psPhysAddrs, uiLog2PageSize,
+				    uiSize, uiPMRFlags, &psWrappedPMR);
 	PVR_LOG_GOTO_IF_ERROR(eError, "PhysmemPhysWrapMem", failPhysWrapMem);
 
+	DevmemImportStructInit(psImport, uiSize, uiAlign, uiFlags, psWrappedPMR,
+			       uiDevMemProperties);
 
-	DevmemImportStructInit(psImport,
-	                        uiSize,
-	                        uiAlign,
-	                        uiFlags,
-	                        psWrappedPMR,
-	                        uiDevMemProperties);
-
-	DevmemMemDescInit(psMemDesc,
-	                   0,
-	                   psImport,
-	                   uiSize);
+	DevmemMemDescInit(psMemDesc, 0, psImport, uiSize);
 
 	/* copy the allocation descriptive name so it can be passed to
 	 * DevicememHistory when the allocation gets mapped/unmapped
 	 */
-	 if (pszText)
-	 {
-		OSStringSafeCopy(psMemDesc->szText,
-		              pszText,
-		              sizeof(psMemDesc->szText));
-	 }
+	if (pszText) {
+		OSStringSafeCopy(psMemDesc->szText, pszText,
+				 sizeof(psMemDesc->szText));
+	}
 
 	*ppsMemDescPtr = psMemDesc;
 

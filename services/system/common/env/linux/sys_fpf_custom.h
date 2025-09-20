@@ -50,8 +50,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sys_fpf_common.h"
 #include "sys_fwif_fpf_custom.h"
 
-typedef struct _RGX_FPF_KICK_COMMS_CONFIG_
-{
+typedef struct _RGX_FPF_KICK_COMMS_CONFIG_ {
 } RGX_FPF_KICK_COMMS_CONFIG;
 
 PVRSRV_ERROR SysFpfCustomDeviceInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig);
@@ -59,7 +58,7 @@ PVRSRV_ERROR SysFpfCustomDeviceInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig);
 void SysFpfCustomDeviceDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig);
 
 PVRSRV_ERROR SysFpfCustomCommunicationInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
-                                            RGX_FPF_KICK_COMMS_FWCTX *psContext);
+					   RGX_FPF_KICK_COMMS_FWCTX *psContext);
 
 void SysFpfCustomCommunicationDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig);
 

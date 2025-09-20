@@ -51,8 +51,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "pvrsrv_error.h"
 #include "pvrsrv_device.h"
 
-typedef enum _VMM_CONF_PARAM_
-{
+typedef enum _VMM_CONF_PARAM_ {
 	VMM_CONF_PRIO_DRV0 = 0,
 	VMM_CONF_PRIO_DRV1 = 1,
 	VMM_CONF_PRIO_DRV2 = 2,
@@ -134,8 +133,7 @@ typedef enum _VMM_CONF_PARAM_
 		5.2 - Continue execution in guest VM
  */
 
-typedef struct _VMM_PVZ_CLIENT_CONNECTION_
-{
+typedef struct _VMM_PVZ_CLIENT_CONNECTION_ {
 	struct {
 		/*
 		   This pair must be implemented if the guest is responsible
@@ -147,14 +145,13 @@ typedef struct _VMM_PVZ_CLIENT_CONNECTION_
 		   If not implemented, return PVRSRV_ERROR_NOT_IMPLEMENTED.
 		 */
 		PVRSRV_ERROR (*pfnMapDevPhysHeap)(IMG_UINT64 ui64Size,
-										  IMG_UINT64 ui64PAddr);
+						  IMG_UINT64 ui64PAddr);
 
 		PVRSRV_ERROR (*pfnUnmapDevPhysHeap)(void);
 	} sClientFuncTab;
 } VMM_PVZ_CLIENT_CONNECTION;
 
-typedef struct _VMM_PVZ_SERVER_CONNECTION_
-{
+typedef struct _VMM_PVZ_SERVER_CONNECTION_ {
 	struct {
 		/*
 			Corresponding server side entries to handle guest PVZ calls
@@ -167,12 +164,12 @@ typedef struct _VMM_PVZ_SERVER_CONNECTION_
 					 - Host pvz function validates incoming Driver ID values
 		 */
 		PVRSRV_ERROR (*pfnMapDevPhysHeap)(IMG_UINT32 ui32DriverID,
-										  IMG_UINT32 ui32DevID,
-										  IMG_UINT64 ui64Size,
-										  IMG_UINT64 ui64PAddr);
+						  IMG_UINT32 ui32DevID,
+						  IMG_UINT64 ui64Size,
+						  IMG_UINT64 ui64PAddr);
 
 		PVRSRV_ERROR (*pfnUnmapDevPhysHeap)(IMG_UINT32 ui32DriverID,
-											IMG_UINT32 ui32DevID);
+						    IMG_UINT32 ui32DevID);
 	} sServerFuncTab;
 
 	struct {
@@ -182,14 +179,14 @@ typedef struct _VMM_PVZ_SERVER_CONNECTION_
 		   the firmware
 		 */
 		PVRSRV_ERROR (*pfnOnVmOnline)(IMG_UINT32 ui32DriverID,
-									  IMG_UINT32 ui32DevID);
+					      IMG_UINT32 ui32DevID);
 
 		PVRSRV_ERROR (*pfnOnVmOffline)(IMG_UINT32 ui32DriverID,
-									   IMG_UINT32 ui32DevID);
+					       IMG_UINT32 ui32DevID);
 
 		PVRSRV_ERROR (*pfnVMMConfigure)(VMM_CONF_PARAM eVMMParamType,
-										IMG_UINT32 ui32ParamValue,
-										IMG_UINT32 ui32DevID);
+						IMG_UINT32 ui32ParamValue,
+						IMG_UINT32 ui32DevID);
 
 	} sVmmFuncTab;
 } VMM_PVZ_SERVER_CONNECTION;

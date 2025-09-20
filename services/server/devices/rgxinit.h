@@ -73,16 +73,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  @Return   PVRSRV_ERROR
 
 ******************************************************************************/
-PVRSRV_ERROR RGXInitDevPart2 (PVRSRV_DEVICE_NODE	*psDeviceNode,
-							  RGX_INIT_APPHINTS		*psApphints);
+PVRSRV_ERROR RGXInitDevPart2(PVRSRV_DEVICE_NODE *psDeviceNode,
+			     RGX_INIT_APPHINTS *psApphints);
 
-PVRSRV_ERROR RGXInitAllocFWImgMem(PVRSRV_DEVICE_NODE   *psDeviceNode,
-                                  IMG_DEVMEM_SIZE_T    ui32FWCodeLen,
-                                  IMG_DEVMEM_SIZE_T    ui32FWDataLen,
-                                  IMG_DEVMEM_SIZE_T    ui32FWRoDataLen,
-                                  IMG_DEVMEM_SIZE_T    uiFWCorememCodeLen,
-                                  IMG_DEVMEM_SIZE_T    uiFWCorememDataLen);
-
+PVRSRV_ERROR RGXInitAllocFWImgMem(PVRSRV_DEVICE_NODE *psDeviceNode,
+				  IMG_DEVMEM_SIZE_T ui32FWCodeLen,
+				  IMG_DEVMEM_SIZE_T ui32FWDataLen,
+				  IMG_DEVMEM_SIZE_T ui32FWRoDataLen,
+				  IMG_DEVMEM_SIZE_T uiFWCorememCodeLen,
+				  IMG_DEVMEM_SIZE_T uiFWCorememDataLen);
 
 /*!
 *******************************************************************************
@@ -99,12 +98,9 @@ PVRSRV_ERROR RGXInitAllocFWImgMem(PVRSRV_DEVICE_NODE   *psDeviceNode,
 
 ******************************************************************************/
 PVRSRV_ERROR
-RGXInitFirmware(PVRSRV_DEVICE_NODE       *psDeviceNode,
-                RGX_INIT_APPHINTS        *psApphints,
-                IMG_UINT32               ui32ConfigFlags,
-                IMG_UINT32               ui32ConfigFlagsExt,
-                IMG_UINT32               ui32FwOsCfgFlags);
-
+RGXInitFirmware(PVRSRV_DEVICE_NODE *psDeviceNode, RGX_INIT_APPHINTS *psApphints,
+		IMG_UINT32 ui32ConfigFlags, IMG_UINT32 ui32ConfigFlagsExt,
+		IMG_UINT32 ui32FwOsCfgFlags);
 
 /*!
 *******************************************************************************
@@ -127,7 +123,7 @@ RGXInitFirmware(PVRSRV_DEVICE_NODE       *psDeviceNode,
 
 ******************************************************************************/
 PVRSRV_ERROR RGXLoadAndGetFWData(PVRSRV_DEVICE_NODE *psDeviceNode,
-                                 OS_FW_IMAGE **ppsRGXFW);
+				 OS_FW_IMAGE **ppsRGXFW);
 
 #if defined(PDUMP)
 /*!
@@ -144,7 +140,7 @@ PVRSRV_ERROR RGXLoadAndGetFWData(PVRSRV_DEVICE_NODE *psDeviceNode,
  @Return   PVRSRV_ERROR
 
 ******************************************************************************/
-PVRSRV_ERROR RGXInitHWPerfCounters(PVRSRV_DEVICE_NODE	*psDeviceNode);
+PVRSRV_ERROR RGXInitHWPerfCounters(PVRSRV_DEVICE_NODE *psDeviceNode);
 #endif
 
 /*!
@@ -195,7 +191,6 @@ IMG_PCHAR RGXDevBVNCString(PVRSRV_RGXDEV_INFO *psDevInfo);
 ******************************************************************************/
 PVRSRV_ERROR DevDeInitRGX(PVRSRV_DEVICE_NODE *psDeviceNode);
 
-
 #if !defined(NO_HARDWARE)
 
 void RGX_WaitForInterruptsTimeout(PVRSRV_RGXDEV_INFO *psDevInfo);
@@ -217,11 +212,10 @@ void RGX_WaitForInterruptsTimeout(PVRSRV_RGXDEV_INFO *psDevInfo);
 
  @Return		PVRSRV_ERROR
 ************************************************************************************/
-PVRSRV_ERROR RGXSystemGetFabricCoherency(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
-										 IMG_CPU_PHYADDR sRegsCpuPBase,
-										 IMG_UINT32 ui32RegsSize,
-										 PVRSRV_DEVICE_FABRIC_TYPE *peDevFabricType,
-										 PVRSRV_DEVICE_SNOOP_MODE *peCacheSnoopingMode);
+PVRSRV_ERROR RGXSystemGetFabricCoherency(
+	PVRSRV_DEVICE_CONFIG *psDeviceConfig, IMG_CPU_PHYADDR sRegsCpuPBase,
+	IMG_UINT32 ui32RegsSize, PVRSRV_DEVICE_FABRIC_TYPE *peDevFabricType,
+	PVRSRV_DEVICE_SNOOP_MODE *peCacheSnoopingMode);
 #endif
 
 /*!
@@ -234,7 +228,8 @@ PVRSRV_ERROR RGXSystemGetFabricCoherency(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
 
  @Input         psDeviceNode  device node
  ******************************************************************************/
-PVRSRV_ERROR RGXInitCreateFWKernelMemoryContext(PVRSRV_DEVICE_NODE *psDeviceNode);
+PVRSRV_ERROR
+RGXInitCreateFWKernelMemoryContext(PVRSRV_DEVICE_NODE *psDeviceNode);
 
 /*!
  *******************************************************************************
@@ -271,7 +266,6 @@ IMG_UINT32 RGXHeapDerivePageSize(IMG_UINT32 uiLog2PageSize);
  @Output        pui32Log2Non4KPgShift page shift
  ******************************************************************************/
 PVRSRV_ERROR RGXGetNon4KHeapPageShift(const void *hPrivate,
-                                     IMG_UINT32 *pui32Log2Non4KPgShift);
-
+				      IMG_UINT32 *pui32Log2Non4KPgShift);
 
 #endif /* RGXINIT_H */

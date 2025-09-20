@@ -70,10 +70,12 @@ int fpf_apu2gpu_put(void)
 
 PVRSRV_ERROR SysFpfFptCbDeviceInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
 {
-	RGX_FPF_KICK_COMMS_CONFIG *psFpfConfig = psDeviceConfig->psFpfConfigPrivData;
+	RGX_FPF_KICK_COMMS_CONFIG *psFpfConfig =
+		psDeviceConfig->psFpfConfigPrivData;
 	PVRSRV_ERROR eError;
 
-	PVR_LOG_RETURN_IF_INVALID_PARAM(psDeviceConfig != NULL, "psDeviceConfig");
+	PVR_LOG_RETURN_IF_INVALID_PARAM(psDeviceConfig != NULL,
+					"psDeviceConfig");
 
 	eError = fpf_apu2gpu_acquire_cb(&psFpfConfig->sApu2GpuConfig);
 	PVR_LOG_RETURN_IF_ERROR(eError, "apumock_init_mts");
@@ -115,30 +117,30 @@ void SysFpfFptCbDeviceDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
 }
 
 PVRSRV_ERROR SysFpfFptCbCommunicationInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
-                                          RGX_FPF_KICK_COMMS_FWCTX *psContext)
+					  RGX_FPF_KICK_COMMS_FWCTX *psContext)
 {
 	PVRSRV_DEVICE_NODE *psDeviceNode = psDeviceConfig->psDevNode;
-	RGX_FPF_KICK_COMMS_CONFIG *psFpfConfig = psDeviceConfig->psFpfConfigPrivData;
+	RGX_FPF_KICK_COMMS_CONFIG *psFpfConfig =
+		psDeviceConfig->psFpfConfigPrivData;
 	IMG_CPU_PHYADDR sBuffPAddr = { psFpfConfig->sApu2GpuConfig.buff_paddr };
 	IMG_CPU_PHYADDR sCtrlPAddr = { psFpfConfig->sApu2GpuConfig.ctrl_paddr };
 	IMG_HANDLE hBuff, hCtrl;
 	PVRSRV_ERROR eError;
 
-	eError = RGXRequestFWGPUMapResource(psDeviceNode,
-	                                    &sBuffPAddr,
-	                                    psFpfConfig->sApu2GpuConfig.page_shift,
-	                                    psFpfConfig->sApu2GpuConfig.buff_pages,
-	                                    &hBuff,
-	                                    &psContext->sFPTCBFWAddr);
+	eError = RGXRequestFWGPUMapResource(
+		psDeviceNode, &sBuffPAddr,
+		psFpfConfig->sApu2GpuConfig.page_shift,
+		psFpfConfig->sApu2GpuConfig.buff_pages, &hBuff,
+		&psContext->sFPTCBFWAddr);
 	PVR_LOG_GOTO_IF_ERROR(eError, "RGXRequestFWGPUMapResource", ErrReturn);
 
-	eError = RGXRequestFWGPUMapResource(psDeviceNode,
-	                                    &sCtrlPAddr,
-	                                    psFpfConfig->sApu2GpuConfig.page_shift,
-	                                    psFpfConfig->sApu2GpuConfig.ctrl_pages,
-	                                    &hCtrl,
-	                                    &psContext->sFPTCBCTRLFWAddr);
-	PVR_LOG_GOTO_IF_ERROR(eError, "RGXRequestFWGPUMapResource", ErrUnmapBuffer);
+	eError = RGXRequestFWGPUMapResource(
+		psDeviceNode, &sCtrlPAddr,
+		psFpfConfig->sApu2GpuConfig.page_shift,
+		psFpfConfig->sApu2GpuConfig.ctrl_pages, &hCtrl,
+		&psContext->sFPTCBCTRLFWAddr);
+	PVR_LOG_GOTO_IF_ERROR(eError, "RGXRequestFWGPUMapResource",
+			      ErrUnmapBuffer);
 
 	psFpfConfig->hFpfBuff = hBuff;
 	psFpfConfig->hFpfCtrl = hCtrl;
@@ -153,14 +155,13 @@ ErrReturn:
 
 void SysFpfFptCbCommunicationDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
 {
-	RGX_FPF_KICK_COMMS_CONFIG *psFpfConfig = psDeviceConfig->psFpfConfigPrivData;
+	RGX_FPF_KICK_COMMS_CONFIG *psFpfConfig =
+		psDeviceConfig->psFpfConfigPrivData;
 
-	if (psFpfConfig->hFpfBuff != NULL)
-	{
+	if (psFpfConfig->hFpfBuff != NULL) {
 		RGXRequestFWGPUUnmapResource(psFpfConfig->hFpfBuff);
 	}
-	if (psFpfConfig->hFpfBuff != NULL)
-	{
+	if (psFpfConfig->hFpfBuff != NULL) {
 		RGXRequestFWGPUUnmapResource(psFpfConfig->hFpfCtrl);
 	}
 

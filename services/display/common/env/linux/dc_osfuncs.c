@@ -61,66 +61,60 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define MAX_DRVNAME 128
 static IMG_CHAR g_szDrvName[MAX_DRVNAME + 1];
 
-typedef struct WORK_ITEM_TAG
-{
-	struct work_struct	sWork;
-	PFN_WORK_PROCESSOR	pfnProcessor;
-	void			*pvData;
+typedef struct WORK_ITEM_TAG {
+	struct work_struct sWork;
+	PFN_WORK_PROCESSOR pfnProcessor;
+	void *pvData;
 } WORK_ITEM;
 
 void DC_OSSetDrvName(const IMG_CHAR *pszDrvName)
 {
 	strncpy(g_szDrvName, pszDrvName, MAX_DRVNAME);
-	g_szDrvName[MAX_DRVNAME] = '\0'; /* ensure null term (not guaranteed by strncpy) */
+	g_szDrvName[MAX_DRVNAME] =
+		'\0'; /* ensure null term (not guaranteed by strncpy) */
 }
 
 void DC_OSAbort(const IMG_CHAR *pszFile, IMG_UINT32 ui32Line)
 {
-	printk(KERN_EMERG "%s - Assertion failed at %s:%d\n", g_szDrvName, pszFile, ui32Line);
+	printk(KERN_EMERG "%s - Assertion failed at %s:%d\n", g_szDrvName,
+	       pszFile, ui32Line);
 	BUG();
 }
 
-void DC_OSDebugPrintf(DC_OS_DEBUG_LEVEL eDebugLevel, const IMG_CHAR *pszFormat, ...)
+void DC_OSDebugPrintf(DC_OS_DEBUG_LEVEL eDebugLevel, const IMG_CHAR *pszFormat,
+		      ...)
 {
 	va_list args;
 
-	switch (eDebugLevel)
-	{
-		case DBGLVL_FATAL:
-		{
-			printk(KERN_EMERG " %s", g_szDrvName);
-			break;
-		}
-		case DBGLVL_ALERT:
-		{
-			printk(KERN_ALERT " %s", g_szDrvName);
-			break;
-		}
-		case DBGLVL_ERROR:
-		{
-			printk(KERN_ERR " %s", g_szDrvName);
-			break;
-		}
-		case DBGLVL_WARNING:
-		{
-			printk(KERN_WARNING " %s", g_szDrvName);
-			break;
-		}
-		case DBGLVL_NOTICE:
-		{
-			printk(KERN_NOTICE " %s", g_szDrvName);
-			break;
-		}
-		case DBGLVL_INFO:
-		{
-			printk(KERN_INFO " %s", g_szDrvName);
-			break;
-		}
-		case DBGLVL_DEBUG:
-		{
-			printk(KERN_DEBUG " %s", g_szDrvName);
-			break;
-		}
+	switch (eDebugLevel) {
+	case DBGLVL_FATAL: {
+		printk(KERN_EMERG " %s", g_szDrvName);
+		break;
+	}
+	case DBGLVL_ALERT: {
+		printk(KERN_ALERT " %s", g_szDrvName);
+		break;
+	}
+	case DBGLVL_ERROR: {
+		printk(KERN_ERR " %s", g_szDrvName);
+		break;
+	}
+	case DBGLVL_WARNING: {
+		printk(KERN_WARNING " %s", g_szDrvName);
+		break;
+	}
+	case DBGLVL_NOTICE: {
+		printk(KERN_NOTICE " %s", g_szDrvName);
+		break;
+	}
+	case DBGLVL_INFO: {
+		printk(KERN_INFO " %s", g_szDrvName);
+		break;
+	}
+	case DBGLVL_DEBUG: {
+		printk(KERN_DEBUG " %s", g_szDrvName);
+		break;
+	}
 	}
 
 	va_start(args, pszFormat);
@@ -128,12 +122,14 @@ void DC_OSDebugPrintf(DC_OS_DEBUG_LEVEL eDebugLevel, const IMG_CHAR *pszFormat, 
 	va_end(args);
 }
 
-IMG_CHAR *DC_OSStringNCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uiLength)
+IMG_CHAR *DC_OSStringNCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc,
+			   size_t uiLength)
 {
 	return strncpy(pszDest, pszSrc, uiLength);
 }
 
-IMG_INT DC_OSSNPrintf(IMG_CHAR *pszDest, size_t uiLength, const IMG_CHAR *pszFormat, ...)
+IMG_INT DC_OSSNPrintf(IMG_CHAR *pszDest, size_t uiLength,
+		      const IMG_CHAR *pszFormat, ...)
 {
 	va_list args;
 	IMG_INT iRetVal;
@@ -145,7 +141,7 @@ IMG_INT DC_OSSNPrintf(IMG_CHAR *pszDest, size_t uiLength, const IMG_CHAR *pszFor
 	return iRetVal;
 }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0))
 IMG_INT64 DC_OSClockns(void)
 {
 	struct timespec64 now;
@@ -216,7 +212,8 @@ IMG_UINT32 DC_OSAddrRangeStart(void *pvDevice, IMG_UINT8 ui8BaseNum)
 	return pci_resource_start(to_pci_dev(psDev), ui8BaseNum);
 }
 
-void *DC_OSRequestAddrRegion(IMG_CPU_PHYADDR sCpuPAddr, IMG_UINT32 ui32Size, IMG_CHAR *pszRequestorName)
+void *DC_OSRequestAddrRegion(IMG_CPU_PHYADDR sCpuPAddr, IMG_UINT32 ui32Size,
+			     IMG_CHAR *pszRequestorName)
 {
 	return request_mem_region(sCpuPAddr.uiAddr, ui32Size, pszRequestorName);
 }
@@ -226,7 +223,8 @@ void DC_OSReleaseAddrRegion(IMG_CPU_PHYADDR sCpuPAddr, IMG_UINT32 ui32Size)
 	release_mem_region(sCpuPAddr.uiAddr, ui32Size);
 }
 
-IMG_CPU_VIRTADDR DC_OSMapPhysAddr(IMG_CPU_PHYADDR sCpuPAddr, IMG_UINT32 ui32Size)
+IMG_CPU_VIRTADDR DC_OSMapPhysAddr(IMG_CPU_PHYADDR sCpuPAddr,
+				  IMG_UINT32 ui32Size)
 {
 	return ioremap(sCpuPAddr.uiAddr, ui32Size);
 }
@@ -242,7 +240,8 @@ IMG_UINT32 DC_OSReadReg32(IMG_CPU_VIRTADDR pvRegCpuVBase, IMG_UINT32 ui32Offset)
 	return ioread32(pvRegCpuVBase + ui32Offset);
 }
 
-void DC_OSWriteReg32(IMG_CPU_VIRTADDR pvRegCpuVBase, IMG_UINT32 ui32Offset, IMG_UINT32 ui32Value)
+void DC_OSWriteReg32(IMG_CPU_VIRTADDR pvRegCpuVBase, IMG_UINT32 ui32Offset,
+		     IMG_UINT32 ui32Value)
 {
 	iowrite32(ui32Value, (pvRegCpuVBase + ui32Offset));
 }
@@ -259,7 +258,8 @@ void DC_OSFloatingPointBegin(void)
 #if defined(CONFIG_X86)
 	kernel_fpu_begin();
 #else
-	DC_OSDebugPrintf(DBGLVL_WARNING, " - %s: Unsupported architecture\n", __func__);
+	DC_OSDebugPrintf(DBGLVL_WARNING, " - %s: Unsupported architecture\n",
+			 __func__);
 #endif
 }
 
@@ -268,7 +268,8 @@ void DC_OSFloatingPointEnd(void)
 #if defined(CONFIG_X86)
 	kernel_fpu_end();
 #else
-	DC_OSDebugPrintf(DBGLVL_WARNING, " - %s: Unsupported architecture\n", __func__);
+	DC_OSDebugPrintf(DBGLVL_WARNING, " - %s: Unsupported architecture\n",
+			 __func__);
 #endif
 }
 
@@ -277,8 +278,7 @@ PVRSRV_ERROR DC_OSMutexCreate(void **ppvMutex)
 	struct mutex *psLock;
 
 	psLock = DC_OSAllocMem(sizeof(*psLock));
-	if (psLock == NULL)
-	{
+	if (psLock == NULL) {
 		return PVRSRV_ERROR_OUT_OF_MEMORY;
 	}
 	mutex_init(psLock);
@@ -322,18 +322,19 @@ void DC_OSPVRServicesConnectionClose(IMG_HANDLE hPVRServicesConnection)
 	DC_ASSERT(hPVRServicesConnection == (IMG_HANDLE)NULL);
 }
 
-PVRSRV_ERROR DC_OSPVRServicesSetupFuncs(IMG_HANDLE hPVRServicesConnection, DC_SERVICES_FUNCS *psServicesFuncs)
+PVRSRV_ERROR DC_OSPVRServicesSetupFuncs(IMG_HANDLE hPVRServicesConnection,
+					DC_SERVICES_FUNCS *psServicesFuncs)
 {
 	DC_ASSERT(hPVRServicesConnection == (IMG_HANDLE)NULL);
 
-	if (psServicesFuncs == NULL)
-	{
+	if (psServicesFuncs == NULL) {
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
 	psServicesFuncs->pfnDCRegisterDevice = DCRegisterDevice;
 	psServicesFuncs->pfnDCUnregisterDevice = DCUnregisterDevice;
-	psServicesFuncs->pfnDCDisplayConfigurationRetired = DCDisplayConfigurationRetired;
+	psServicesFuncs->pfnDCDisplayConfigurationRetired =
+		DCDisplayConfigurationRetired;
 	psServicesFuncs->pfnDCImportBufferAcquire = DCImportBufferAcquire;
 	psServicesFuncs->pfnDCImportBufferRelease = DCImportBufferRelease;
 
@@ -342,10 +343,13 @@ PVRSRV_ERROR DC_OSPVRServicesSetupFuncs(IMG_HANDLE hPVRServicesConnection, DC_SE
 	psServicesFuncs->pfnPhysHeapGetType = PhysHeapGetType;
 	psServicesFuncs->pfnPhysHeapGetSize = PhysHeapGetSize;
 	psServicesFuncs->pfnPhysHeapGetCpuPAddr = PhysHeapGetCpuPAddr;
-	psServicesFuncs->pfnPhysHeapCpuPAddrToDevPAddr = PhysHeapCpuPAddrToDevPAddr;
+	psServicesFuncs->pfnPhysHeapCpuPAddrToDevPAddr =
+		PhysHeapCpuPAddrToDevPAddr;
 
-	psServicesFuncs->pfnSysInstallDeviceLISR = PVRSRVSystemInstallDeviceLISR;
-	psServicesFuncs->pfnSysUninstallDeviceLISR = PVRSRVSystemUninstallDeviceLISR;
+	psServicesFuncs->pfnSysInstallDeviceLISR =
+		PVRSRVSystemInstallDeviceLISR;
+	psServicesFuncs->pfnSysUninstallDeviceLISR =
+		PVRSRVSystemUninstallDeviceLISR;
 
 	psServicesFuncs->pfnCheckStatus = PVRSRVCheckStatus;
 	psServicesFuncs->pfnGetErrorString = PVRSRVGetErrorString;
@@ -360,14 +364,13 @@ PVRSRV_ERROR DC_OSWorkQueueCreate(IMG_HANDLE *phQueue, IMG_UINT32 ui32Length)
 
 	PVR_UNREFERENCED_PARAMETER(ui32Length);
 
-	if (phQueue == NULL)
-	{
+	if (phQueue == NULL) {
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
-	psQueue = alloc_ordered_workqueue("%s", WQ_FREEZABLE | WQ_MEM_RECLAIM, g_szDrvName);
-	if (psQueue == NULL)
-	{
+	psQueue = alloc_ordered_workqueue("%s", WQ_FREEZABLE | WQ_MEM_RECLAIM,
+					  g_szDrvName);
+	if (psQueue == NULL) {
 		return PVRSRV_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -409,25 +412,25 @@ static void WorkQueueProcessorWrapper(struct work_struct *psWork)
 	DC_ASSERT(psWorkItem->pfnProcessor != NULL);
 
 	eError = psWorkItem->pfnProcessor(psWorkItem->pvData);
-	if (eError != PVRSRV_OK)
-	{
-		printk(KERN_ERR " %s - %s: pfnProcessor() failed with error %d\n",
+	if (eError != PVRSRV_OK) {
+		printk(KERN_ERR
+		       " %s - %s: pfnProcessor() failed with error %d\n",
 		       g_szDrvName, __func__, eError);
 	}
 }
 
-PVRSRV_ERROR DC_OSWorkQueueCreateWorkItem(IMG_HANDLE *phWorkItem, PFN_WORK_PROCESSOR pfnProcessor, void *pvProcessorData)
+PVRSRV_ERROR DC_OSWorkQueueCreateWorkItem(IMG_HANDLE *phWorkItem,
+					  PFN_WORK_PROCESSOR pfnProcessor,
+					  void *pvProcessorData)
 {
 	WORK_ITEM *psWorkItem;
 
-	if (phWorkItem == NULL || pfnProcessor == NULL)
-	{
+	if (phWorkItem == NULL || pfnProcessor == NULL) {
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
 	psWorkItem = DC_OSAllocMem(sizeof(*psWorkItem));
-	if (psWorkItem == NULL)
-	{
+	if (psWorkItem == NULL) {
 		return PVRSRV_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -459,9 +462,9 @@ PVRSRV_ERROR DC_OSWorkQueueAddWorkItem(IMG_HANDLE hQueue, IMG_HANDLE hWorkItem)
 
 	DC_ASSERT(psQueue && psWorkItem);
 
-	if (!queue_work(psQueue, &psWorkItem->sWork))
-	{
-		printk(KERN_WARNING " %s - %s: Cannot queue work that's already queued\n",
+	if (!queue_work(psQueue, &psWorkItem->sWork)) {
+		printk(KERN_WARNING
+		       " %s - %s: Cannot queue work that's already queued\n",
 		       g_szDrvName, __func__);
 		return PVRSRV_ERROR_UNABLE_TO_SCHEDULE_TASK;
 	}

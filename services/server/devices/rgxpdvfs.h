@@ -50,31 +50,33 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rgx_options.h"
 #include "pvrsrv.h"
 
-
 static inline IMG_BOOL _PDVFSEnabled(void)
 {
 	PVRSRV_DATA *psSRVData = PVRSRVGetPVRSRVData();
 
 	if (psSRVData->sDriverInfo.sKMBuildInfo.ui32BuildOptions &
 	    psSRVData->sDriverInfo.sUMBuildInfo.ui32BuildOptions &
-	    OPTIONS_PDVFS_EN)
-	{
+	    OPTIONS_PDVFS_EN) {
 		return IMG_TRUE;
 	}
 
 	return IMG_FALSE;
 }
 
-PVRSRV_ERROR PDVFSLimitMaxFrequency(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32MaxOPPPoint);
+PVRSRV_ERROR PDVFSLimitMaxFrequency(PVRSRV_RGXDEV_INFO *psDevInfo,
+				    IMG_UINT32 ui32MaxOPPPoint);
 
-PVRSRV_ERROR PDVFSLimitMinFrequency(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32MinOPPPoint);
+PVRSRV_ERROR PDVFSLimitMinFrequency(PVRSRV_RGXDEV_INFO *psDevInfo,
+				    IMG_UINT32 ui32MinOPPPoint);
 
 #if defined(SUPPORT_PDVFS_HEADROOM_EXT)
-PVRSRV_ERROR PDVFSSetFrequencyHeadroom(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_INT32 i32Headroom);
+PVRSRV_ERROR PDVFSSetFrequencyHeadroom(PVRSRV_RGXDEV_INFO *psDevInfo,
+				       IMG_INT32 i32Headroom);
 #endif
 
 #if defined(SUPPORT_PDVFS_POLLINT_EXT)
-PVRSRV_ERROR PDVFSSetReactivePollingInterval(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32PollingMs);
+PVRSRV_ERROR PDVFSSetReactivePollingInterval(PVRSRV_RGXDEV_INFO *psDevInfo,
+					     IMG_UINT32 ui32PollingMs);
 #endif
 
 #if defined(RGXFW_META_SUPPORT_2ND_THREAD)

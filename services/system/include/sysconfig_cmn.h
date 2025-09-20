@@ -63,7 +63,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 @Return         None.
 */ /***************************************************************************/
 void SysRGXErrorNotify(IMG_HANDLE hSysData,
-                       PVRSRV_ROBUSTNESS_NOTIFY_DATA *psErrorData);
+		       PVRSRV_ROBUSTNESS_NOTIFY_DATA *psErrorData);
 
 /**************************************************************************/ /*!
 @Function       SysRestrictGpuLocalPhysheap
@@ -101,9 +101,8 @@ IMG_BOOL SysDefaultToCpuLocalHeap(void);
 extern PHYS_HEAP_FUNCTIONS g_sUmaHeapFns;
 
 #if defined(SUPPORT_NATIVE_FENCE_SYNC)
-IMG_BOOL SysDevExtractFFToken(IMG_HANDLE hSysData,
-                              IMG_HANDLE hEnvFenceObjPtr,
-                              IMG_UINT16 *pui16FFToken);
+IMG_BOOL SysDevExtractFFToken(IMG_HANDLE hSysData, IMG_HANDLE hEnvFenceObjPtr,
+			      IMG_UINT16 *pui16FFToken);
 #endif
 
 #endif /* SYSCONFIG_CMN_H */

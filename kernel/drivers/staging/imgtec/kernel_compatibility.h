@@ -63,51 +63,47 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * included after it.
  */
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 
 #define drm_dev_put(dev) drm_dev_unref(dev)
 
-#define drm_mode_object_find(dev, file_priv, id, type) drm_mode_object_find(dev, id, type)
+#define drm_mode_object_find(dev, file_priv, id, type) \
+	drm_mode_object_find(dev, id, type)
 #define drm_encoder_find(dev, file_priv, id) drm_encoder_find(dev, id)
 
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)) */
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0))
 
-#define drm_atomic_helper_check_plane_state(plane_state, crtc_state, \
-											min_scale, max_scale, \
-											can_position, can_update_disabled) \
-	({ \
-		const struct drm_rect __clip = { \
-			.x2 = crtc_state->crtc->mode.hdisplay, \
-			.y2 = crtc_state->crtc->mode.vdisplay, \
-		}; \
-		int __ret = drm_plane_helper_check_state(plane_state, \
-												 &__clip, \
-												 min_scale, max_scale, \
-												 can_position, \
-												 can_update_disabled); \
-		__ret; \
+#define drm_atomic_helper_check_plane_state(plane_state, crtc_state,           \
+					    min_scale, max_scale,              \
+					    can_position, can_update_disabled) \
+	({                                                                     \
+		const struct drm_rect __clip = {                               \
+			.x2 = crtc_state->crtc->mode.hdisplay,                 \
+			.y2 = crtc_state->crtc->mode.vdisplay,                 \
+		};                                                             \
+		int __ret = drm_plane_helper_check_state(plane_state, &__clip, \
+							 min_scale, max_scale, \
+							 can_position,         \
+							 can_update_disabled); \
+		__ret;                                                         \
 	})
 
 #elif (LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0))
 
-#define drm_atomic_helper_check_plane_state(plane_state, crtc_state, \
-											min_scale, max_scale, \
-											can_position, can_update_disabled) \
-	({ \
-		const struct drm_rect __clip = { \
-			.x2 = crtc_state->crtc->mode.hdisplay, \
-			.y2 = crtc_state->crtc->mode.vdisplay, \
-		}; \
-		int __ret = drm_atomic_helper_check_plane_state(plane_state, \
-														crtc_state, \
-														&__clip, \
-														min_scale, max_scale, \
-														can_position, \
-														can_update_disabled); \
-		__ret; \
+#define drm_atomic_helper_check_plane_state(plane_state, crtc_state,           \
+					    min_scale, max_scale,              \
+					    can_position, can_update_disabled) \
+	({                                                                     \
+		const struct drm_rect __clip = {                               \
+			.x2 = crtc_state->crtc->mode.hdisplay,                 \
+			.y2 = crtc_state->crtc->mode.vdisplay,                 \
+		};                                                             \
+		int __ret = drm_atomic_helper_check_plane_state(               \
+			plane_state, crtc_state, &__clip, min_scale,           \
+			max_scale, can_position, can_update_disabled);         \
+		__ret;                                                         \
 	})
 
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)) */
@@ -122,9 +118,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)) */
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0))
-
 
 /*
  * Linux 5.0 dropped the type argument.
@@ -133,12 +127,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * than 'um' (User Mode Linux), which stopped using it in 4.2.
  */
 #if defined(access_ok)
- /*
+/*
   * NOTE: This function should not be called directly as it exists simply to
   * work around access_ok being defined as a macro.
   */
-static inline int
-__pvr_access_ok_compat(int type, const void __user * addr, unsigned long size)
+static inline int __pvr_access_ok_compat(int type, const void __user *addr,
+					 unsigned long size)
 {
 	return access_ok(type, addr, size);
 }
@@ -166,11 +160,11 @@ __pvr_access_ok_compat(int type, const void __user * addr, unsigned long size)
  */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
 
-#define mmap_write_lock(mm)   down_write(&mm->mmap_sem)
+#define mmap_write_lock(mm) down_write(&mm->mmap_sem)
 #define mmap_write_unlock(mm) up_write(&mm->mmap_sem)
 
-#define mmap_read_lock(mm)    down_read(&mm->mmap_sem)
-#define mmap_read_unlock(mm)  up_read(&mm->mmap_sem)
+#define mmap_read_lock(mm) down_read(&mm->mmap_sem)
+#define mmap_read_unlock(mm) up_read(&mm->mmap_sem)
 
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) */
 
@@ -191,16 +185,18 @@ struct dma_buf_map {
 	void *vaddr;
 };
 
-#define dma_buf_vmap(dmabuf, map) \
-	({ \
-		(map)->vaddr = dma_buf_vmap(dmabuf); \
-		(map)->vaddr ? 0 : ((dmabuf) && (dmabuf)->ops->vmap) ? -ENOMEM : -EINVAL; \
+#define dma_buf_vmap(dmabuf, map)                             \
+	({                                                    \
+		(map)->vaddr = dma_buf_vmap(dmabuf);          \
+		(map)->vaddr			  ? 0 :       \
+		((dmabuf) && (dmabuf)->ops->vmap) ? -ENOMEM : \
+						    -EINVAL;  \
 	})
 
-#define dma_buf_vunmap(dmabuf, map) \
-	({ \
+#define dma_buf_vunmap(dmabuf, map)                   \
+	({                                            \
 		dma_buf_vunmap(dmabuf, (map)->vaddr); \
-		(map)->vaddr = NULL; \
+		(map)->vaddr = NULL;                  \
 	})
 
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0) */
@@ -237,8 +233,9 @@ struct dma_buf_map {
 #define kthread_complete_and_exit(comp, ret) complete_and_exit(comp, ret);
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(5, 17, 0)) */
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)) || \
-	((LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) && !defined(CHROMIUMOS_KERNEL))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 15, 0)) ||      \
+	((LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) && \
+	 !defined(CHROMIUMOS_KERNEL))
 #define iosys_map dma_buf_map
 #define iosys_map_set_vaddr dma_buf_map_set_vaddr
 #define iosys_map_set_vaddr_iomem dma_buf_map_set_vaddr_iomem
@@ -247,8 +244,7 @@ struct dma_buf_map {
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0))
 
-#define register_shrinker(shrinker, name) \
-	register_shrinker(shrinker)
+#define register_shrinker(shrinker, name) register_shrinker(shrinker)
 
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(6, 0, 0)) */
 
@@ -268,24 +264,24 @@ struct dma_buf_map {
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(6, 2, 0)) */
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0)) || \
-        ((LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)) && !defined(ANDROID))
+	((LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)) && !defined(ANDROID))
 static inline void pvr_vm_flags_set(struct vm_area_struct *vma,
-				vm_flags_t flags)
+				    vm_flags_t flags)
 {
 	vma->vm_flags |= flags;
 }
 static inline void pvr_vm_flags_init(struct vm_area_struct *vma,
-				vm_flags_t flags)
+				     vm_flags_t flags)
 {
 	vma->vm_flags = flags;
 }
 static inline void pvr_vm_flags_clear(struct vm_area_struct *vma,
-				vm_flags_t flags)
+				      vm_flags_t flags)
 {
 	vma->vm_flags &= ~flags;
 }
 #else
-#define pvr_vm_flags_set  vm_flags_set
+#define pvr_vm_flags_set vm_flags_set
 #define pvr_vm_flags_init vm_flags_init
 #define pvr_vm_flags_clear vm_flags_clear
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)) */
@@ -299,8 +295,9 @@ static inline void pvr_vm_flags_clear(struct vm_area_struct *vma,
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)) */
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-#define thermal_tripless_zone_device_register(type, devdata, ops, tzp) \
-	thermal_zone_device_register((type), 0, 0, (devdata), (ops), (tzp), 0, 0)
+#define thermal_tripless_zone_device_register(type, devdata, ops, tzp)         \
+	thermal_zone_device_register((type), 0, 0, (devdata), (ops), (tzp), 0, \
+				     0)
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)) */
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 13, 0))
@@ -311,25 +308,24 @@ static inline void pvr_vm_flags_clear(struct vm_area_struct *vma,
 
 #if defined(__GNUC__)
 #define GCC_VERSION_AT_LEAST(major, minor) \
-	(__GNUC__ > (major) || \
-	(__GNUC__ == (major) && __GNUC_MINOR__ >= (minor)))
+	(__GNUC__ > (major) ||             \
+	 (__GNUC__ == (major) && __GNUC_MINOR__ >= (minor)))
 #else
 #define GCC_VERSION_AT_LEAST(major, minor) 0
 #endif
 
 #if defined(__clang__)
-#define CLANG_VERSION_AT_LEAST(major) \
-	(__clang_major__ >= (major))
+#define CLANG_VERSION_AT_LEAST(major) (__clang_major__ >= (major))
 #else
 #define CLANG_VERSION_AT_LEAST(major) 0
 #endif
 
 #if !defined(__fallthrough)
-	#if GCC_VERSION_AT_LEAST(7, 0) || CLANG_VERSION_AT_LEAST(10)
-		#define __fallthrough __attribute__((__fallthrough__))
-	#else
-		#define __fallthrough
-	#endif
+#if GCC_VERSION_AT_LEAST(7, 0) || CLANG_VERSION_AT_LEAST(10)
+#define __fallthrough __attribute__((__fallthrough__))
+#else
+#define __fallthrough
+#endif
 #endif
 
 #endif /* __KERNEL_COMPATIBILITY_H__ */

@@ -50,24 +50,24 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sys_fwif_fpf_common.h"
 
 /* Circular buffer control structure. */
-typedef struct _RGX_FPF_FPTCB_CTRL_
-{
-	volatile IMG_UINT32 ui32WriteOffset; /*!< write offset into array of Tokens */
-	volatile IMG_UINT32 ui32ReadOffset;  /*!< read offset into array of Tokens */
-	IMG_UINT32 ui32WrapMask;             /*!< Offset wrapping mask (Total capacity of the CB - 1), total capacity should be pow2 */
+typedef struct _RGX_FPF_FPTCB_CTRL_ {
+	volatile IMG_UINT32
+		ui32WriteOffset; /*!< write offset into array of Tokens */
+	volatile IMG_UINT32
+		ui32ReadOffset; /*!< read offset into array of Tokens */
+	IMG_UINT32
+	ui32WrapMask; /*!< Offset wrapping mask (Total capacity of the CB - 1), total capacity should be pow2 */
 } RGX_FPF_FPTCB_CTRL;
 
 // These are the resource handles returned from RGXRequestFWGPUMapResource().
 // They may move in future as they are not necessary for the FW interface header.
-typedef struct _RGX_FPF_KICK_AND_COM_RES_CTX_
-{
+typedef struct _RGX_FPF_KICK_AND_COM_RES_CTX_ {
 	IMG_HANDLE hFPTCBCTRLRes;
 	IMG_HANDLE hFPTCBRes;
 } RGX_FPF_KICK_AND_COM_RES_CTX;
 
 // Populated in the "RGX_FPF_KICK_COMMS_FWCTX *ppsContext"
-struct _RGX_FPF_KICK_COMMS_FWCTX_
-{
+struct _RGX_FPF_KICK_COMMS_FWCTX_ {
 	RGXFWIF_DEV_VIRTADDR sFPTCBCTRLFWAddr;
 	RGXFWIF_DEV_VIRTADDR sFPTCBFWAddr;
 };

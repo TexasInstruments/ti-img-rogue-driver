@@ -71,11 +71,9 @@ void RGXDeviceInitCallbacks(PVRSRV_DEVICE_NODE *psDeviceNode);
  */ /*************************************************************************/
 IMG_BOOL SampleIRQCount(PVRSRV_RGXDEV_INFO *psDevInfo);
 
-IMG_BOOL RGXAckHwIrq(PVRSRV_RGXDEV_INFO *psDevInfo,
-                     IMG_UINT32 ui32IRQStatusReg,
-                     IMG_UINT32 ui32IRQStatusEventMsk,
-                     IMG_UINT32 ui32IRQClearReg,
-                     IMG_UINT32 ui32IRQClearMask);
+IMG_BOOL RGXAckHwIrq(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32IRQStatusReg,
+		     IMG_UINT32 ui32IRQStatusEventMsk,
+		     IMG_UINT32 ui32IRQClearReg, IMG_UINT32 ui32IRQClearMask);
 
 IMG_BOOL RGXAckIrqDedicated(PVRSRV_RGXDEV_INFO *psDevInfo);
 #endif
