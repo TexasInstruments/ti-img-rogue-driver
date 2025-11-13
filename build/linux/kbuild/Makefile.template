@@ -91,8 +91,6 @@ endif
 ccflags-y += -D__linux__ -include $(OUT)/config_kernel.h \
  -I$(OUT)/include
 
-ccflags-y += $(INTERNAL_KBUILD_CFLAGS)
-
 ifeq ($(DEFINE_X86_FEATURE_LA57),1)
  ccflags-$(CONFIG_X86) += -include $(srctree)/arch/x86/include/asm/cpufeatures.h
 endif

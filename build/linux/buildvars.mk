@@ -141,15 +141,15 @@ TESTED_TARGET_USER_FLAGS := \
  $(call cc-option,-fdiagnostics-show-option) \
  $(call cc-option,-Wno-self-assign) \
  $(call cc-option,-Wno-parentheses-equality) \
- $(call cc-option,-fmacro-prefix-map=$(srctree)/=) \
- $(call cc-option,-fdebug-prefix-map=$(srctree)/=)
+ $(call cc-option,-fmacro-prefix-map=$(TOP)/=) \
+ $(call cc-option,-fdebug-prefix-map=$(TOP)/=)
 TESTED_HOST_USER_FLAGS := \
  $(call host-cc-option,-Wno-missing-field-initializers) \
  $(call host-cc-option,-fdiagnostics-show-option) \
  $(call host-cc-option,-Wno-self-assign) \
  $(call host-cc-option,-Wno-parentheses-equality) \
- $(call host-cc-option,-fmacro-prefix-map=$(srctree)/=) \
- $(call host-cc-option,-fdebug-prefix-map=$(srctree)/=)
+ $(call host-cc-option,-fmacro-prefix-map=$(TOP)/=) \
+ $(call host-cc-option,-fdebug-prefix-map=$(TOP)/=)
 
 # These flags are clang-specific.
 # -Wno-unused-command-line-argument works around a buggy interaction
@@ -270,8 +270,8 @@ TESTED_KBUILD_FLAGS := \
 
 # Use macro prefix map to prevent host paths from leaking into bins
 TESTED_KBUILD_FLAGS := \
- $(call kernel-cc-option,-fmacro-prefix-map=$(srctree)/=) \
- $(call kernel-cc-option,-fdebug-prefix-map=$(srctree)/=) \
+ $(call kernel-cc-option,-fmacro-prefix-map=$(TOP)/=) \
+ $(call kernel-cc-option,-fdebug-prefix-map=$(TOP)/=) \
  $(TESTED_KBUILD_FLAGS)
 
 # When building against experimentally patched kernels with LLVM support,
