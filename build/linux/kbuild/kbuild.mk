@@ -86,7 +86,6 @@ kbuild_check:
 kbuild: kbuild_check $(TARGET_PRIMARY_OUT)/kbuild/Makefile bridges
 	$(if $(V),,@)$(MAKE) -Rr --no-print-directory -C $(KERNELDIR) \
 		M=$(abspath $(TARGET_PRIMARY_OUT)/kbuild) \
-		INTERNAL_KBUILD_CFLAGS="$(ALL_KBUILD_CFLAGS)" \
 		INTERNAL_KBUILD_MAKEFILES="$(INTERNAL_KBUILD_MAKEFILES)" \
 		INTERNAL_KBUILD_OBJECTS="$(INTERNAL_KBUILD_OBJECTS)" \
 		INTERNAL_EXTRA_KBUILD_OBJECTS="$(INTERNAL_EXTRA_KBUILD_OBJECTS)" \
@@ -98,6 +97,7 @@ kbuild: kbuild_check $(TARGET_PRIMARY_OUT)/kbuild/Makefile bridges
 		%-androideabi,%-gnueabi,$(CROSS_TRIPLE)),$(patsubst \
 		%-android,%-gnu,$(CROSS_TRIPLE)))- \
 		CROSS_COMPILE="$(KERNEL_CROSS_COMPILE)" \
+		EXTRA_CFLAGS="$(ALL_KBUILD_CFLAGS)" \
 		CC=$(if $(KERNEL_CC),$(KERNEL_CC),$(KERNEL_CROSS_COMPILE)gcc) \
 		AR=$(if $(KERNEL_AR),$(KERNEL_AR),$(KERNEL_CROSS_COMPILE)ar) \
 		LD=$(if $(KERNEL_LD),$(KERNEL_LD),$(KERNEL_CROSS_COMPILE)ld) \
