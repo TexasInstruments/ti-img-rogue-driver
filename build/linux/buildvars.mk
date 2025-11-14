@@ -272,6 +272,9 @@ TESTED_KBUILD_FLAGS := \
 TESTED_KBUILD_FLAGS := \
  $(call kernel-cc-option,-fmacro-prefix-map=$(TOP)/=) \
  $(call kernel-cc-option,-fdebug-prefix-map=$(TOP)/=) \
+ $(call kernel-cc-option,-fmacro-prefix-map=$(KERNELDIR)=) \
+ $(call kernel-cc-option,-fdebug-prefix-map=$(KERNELDIR)=) \
+ $(call kernel-cc-option,-gdwarf-4) \
  $(TESTED_KBUILD_FLAGS)
 
 # When building against experimentally patched kernels with LLVM support,
