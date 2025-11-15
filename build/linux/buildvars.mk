@@ -277,6 +277,15 @@ TESTED_KBUILD_FLAGS := \
  $(call kernel-cc-option,-gdwarf-4) \
  $(TESTED_KBUILD_FLAGS)
 
+# Allow split artifact and source directories. Make sure KERNELDIR points to the
+# artifact directory where kbuild is expected to run.
+ifneq ($(KERNEL_SRC),)
+TESTED_KBUILD_FLAGS := \
+ $(call kernel-cc-option,-fmacro-prefix-map=$(KERNEL_SRC)=) \
+ $(call kernel-cc-option,-fdebug-prefix-map=$(KERNEL_SRC)=) \
+ $(TESTED_KBUILD_FLAGS)
+endif
+
 # When building against experimentally patched kernels with LLVM support,
 # we need to suppress warnings about bugs we haven't fixed yet. This is
 # temporary and will go away in the future.
