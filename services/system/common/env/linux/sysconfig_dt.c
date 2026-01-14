@@ -55,6 +55,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sysinfo.h"
 
 #include <linux/clk.h>
+#include <linux/clk/clk-conf.h>
 #include <linux/dma-mapping.h>
 #include <linux/of_device.h>
 #include <linux/platform_device.h>
@@ -435,11 +436,21 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 		eStatus = PopulateHeaps(*ppsDevConfig);
 		if (eStatus != PVRSRV_OK) break;
 
+		eStatus = PMInit((*ppsDevConfig)->hSysData);
+		if (eStatus != PVRSRV_OK) break;
+
+		if (pm_runtime_resume_and_get((struct device *)pvOSDevice))
+			PVR_LOG(("%s: failed to resume", __func__));
+		/* Set clock values from dt */
+		if (of_clk_set_defaults(((struct device *)pvOSDevice)->of_node,true)) {
+			PVR_DPF((PVR_DBG_ERROR, "%s: failed to set clock rates",__func__));
+			return PVRSRV_ERROR_INVALID_DEVICE;
+		}
 		eStatus = PopulateRGXData(*ppsDevConfig);
 		if (eStatus != PVRSRV_OK) break;
 
-		eStatus = PMInit((*ppsDevConfig)->hSysData);
-		if (eStatus != PVRSRV_OK) break;
+		if (pm_runtime_put_sync_autosuspend((struct device *)pvOSDevice))
+			PVR_LOG(("%s: failed to suspend", __func__));
 
 		return PVRSRV_OK;
 	} while (false);
