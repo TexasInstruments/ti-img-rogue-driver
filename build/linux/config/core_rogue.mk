@@ -1254,6 +1254,13 @@ callback that when invoked returns the current value of the SoC timer._\
 ))
 
 ifeq ($(SUPPORT_SOC_TIMER),1)
+ifneq ($(filter target_arm% target_aarch%,$(TARGET_PRIMARY_ARCH)),)
+$(eval $(call TunableKernelConfigC,SUPPORT_ARM_ARCH_TIMER,1,\
+Use the ARM arch timer helpers to enable SoC timer support. This registers a_\
+default implementation of the pfnSoCTimerRead callback that when invoked_\
+returns the current binary value of the SoC timer._\
+))
+endif
 endif
 
 ifeq ($(PVR_BLOB_CACHE_DEBUG),1)
