@@ -52,9 +52,6 @@ NO_HARDWARE := 0
 PVR_LDM_PLATFORM_PRE_REGISTERED := 1
 SUPPORT_NATIVE_FENCE_SYNC := 1
 
-# HACK to circumvent buffer import issues for now
-SUPPORT_WRAP_EXTMEM := 0
-
 KERNEL_COMPONENTS := srvkm
 
 ifeq ($(PVR_REMVIEW),1)
