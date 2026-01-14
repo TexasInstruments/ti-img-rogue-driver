@@ -185,6 +185,7 @@ else
 # KERNEL_COMPONENTS and KERNEL_ID
 #
 ifneq ($(strip $(KERNELDIR)),)
+override KERNELDIR := $(realpath $(KERNELDIR))
 PVRSRV_MODULE_BASEDIR ?= /lib/modules/$(KERNEL_ID)/extra/
 $(eval $(call BothConfigMake,KERNELDIR,$(KERNELDIR)))
 $(eval $(call BothConfigMake,KERNEL_ID,$(KERNEL_ID)))
