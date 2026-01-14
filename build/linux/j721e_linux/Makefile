@@ -38,7 +38,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ### ###########################################################################
 
-RGX_BVNC := 36.53.104.796
+RGX_BVNC := 22.104.208.318
 PVR_SYSTEM := rgx_ti_linux
 
 include ../config/preconfig.mk
@@ -50,10 +50,9 @@ endif
 
 NO_HARDWARE := 0
 PVR_LDM_PLATFORM_PRE_REGISTERED := 1
-SUPPORT_NATIVE_FENCE_SYNC := 1
 
-# HACK to circumvent buffer import issues for now
-SUPPORT_WRAP_EXTMEM := 0
+SUPPORT_NATIVE_FENCE_SYNC := 1
+SUPPORT_MIPS_64K_PAGE_SIZE := 1
 
 KERNEL_COMPONENTS := srvkm
 
@@ -68,10 +67,6 @@ endif
 # Always print fatal and error logs, especially in kernel mode.
 PVRSRV_NEED_PVR_DPF := 1
 
-# System is UMA
-SUPPORT_WRAP_EXTMEM := 1
-
 # Should be last
 include ../config/core.mk
 include ../common/lws.mk
-include ../common/wrapextmem.mk

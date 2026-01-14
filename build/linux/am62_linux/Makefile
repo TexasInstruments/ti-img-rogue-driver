@@ -64,6 +64,9 @@ else
  PVR_DRM_MODESET_DRIVER_NAME := tidss
 endif
 
+# Always print fatal and error logs, especially in kernel mode.
+PVRSRV_NEED_PVR_DPF := 1
+
 # System is UMA
 SUPPORT_WRAP_EXTMEM := 1
 
