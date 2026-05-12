@@ -60,8 +60,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "physmem_extmem_wrap.h"
 
 PVRSRV_ERROR WrapMemAcquirePhysPagesFromVirt(IMG_DEVMEM_SIZE_T uiSize,
-                                             uintptr_t pvCpuVAddr,
-                                             void *pvPrivData);
+					     uintptr_t pvCpuVAddr,
+					     void *pvPrivData);
 
 void WrapMemReleasePhysPagesFromVirt(void *pvPrivData);
 

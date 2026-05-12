@@ -54,7 +54,8 @@ int pvr_sync_api_sw_create_fence(void *api_priv, void *user_data);
 int pvr_sync_api_sw_inc(void *api_priv, void *user_data);
 int pvr_sync_api_force_exp_only(void *api_priv, void *api_data);
 int pvr_sync_api_create_export_fence(void *api_priv, void *user_data);
-int pvr_sync_api_create_export_fence_with_fp_token(void *api_priv, void *user_data);
+int pvr_sync_api_create_export_fence_with_fp_token(void *api_priv,
+						   void *user_data);
 
 struct file;
 

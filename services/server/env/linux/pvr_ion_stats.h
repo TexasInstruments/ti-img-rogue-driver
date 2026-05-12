@@ -78,7 +78,8 @@ static INLINE void PVRSRVIonRemoveMemAllocRecord(struct dma_buf *psDmaBuf)
 	PVR_UNREFERENCED_PARAMETER(psDmaBuf);
 }
 
-static INLINE void PVRSRVIonZombifyMemAllocRecord(const struct dma_buf *psDmaBuf)
+static INLINE void
+PVRSRVIonZombifyMemAllocRecord(const struct dma_buf *psDmaBuf)
 {
 	PVR_UNREFERENCED_PARAMETER(psDmaBuf);
 }

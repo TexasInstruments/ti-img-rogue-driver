@@ -50,8 +50,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rgx_common.h"
 #include "sys_fwif_fpf_common.h"
 
-struct _RGX_FPF_KICK_COMMS_FWCTX_
-{
-};
+struct _RGX_FPF_KICK_COMMS_FWCTX_ {};
 
 #endif /* SYS_FWIF_FPF_CUSTOM_H */

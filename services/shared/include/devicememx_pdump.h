@@ -55,30 +55,27 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  * Same as DevmemPDumpLoadMem().
  */
-IMG_INTERNAL void
-DevmemXPDumpLoadMem(DEVMEMX_PHYSDESC *psMemDescPhys,
-                    IMG_DEVMEM_OFFSET_T uiOffset,
-                    IMG_DEVMEM_SIZE_T uiSize,
-                    PDUMP_FLAGS_T uiPDumpFlags);
+IMG_INTERNAL void DevmemXPDumpLoadMem(DEVMEMX_PHYSDESC *psMemDescPhys,
+				      IMG_DEVMEM_OFFSET_T uiOffset,
+				      IMG_DEVMEM_SIZE_T uiSize,
+				      PDUMP_FLAGS_T uiPDumpFlags);
 
-IMG_INTERNAL void
-DevmemXPDumpSaveMem(DEVMEMX_PHYSDESC *psMemDescPhys,
-                    IMG_DEVMEM_OFFSET_T uiOffset,
-                    IMG_DEVMEM_SIZE_T uiSize,
-					const IMG_CHAR *pszFilename,
-					IMG_UINT32 uiFileOffset,
-                    PDUMP_FLAGS_T uiPDumpFlags);
+IMG_INTERNAL void DevmemXPDumpSaveMem(DEVMEMX_PHYSDESC *psMemDescPhys,
+				      IMG_DEVMEM_OFFSET_T uiOffset,
+				      IMG_DEVMEM_SIZE_T uiSize,
+				      const IMG_CHAR *pszFilename,
+				      IMG_UINT32 uiFileOffset,
+				      PDUMP_FLAGS_T uiPDumpFlags);
 #else
 
 #ifdef INLINE_IS_PRAGMA
 #pragma inline(DevmemXPDumpLoadMem)
 #endif
 
-static INLINE void
-DevmemXPDumpLoadMem(DEVMEMX_PHYSDESC *psMemDescPhys,
-                    IMG_DEVMEM_OFFSET_T uiOffset,
-                    IMG_DEVMEM_SIZE_T uiSize,
-                    PDUMP_FLAGS_T uiPDumpFlags)
+static INLINE void DevmemXPDumpLoadMem(DEVMEMX_PHYSDESC *psMemDescPhys,
+				       IMG_DEVMEM_OFFSET_T uiOffset,
+				       IMG_DEVMEM_SIZE_T uiSize,
+				       PDUMP_FLAGS_T uiPDumpFlags)
 {
 	PVR_UNREFERENCED_PARAMETER(psMemDescPhys);
 	PVR_UNREFERENCED_PARAMETER(uiOffset);
@@ -90,13 +87,12 @@ DevmemXPDumpLoadMem(DEVMEMX_PHYSDESC *psMemDescPhys,
 #pragma inline(DevmemXPDumpSaveMem)
 #endif
 
-static INLINE void
-DevmemXPDumpSaveMem(DEVMEMX_PHYSDESC *psMemDescPhys,
-                    IMG_DEVMEM_OFFSET_T uiOffset,
-                    IMG_DEVMEM_SIZE_T uiSize,
-					const IMG_CHAR *pszFilename,
-					IMG_UINT32 uiFileOffset,
-                    PDUMP_FLAGS_T uiPDumpFlags)
+static INLINE void DevmemXPDumpSaveMem(DEVMEMX_PHYSDESC *psMemDescPhys,
+				       IMG_DEVMEM_OFFSET_T uiOffset,
+				       IMG_DEVMEM_SIZE_T uiSize,
+				       const IMG_CHAR *pszFilename,
+				       IMG_UINT32 uiFileOffset,
+				       PDUMP_FLAGS_T uiPDumpFlags)
 {
 	PVR_UNREFERENCED_PARAMETER(psMemDescPhys);
 	PVR_UNREFERENCED_PARAMETER(uiOffset);

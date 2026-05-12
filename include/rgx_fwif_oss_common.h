@@ -50,23 +50,32 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "img_defs.h"
 
-#define rgx_fwif_oss_assert(expr_, value_, expected_) \
-	static_assert(expr_, "SUPPORT_OPEN_SOURCE_DRIVER_FIRMWARE: " value_ " is incorrect (expected " expected_ ")")
+#define rgx_fwif_oss_assert(expr_, value_, expected_)                       \
+	static_assert(expr_, "SUPPORT_OPEN_SOURCE_DRIVER_FIRMWARE: " value_ \
+			     " is incorrect (expected " expected_ ")")
 
-#define rgx_fwif_oss_assert_eq(expr_, value_) rgx_fwif_oss_assert(expr_ == value_, #expr_, #value_)
-#define rgx_fwif_oss_assert_le(expr_, value_) rgx_fwif_oss_assert(expr_ <= value_, #expr_, "<= " #value_)
+#define rgx_fwif_oss_assert_eq(expr_, value_) \
+	rgx_fwif_oss_assert(expr_ == value_, #expr_, #value_)
+#define rgx_fwif_oss_assert_le(expr_, value_) \
+	rgx_fwif_oss_assert(expr_ <= value_, #expr_, "<= " #value_)
 
-#define rgx_fwif_oss_assert_size(type_, size_) rgx_fwif_oss_assert_eq(sizeof(type_), size_)
-#define rgx_fwif_oss_assert_align(type_, align_) rgx_fwif_oss_assert_le(__alignof__(type_), align_)
-#define rgx_fwif_oss_assert_offset(struct_, member_, offset_) rgx_fwif_oss_assert_eq(offsetof(struct_, member_), offset_)
+#define rgx_fwif_oss_assert_size(type_, size_) \
+	rgx_fwif_oss_assert_eq(sizeof(type_), size_)
+#define rgx_fwif_oss_assert_align(type_, align_) \
+	rgx_fwif_oss_assert_le(__alignof__(type_), align_)
+#define rgx_fwif_oss_assert_offset(struct_, member_, offset_) \
+	rgx_fwif_oss_assert_eq(offsetof(struct_, member_), offset_)
 
 /*! A shortcut for enum types to ensure they're properly sized (no -fshort-enums or similar). */
-#define rgx_fwif_oss_assert_enum(type_) rgx_fwif_oss_assert_size(type_, 4); rgx_fwif_oss_assert_align(type_, 4)
+#define rgx_fwif_oss_assert_enum(type_)     \
+	rgx_fwif_oss_assert_size(type_, 4); \
+	rgx_fwif_oss_assert_align(type_, 4)
 
 /* Don't use RGX_FWIF_OSSMAX here since it causes expansion of macro_. */
-#define rgx_fwif_oss_assert_max(macro_) rgx_fwif_oss_assert_le(macro_, macro_ ## _OSSMAX)
+#define rgx_fwif_oss_assert_max(macro_) \
+	rgx_fwif_oss_assert_le(macro_, macro_##_OSSMAX)
 
-#define RGX_FWIF_OSSMAX(X_) X_ ## _OSSMAX
+#define RGX_FWIF_OSSMAX(X_) X_##_OSSMAX
 
 #else
 

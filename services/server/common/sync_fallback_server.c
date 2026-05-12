@@ -64,7 +64,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "pdump_km.h"
 #include "allocmem.h"
 
-
 #include "ossecure_export.h"
 
 /* Refcounting debug.
@@ -72,42 +71,55 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // #define SYNC_FB_REF_DEBUG 1
 
 #if defined(SYNC_FB_REF_DEBUG)
-#define PRINT_REF(type, opchr, pRef, ptr, name, info, num) \
-	PVR_LOG(("        %s REF(%c) -> %d - %6s: %-5u - %-30s (0x%p)", type, opchr, pRef, info, num, name, ptr))
+#define PRINT_REF(type, opchr, pRef, ptr, name, info, num)                    \
+	PVR_LOG(("        %s REF(%c) -> %d - %6s: %-5u - %-30s (0x%p)", type, \
+		 opchr, pRef, info, num, name, ptr))
 #else
 #define PRINT_REF(type, opchr, pRef, ptr, name, info, num)
 #endif
 
-#define REF_SET(type, pRef, val, ptr, name, info, num) OSAtomicWrite(pRef, val); PRINT_REF(type, '=', val, ptr, name, info, num)
-#define REF_INC(type, pRef,      ptr, name, info, num) OSAtomicIncrement(pRef); PRINT_REF(type, '+', OSAtomicRead(pRef), ptr, name, info, num)
-#define REF_DEC(type, pRef,      ptr, name, info, num) OSAtomicDecrement(pRef); PRINT_REF(type, '-', OSAtomicRead(pRef), ptr, name, info, num)
+#define REF_SET(type, pRef, val, ptr, name, info, num) \
+	OSAtomicWrite(pRef, val);                      \
+	PRINT_REF(type, '=', val, ptr, name, info, num)
+#define REF_INC(type, pRef, ptr, name, info, num) \
+	OSAtomicIncrement(pRef);                  \
+	PRINT_REF(type, '+', OSAtomicRead(pRef), ptr, name, info, num)
+#define REF_DEC(type, pRef, ptr, name, info, num) \
+	OSAtomicDecrement(pRef);                  \
+	PRINT_REF(type, '-', OSAtomicRead(pRef), ptr, name, info, num)
 
 /* Timelines */
-#define TL_REF_SET(pRef, val, ptr) REF_SET("TL", pRef, val, ptr, ptr->pszName, "UID", (IMG_UINT64) ptr->iUID)
-#define TL_REF_INC(pRef, ptr)      REF_INC("TL", pRef,      ptr, ptr->pszName, "UID", (IMG_UINT64) ptr->iUID)
-#define TL_REF_DEC(pRef, ptr)      REF_DEC("TL", pRef,      ptr, ptr->pszName, "UID", (IMG_UINT64) ptr->iUID)
+#define TL_REF_SET(pRef, val, ptr)                         \
+	REF_SET("TL", pRef, val, ptr, ptr->pszName, "UID", \
+		(IMG_UINT64)ptr->iUID)
+#define TL_REF_INC(pRef, ptr) \
+	REF_INC("TL", pRef, ptr, ptr->pszName, "UID", (IMG_UINT64)ptr->iUID)
+#define TL_REF_DEC(pRef, ptr) \
+	REF_DEC("TL", pRef, ptr, ptr->pszName, "UID", (IMG_UINT64)ptr->iUID)
 
 /* Fences */
-#define FENCE_REF_SET(pRef, val, ptr) REF_SET("FE", pRef, val, ptr, ptr->pszName, "#Syncs", ptr->uiNumSyncs)
-#define FENCE_REF_INC(pRef, ptr)      REF_INC("FE", pRef,      ptr, ptr->pszName, "#Syncs", ptr->uiNumSyncs)
-#define FENCE_REF_DEC(pRef, ptr)      REF_DEC("FE", pRef,      ptr, ptr->pszName, "#Syncs", ptr->uiNumSyncs)
+#define FENCE_REF_SET(pRef, val, ptr) \
+	REF_SET("FE", pRef, val, ptr, ptr->pszName, "#Syncs", ptr->uiNumSyncs)
+#define FENCE_REF_INC(pRef, ptr) \
+	REF_INC("FE", pRef, ptr, ptr->pszName, "#Syncs", ptr->uiNumSyncs)
+#define FENCE_REF_DEC(pRef, ptr) \
+	REF_DEC("FE", pRef, ptr, ptr->pszName, "#Syncs", ptr->uiNumSyncs)
 
 /* SyncPt */
-#define PT_REF_SET(pRef, val, ptr) REF_SET("PT", pRef, val, ptr, ptr->psTl->pszName, "SeqNum" ,ptr->uiSeqNum)
-#define PT_REF_INC(pRef, ptr)      REF_INC("PT", pRef,      ptr, ptr->psTl->pszName, "SeqNum" ,ptr->uiSeqNum)
-#define PT_REF_DEC(pRef, ptr)      REF_DEC("PT", pRef,      ptr, ptr->psTl->pszName, "SeqNum" ,ptr->uiSeqNum)
-
+#define PT_REF_SET(pRef, val, ptr)                                  \
+	REF_SET("PT", pRef, val, ptr, ptr->psTl->pszName, "SeqNum", \
+		ptr->uiSeqNum)
+#define PT_REF_INC(pRef, ptr) \
+	REF_INC("PT", pRef, ptr, ptr->psTl->pszName, "SeqNum", ptr->uiSeqNum)
+#define PT_REF_DEC(pRef, ptr) \
+	REF_DEC("PT", pRef, ptr, ptr->psTl->pszName, "SeqNum", ptr->uiSeqNum)
 
 /* Simple prints for error and warning */
-#define ERR(msg, ...) PVR_DPF((PVR_DBG_ERROR, \
-                          "%s: " msg, \
-                          __func__, \
-                          ##__VA_ARGS__));
+#define ERR(msg, ...) \
+	PVR_DPF((PVR_DBG_ERROR, "%s: " msg, __func__, ##__VA_ARGS__));
 
-#define WRN(msg, ...) PVR_DPF((PVR_DBG_WARNING, \
-                          "%s: " msg, \
-                          __func__, \
-                          ##__VA_ARGS__));
+#define WRN(msg, ...) \
+	PVR_DPF((PVR_DBG_WARNING, "%s: " msg, __func__, ##__VA_ARGS__));
 
 // #define SYNC_FB_DEBUG 1
 #if defined(SYNC_FB_DEBUG)
@@ -118,46 +130,41 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /* Functions for timelines */
 typedef IMG_BOOL (*PFN_SYNC_PT_HAS_SIGNALLED)(PVRSRV_SYNC_PT *psSyncPt);
-typedef void (*PFN_SYNC_FREE) (IMG_HANDLE hAttachedSync);
-
+typedef void (*PFN_SYNC_FREE)(IMG_HANDLE hAttachedSync);
 
 /* The states a SyncPt can be in */
-typedef enum
-{
-	PVRSRV_SYNC_NOT_SIGNALLED,     /*!< sync pt has not yet signalled */
-	PVRSRV_SYNC_SIGNALLED,         /*!< sync pt has signalled */
-	PVRSRV_SYNC_ERRORED            /*!< sync pt has errored */
+typedef enum {
+	PVRSRV_SYNC_NOT_SIGNALLED, /*!< sync pt has not yet signalled */
+	PVRSRV_SYNC_SIGNALLED, /*!< sync pt has signalled */
+	PVRSRV_SYNC_ERRORED /*!< sync pt has errored */
 } PVRSRV_SYNC_STATE;
 
-typedef enum
-{
+typedef enum {
 	PVRSRV_SYNC_HANDLE_UNKNOWN,
 	PVRSRV_SYNC_HANDLE_PVR,
 	PVRSRV_SYNC_HANDLE_SW
 } PVRSRV_SYNC_HANDLE_TYPE;
 
-typedef struct _PVRSRV_SYNC_SIGNAL_CB_
-{
+typedef struct _PVRSRV_SYNC_SIGNAL_CB_ {
 	DLLIST_NODE sCallbackNode;
-	IMG_HANDLE  hAttachedSync;
-	IMG_HANDLE  hPrivData;
-	PVRSRV_ERROR (*pfnSignal)(IMG_HANDLE hAttachedSync,
-	                          PVRSRV_SYNC_STATE eState);
+	IMG_HANDLE hAttachedSync;
+	IMG_HANDLE hPrivData;
+	PVRSRV_ERROR (*pfnSignal)
+	(IMG_HANDLE hAttachedSync, PVRSRV_SYNC_STATE eState);
 	PFN_SYNC_FREE pfnSyncFree;
 
 } PVRSRV_SYNC_SIGNAL_CB;
 
-struct _PVRSRV_SYNC_PT_
-{
+struct _PVRSRV_SYNC_PT_ {
 	/* The timeline this sync pt is associated with */
-	PVRSRV_TIMELINE_SERVER	*psTl;
-	IMG_UINT32				uiSeqNum;
+	PVRSRV_TIMELINE_SERVER *psTl;
+	IMG_UINT32 uiSeqNum;
 	/* Refcount */
-	ATOMIC_T				iRef;
+	ATOMIC_T iRef;
 	/* Timeline list. Take TL lock! */
-	DLLIST_NODE				sTlSyncList;
+	DLLIST_NODE sTlSyncList;
 	/* Timeline active list. Take TL lock! */
-	DLLIST_NODE				sTlSyncActiveList;
+	DLLIST_NODE sTlSyncActiveList;
 
 	/* List of callbacks to signal attached syncs.
 	 *
@@ -174,87 +181,79 @@ struct _PVRSRV_SYNC_PT_
 	 * access sync checkpoints of another device or a device that needs
 	 * to wait for a different sync type that it is not able to read
 	 * e.g. a SW sync */
-	DLLIST_NODE				sSignalCallbacks;
+	DLLIST_NODE sSignalCallbacks;
 	/* Can have a PVRSRV_SYNC_STATE */
-	ATOMIC_T				iStatus;
+	ATOMIC_T iStatus;
 	/* PID of the sync pt creator, used for cleanup-unblocking */
-	IMG_UINT32				uiPID;
+	IMG_UINT32 uiPID;
 };
 
 /* Definition representing an attached SW sync pt.
  * This is the counterpart to the SYNC_CHECKPOINTS for syncs that get
  * signalled by the CPU. */
-typedef struct _PVRSRV_SYNC_PT_SW_
-{
-	 IMG_BOOL bSignalled;
+typedef struct _PVRSRV_SYNC_PT_SW_ {
+	IMG_BOOL bSignalled;
 } PVRSRV_SYNC_PT_SW;
 
 /*! Possible states for a PVRSRV_FENCE */
-typedef enum
-{
-    PVRSRV_FENCE_NOT_SIGNALLED,             /*!< fence has not yet signalled (not all components have signalled) */
-    PVRSRV_FENCE_SIGNALLED                  /*!< fence has signalled (all components have signalled/errored) */
+typedef enum {
+	PVRSRV_FENCE_NOT_SIGNALLED, /*!< fence has not yet signalled (not all components have signalled) */
+	PVRSRV_FENCE_SIGNALLED /*!< fence has signalled (all components have signalled/errored) */
 } PVRSRV_FENCE_STATE;
 
-struct _PVRSRV_FENCE_SERVER_
-{
-	IMG_UINT32			uiNumSyncs;
-	PVRSRV_SYNC_PT		**apsFenceSyncList;
-	ATOMIC_T			iRef;
+struct _PVRSRV_FENCE_SERVER_ {
+	IMG_UINT32 uiNumSyncs;
+	PVRSRV_SYNC_PT **apsFenceSyncList;
+	ATOMIC_T iRef;
 	/* Only written to when waiter checks if fence is met */
-	ATOMIC_T			iStatus;
-	IMG_INT64			iUID;
-	IMG_CHAR			pszName[SYNC_FB_FENCE_MAX_LENGTH];
-	PVRSRV_DEVICE_NODE	*psDevNode;
-	DLLIST_NODE			sFenceListNode;
+	ATOMIC_T iStatus;
+	IMG_INT64 iUID;
+	IMG_CHAR pszName[SYNC_FB_FENCE_MAX_LENGTH];
+	PVRSRV_DEVICE_NODE *psDevNode;
+	DLLIST_NODE sFenceListNode;
 };
 
-struct _PVRSRV_FENCE_EXPORT_
-{
+struct _PVRSRV_FENCE_EXPORT_ {
 	PVRSRV_FENCE_SERVER *psFence;
 };
 
-typedef struct _PVRSRV_TIMELINE_OPS_
-{
+typedef struct _PVRSRV_TIMELINE_OPS_ {
 	/* Supposed to be called when someone queries the TL
 	 * to update its active generic syncs */
 	PFN_SYNC_PT_HAS_SIGNALLED pfnSyncPtHasSignalled;
 } PVRSRV_TIMELINE_OPS;
 
-struct _PVRSRV_TIMELINE_SERVER_
-{
+struct _PVRSRV_TIMELINE_SERVER_ {
 	/* Never take the fence lock after this one */
-	POS_LOCK			hTlLock;
+	POS_LOCK hTlLock;
 	/* Timeline list. Contains all sync pts of the timeline that
 	 * were not destroyed. Signalled or unsignalled. Take TL lock! */
-	DLLIST_NODE			sSyncList;
+	DLLIST_NODE sSyncList;
 	/* Timeline active list. Contains all sync pts of the timeline
 	 * that were not signalled yet.
 	 * Before removing node, check if it's still in list. Take TL lock! */
-	DLLIST_NODE			sSyncActiveList;
-	IMG_CHAR			pszName[SYNC_FB_TIMELINE_MAX_LENGTH];
-	ATOMIC_T			iRef;
+	DLLIST_NODE sSyncActiveList;
+	IMG_CHAR pszName[SYNC_FB_TIMELINE_MAX_LENGTH];
+	ATOMIC_T iRef;
 	PVRSRV_TIMELINE_OPS sTlOps;
-	DLLIST_NODE			sTlList;
+	DLLIST_NODE sTlList;
 	/* This ID helps to order the sync pts in a fence when merging */
-	IMG_INT64			iUID;
+	IMG_INT64 iUID;
 	/* The sequence number of the last sync pt created */
-	ATOMIC_T			iSeqNum;
+	ATOMIC_T iSeqNum;
 	/* The sequence number of the latest signalled sync pt */
-	ATOMIC_T			iLastSignalledSeqNum;
+	ATOMIC_T iLastSignalledSeqNum;
 	/* The PID of the process which created this timeline */
-	IMG_PID				uiPID;
+	IMG_PID uiPID;
 };
 
-typedef struct _SYNC_FB_CONTEXT_DEVICE_LIST_
-{
+typedef struct _SYNC_FB_CONTEXT_DEVICE_LIST_ {
 	DLLIST_NODE sDeviceListNode;
 	IMG_HANDLE hDBGNotify;
 	PVRSRV_DEVICE_NODE *psDevice;
 } SYNC_FB_CONTEXT_DEVICE_LIST;
 
-typedef struct _SYNC_FB_CONTEXT_
-{
+typedef struct _SYNC_FB_CONTEXT_ {
 	IMG_HANDLE hSyncEventObject;
 	IMG_HANDLE hCMDNotify;
 	DLLIST_NODE sDeviceList;
@@ -272,29 +271,27 @@ static SYNC_FB_CONTEXT gsSyncFbContext;
 static void _SyncFbTimelineAcquire(PVRSRV_TIMELINE_SERVER *psTl);
 static void _SyncFbFenceAcquire(PVRSRV_FENCE_SERVER *psFence);
 static PVRSRV_ERROR _SyncFbSyncPtSignalAttached(PVRSRV_SYNC_PT *psSyncPt,
-                                        PVRSRV_SYNC_STATE eSignal);
-static PVRSRV_ERROR SyncFbFenceRollbackPVR(PVRSRV_FENCE iFence, void *pvFenceData);
+						PVRSRV_SYNC_STATE eSignal);
+static PVRSRV_ERROR SyncFbFenceRollbackPVR(PVRSRV_FENCE iFence,
+					   void *pvFenceData);
 static PVRSRV_ERROR _SyncFbSyncPtSignalPVR(IMG_HANDLE hSync,
-                                           PVRSRV_SYNC_STATE eState);
+					   PVRSRV_SYNC_STATE eState);
 static PVRSRV_ERROR _SyncFbSyncPtSignalSW(IMG_HANDLE hSync,
-                                          PVRSRV_SYNC_STATE eState);
+					  PVRSRV_SYNC_STATE eState);
 static IMG_BOOL _SyncFbFenceSyncsHaveSignalled(PVRSRV_FENCE_SERVER *psFence);
 static IMG_BOOL _SyncFbSyncPtHasSignalled(PVRSRV_SYNC_PT *psSyncPt);
 static IMG_BOOL _SyncFbSyncPtHasSignalledPVR(PVRSRV_SYNC_PT *psSyncPt);
 static IMG_BOOL _SyncFbSyncPtHasSignalledSW(PVRSRV_SYNC_PT *psSyncPt);
-static IMG_BOOL _SyncFbFenceAddPt(PVRSRV_FENCE_SERVER *psFence,
-                                  IMG_UINT32 *i,
-                                  PVRSRV_SYNC_PT *psSyncPt);
-static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(PVRSRV_DEVICE_NODE *psDeviceNode,
-                                                 PVRSRV_TIMELINE_SERVER *psTl,
-                                                 const IMG_CHAR *pszFenceName,
-                                                 PVRSRV_FENCE_SERVER **ppsOutputFence,
-                                                 IMG_UINT64 *pui64SyncPtIdx);
+static IMG_BOOL _SyncFbFenceAddPt(PVRSRV_FENCE_SERVER *psFence, IMG_UINT32 *i,
+				  PVRSRV_SYNC_PT *psSyncPt);
+static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(
+	PVRSRV_DEVICE_NODE *psDeviceNode, PVRSRV_TIMELINE_SERVER *psTl,
+	const IMG_CHAR *pszFenceName, PVRSRV_FENCE_SERVER **ppsOutputFence,
+	IMG_UINT64 *pui64SyncPtIdx);
 static PVRSRV_ERROR _SyncSWTimelineAdvanceSigErr(PVRSRV_TIMELINE_SERVER *psTl,
-                                                 PVRSRV_SYNC_STATE eState,
-                                                 IMG_UINT64 *pui64SyncPtIdx);
+						 PVRSRV_SYNC_STATE eState,
+						 IMG_UINT64 *pui64SyncPtIdx);
 static void _SyncSWTimelineCheckForUnsignalledPts(PVRSRV_TIMELINE_SERVER *psTl);
-
 
 /*****************************************************************************/
 /*                                                                           */
@@ -302,12 +299,12 @@ static void _SyncSWTimelineCheckForUnsignalledPts(PVRSRV_TIMELINE_SERVER *psTl);
 /*                                                                           */
 /*****************************************************************************/
 
-
 /* Add a fence to the global fence list */
 static inline void _SyncFbFenceListAdd(PVRSRV_FENCE_SERVER *psFence)
 {
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
-	dllist_add_to_tail(&gsSyncFbContext.sFenceList, &psFence->sFenceListNode);
+	dllist_add_to_tail(&gsSyncFbContext.sFenceList,
+			   &psFence->sFenceListNode);
 	OSLockRelease(gsSyncFbContext.hFbContextLock);
 }
 
@@ -348,7 +345,8 @@ static PVRSRV_ERROR _SyncFbSignalEO(void)
 	PVR_DPF_RETURN_RC(eError);
 }
 
-static inline PVRSRV_ERROR _SyncFbAcquireProcHandleBase(PROCESS_HANDLE_BASE **ppsBase)
+static inline PVRSRV_ERROR
+_SyncFbAcquireProcHandleBase(PROCESS_HANDLE_BASE **ppsBase)
 {
 	PVRSRV_ERROR eError;
 	eError = PVRSRVAcquireProcessHandleBase(ppsBase);
@@ -357,13 +355,14 @@ static inline PVRSRV_ERROR _SyncFbAcquireProcHandleBase(PROCESS_HANDLE_BASE **pp
 	return PVRSRV_OK;
 }
 
-static inline PVRSRV_ERROR _SyncFbReleaseProcHandleBase(PROCESS_HANDLE_BASE *psBase)
+static inline PVRSRV_ERROR
+_SyncFbReleaseProcHandleBase(PROCESS_HANDLE_BASE *psBase)
 {
 	PVRSRV_ERROR eError;
-	eError = PVRSRVReleaseProcessHandleBase(psBase,
-			PVRSRVGetPVRSRVData()->bUnload
-			? 0
-			: CONNECTION_DEFERRED_CLEANUP_TIMESLICE_NS);
+	eError = PVRSRVReleaseProcessHandleBase(
+		psBase, PVRSRVGetPVRSRVData()->bUnload ?
+				0 :
+				CONNECTION_DEFERRED_CLEANUP_TIMESLICE_NS);
 	PVR_LOG_RETURN_IF_ERROR(eError, "PVRSRVReleaseProcessHandleBase");
 
 	return PVRSRV_OK;
@@ -372,7 +371,7 @@ static inline PVRSRV_ERROR _SyncFbReleaseProcHandleBase(PROCESS_HANDLE_BASE *psB
 /* Destroy a handle in case a resource has not been registered with
  * the resource manager */
 static PVRSRV_ERROR _SyncFbDestroyHandle(IMG_HANDLE hHandle,
-                                         PVRSRV_HANDLE_TYPE eType)
+					 PVRSRV_HANDLE_TYPE eType)
 {
 	PVRSRV_ERROR eError;
 	PROCESS_HANDLE_BASE *psProcBase;
@@ -428,7 +427,8 @@ eExit:
 /* Returns the type of a sync point determined by its registered
  * signalling callback. Type can be e.g. a PVR sync point containing
  * sync checkpoints or a software sync point */
-static PVRSRV_SYNC_HANDLE_TYPE _SyncFbSyncPtHandleType(PVRSRV_SYNC_SIGNAL_CB *psCb)
+static PVRSRV_SYNC_HANDLE_TYPE
+_SyncFbSyncPtHandleType(PVRSRV_SYNC_SIGNAL_CB *psCb)
 {
 	if (psCb == NULL)
 		return PVRSRV_SYNC_HANDLE_UNKNOWN;
@@ -442,7 +442,8 @@ static PVRSRV_SYNC_HANDLE_TYPE _SyncFbSyncPtHandleType(PVRSRV_SYNC_SIGNAL_CB *ps
 	return PVRSRV_SYNC_HANDLE_UNKNOWN;
 }
 
-static PVRSRV_SYNC_HANDLE_TYPE _SyncFbTimelineHandleType(PVRSRV_TIMELINE_SERVER *psTl)
+static PVRSRV_SYNC_HANDLE_TYPE
+_SyncFbTimelineHandleType(PVRSRV_TIMELINE_SERVER *psTl)
 {
 	if (psTl == NULL)
 		return PVRSRV_SYNC_HANDLE_UNKNOWN;
@@ -457,70 +458,77 @@ static PVRSRV_SYNC_HANDLE_TYPE _SyncFbTimelineHandleType(PVRSRV_TIMELINE_SERVER 
 }
 
 /* Print info about a sync point to the debug dump log */
-static void _SyncFbDebugRequestPrintSyncPt(PVRSRV_SYNC_PT *psSyncPt,
-                                           IMG_BOOL bPrintTl,
-                                           DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
-                                           void *pvDumpDebugFile)
+static void
+_SyncFbDebugRequestPrintSyncPt(PVRSRV_SYNC_PT *psSyncPt, IMG_BOOL bPrintTl,
+			       DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
+			       void *pvDumpDebugFile)
 {
 	PDLLIST_NODE psCBNode, psNextCBNode;
 	PVRSRV_SYNC_SIGNAL_CB *psCb;
 
-	if (bPrintTl)
-	{
-		PVR_DUMPDEBUG_LOG(" - SyncPt: SeqNum: %u, Refs: %d, Timeline: %-9s <%#"IMG_UINT64_FMTSPECx">, %-9s - <0x"IMG_KM_PTR_FMTSPEC">",
-						  psSyncPt->uiSeqNum,
-						  OSAtomicRead(&psSyncPt->iRef),
-						  psSyncPt->psTl->pszName,
-						  psSyncPt->psTl->iUID,
-						  OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_SIGNALLED ? "Signalled" :
-							OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_ERRORED ? "Errored" : "Active",
-						  psSyncPt);
-	}
-	else
-	{
-		PVR_DUMPDEBUG_LOG(" - SyncPt: SeqNum: %u, Refs: %d, %-9s - <0x"IMG_KM_PTR_FMTSPEC">",
-						  psSyncPt->uiSeqNum,
-						  OSAtomicRead(&psSyncPt->iRef),
-						  OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_SIGNALLED ? "Signalled" :
-							OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_ERRORED ? "Errored" : "Active",
-						  psSyncPt);
+	if (bPrintTl) {
+		PVR_DUMPDEBUG_LOG(
+			" - SyncPt: SeqNum: %u, Refs: %d, Timeline: %-9s <%#" IMG_UINT64_FMTSPECx
+			">, %-9s - <0x" IMG_KM_PTR_FMTSPEC ">",
+			psSyncPt->uiSeqNum, OSAtomicRead(&psSyncPt->iRef),
+			psSyncPt->psTl->pszName, psSyncPt->psTl->iUID,
+			OSAtomicRead(&psSyncPt->iStatus) ==
+					PVRSRV_SYNC_SIGNALLED ?
+				"Signalled" :
+			OSAtomicRead(&psSyncPt->iStatus) ==
+					PVRSRV_SYNC_ERRORED ?
+				"Errored" :
+				"Active",
+			psSyncPt);
+	} else {
+		PVR_DUMPDEBUG_LOG(
+			" - SyncPt: SeqNum: %u, Refs: %d, %-9s - <0x" IMG_KM_PTR_FMTSPEC
+			">",
+			psSyncPt->uiSeqNum, OSAtomicRead(&psSyncPt->iRef),
+			OSAtomicRead(&psSyncPt->iStatus) ==
+					PVRSRV_SYNC_SIGNALLED ?
+				"Signalled" :
+			OSAtomicRead(&psSyncPt->iStatus) ==
+					PVRSRV_SYNC_ERRORED ?
+				"Errored" :
+				"Active",
+			psSyncPt);
 	}
 
 	/* ... all attached syncs to that sync point */
-	dllist_foreach_node(&psSyncPt->sSignalCallbacks,
-	                    psCBNode,
-	                    psNextCBNode)
+	dllist_foreach_node(&psSyncPt->sSignalCallbacks, psCBNode, psNextCBNode)
 	{
-		psCb = IMG_CONTAINER_OF(psCBNode,
-		                        PVRSRV_SYNC_SIGNAL_CB,
-		                        sCallbackNode);
+		psCb = IMG_CONTAINER_OF(psCBNode, PVRSRV_SYNC_SIGNAL_CB,
+					sCallbackNode);
 
-		switch (_SyncFbSyncPtHandleType(psCb))
-		{
-			case PVRSRV_SYNC_HANDLE_PVR:
-			{
-				PSYNC_CHECKPOINT pCP = psCb->hAttachedSync;
-				PVR_DUMPDEBUG_LOG("    - CbType: PVR-Checkpoint, ID: %u, FWAddr: %#08x, Enq: %d, Ref: %d, %-9s - <0x"IMG_KM_PTR_FMTSPEC">",
-				                  SyncCheckpointGetId(pCP),
-				                  SyncCheckpointGetFirmwareAddr(pCP),
-				                  SyncCheckpointGetEnqueuedCount(pCP),
-				                  SyncCheckpointGetReferenceCount(pCP),
-				                  SyncCheckpointGetStateString(pCP),
-				                  pCP);
-				break;
-			}
-			case PVRSRV_SYNC_HANDLE_SW:
-			{
-				PVRSRV_SYNC_PT_SW *psSWPt = psCb->hAttachedSync;
-				PVR_DUMPDEBUG_LOG("    - CbType: SW-Syncpoint, %-9s - <0x"IMG_KM_PTR_FMTSPEC">",
-				                  psSWPt->bSignalled ? "Signalled" : "Active",
-				                  psSWPt);
-				break;
-			}
-			case PVRSRV_SYNC_HANDLE_UNKNOWN:
-			default:
-				PVR_DUMPDEBUG_LOG("    - CbType: Unknown - <0x"IMG_KM_PTR_FMTSPEC">",
-				                  psCb->hAttachedSync);
+		switch (_SyncFbSyncPtHandleType(psCb)) {
+		case PVRSRV_SYNC_HANDLE_PVR: {
+			PSYNC_CHECKPOINT pCP = psCb->hAttachedSync;
+			PVR_DUMPDEBUG_LOG(
+				"    - CbType: PVR-Checkpoint, ID: %u, FWAddr: %#08x, Enq: %d, Ref: %d, %-9s - <0x" IMG_KM_PTR_FMTSPEC
+				">",
+				SyncCheckpointGetId(pCP),
+				SyncCheckpointGetFirmwareAddr(pCP),
+				SyncCheckpointGetEnqueuedCount(pCP),
+				SyncCheckpointGetReferenceCount(pCP),
+				SyncCheckpointGetStateString(pCP), pCP);
+			break;
+		}
+		case PVRSRV_SYNC_HANDLE_SW: {
+			PVRSRV_SYNC_PT_SW *psSWPt = psCb->hAttachedSync;
+			PVR_DUMPDEBUG_LOG(
+				"    - CbType: SW-Syncpoint, %-9s - <0x" IMG_KM_PTR_FMTSPEC
+				">",
+				psSWPt->bSignalled ? "Signalled" : "Active",
+				psSWPt);
+			break;
+		}
+		case PVRSRV_SYNC_HANDLE_UNKNOWN:
+		default:
+			PVR_DUMPDEBUG_LOG(
+				"    - CbType: Unknown - <0x" IMG_KM_PTR_FMTSPEC
+				">",
+				psCb->hAttachedSync);
 		}
 	}
 }
@@ -528,14 +536,14 @@ static void _SyncFbDebugRequestPrintSyncPt(PVRSRV_SYNC_PT *psSyncPt,
 /* Function registered with the debug dump mechanism. Prints out all timelines
  * with pending syncs. */
 static void _SyncFbDebugRequest(IMG_HANDLE hDebugRequestHandle,
-                                IMG_UINT32 ui32VerbLevel,
-                                DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
-                                void *pvDumpDebugFile)
+				IMG_UINT32 ui32VerbLevel,
+				DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
+				void *pvDumpDebugFile)
 {
 	PVR_UNREFERENCED_PARAMETER(hDebugRequestHandle);
 
-	if (DD_VERB_LVL_ENABLED(ui32VerbLevel, DEBUG_REQUEST_VERBOSITY_MEDIUM))
-	{
+	if (DD_VERB_LVL_ENABLED(ui32VerbLevel,
+				DEBUG_REQUEST_VERBOSITY_MEDIUM)) {
 		IMG_UINT32 i;
 
 		PDLLIST_NODE psTlNode, psNextTlNode;
@@ -549,71 +557,69 @@ static void _SyncFbDebugRequest(IMG_HANDLE hDebugRequestHandle,
 
 		OSLockAcquire(gsSyncFbContext.hFbContextLock);
 
-		PVR_DUMPDEBUG_LOG("------[ Fallback Fence Sync: timelines ]------");
+		PVR_DUMPDEBUG_LOG(
+			"------[ Fallback Fence Sync: timelines ]------");
 
 		/* Iterate over all timelines */
-		dllist_foreach_node(&gsSyncFbContext.sTlList, psTlNode, psNextTlNode)
+		dllist_foreach_node(&gsSyncFbContext.sTlList, psTlNode,
+				    psNextTlNode)
 		{
-
-			psTl = IMG_CONTAINER_OF(psTlNode,
-			                        PVRSRV_TIMELINE_SERVER,
-			                        sTlList);
+			psTl = IMG_CONTAINER_OF(
+				psTlNode, PVRSRV_TIMELINE_SERVER, sTlList);
 
 			OSLockAcquire(psTl->hTlLock);
 
-			PVR_DUMPDEBUG_LOG("Timeline: %s, SeqNum: %d/%d - <%#"IMG_UINT64_FMTSPECx">",
-			                  psTl->pszName,
-			                  OSAtomicRead(&psTl->iLastSignalledSeqNum),
-			                  OSAtomicRead(&psTl->iSeqNum),
-			                  psTl->iUID);
+			PVR_DUMPDEBUG_LOG(
+				"Timeline: %s, SeqNum: %d/%d - <%#" IMG_UINT64_FMTSPECx
+				">",
+				psTl->pszName,
+				OSAtomicRead(&psTl->iLastSignalledSeqNum),
+				OSAtomicRead(&psTl->iSeqNum), psTl->iUID);
 
 			/* ... all active sync points in the timeline */
-			dllist_foreach_node(&psTl->sSyncActiveList, psPtNode, psNextPtNode)
+			dllist_foreach_node(&psTl->sSyncActiveList, psPtNode,
+					    psNextPtNode)
 			{
-
 				psSyncPt = IMG_CONTAINER_OF(psPtNode,
-				                            PVRSRV_SYNC_PT,
-				                            sTlSyncActiveList);
+							    PVRSRV_SYNC_PT,
+							    sTlSyncActiveList);
 
-				_SyncFbDebugRequestPrintSyncPt(psSyncPt,
-				                               IMG_FALSE,
-				                               pfnDumpDebugPrintf,
-				                               pvDumpDebugFile);
-
+				_SyncFbDebugRequestPrintSyncPt(
+					psSyncPt, IMG_FALSE, pfnDumpDebugPrintf,
+					pvDumpDebugFile);
 			}
 			OSLockRelease(psTl->hTlLock);
 		}
 
-		PVR_DUMPDEBUG_LOG("------[ Fallback Fence Sync: fences ]------");
+		PVR_DUMPDEBUG_LOG(
+			"------[ Fallback Fence Sync: fences ]------");
 
 		/* Iterate over all fences */
-		dllist_foreach_node(&gsSyncFbContext.sFenceList,
-							psFenceNode,
-							psNextFenceNode)
+		dllist_foreach_node(&gsSyncFbContext.sFenceList, psFenceNode,
+				    psNextFenceNode)
 		{
 			psFence = IMG_CONTAINER_OF(psFenceNode,
-			                           PVRSRV_FENCE_SERVER,
-			                           sFenceListNode);
+						   PVRSRV_FENCE_SERVER,
+						   sFenceListNode);
 
-			PVR_DUMPDEBUG_LOG("Fence: %s, %-9s - <%#"IMG_UINT64_FMTSPECx">",
-			                  psFence->pszName,
-			                  _SyncFbFenceSyncsHaveSignalled(psFence) ?
-			                      "Signalled" : "Active",
-				               psFence->iUID);
+			PVR_DUMPDEBUG_LOG(
+				"Fence: %s, %-9s - <%#" IMG_UINT64_FMTSPECx ">",
+				psFence->pszName,
+				_SyncFbFenceSyncsHaveSignalled(psFence) ?
+					"Signalled" :
+					"Active",
+				psFence->iUID);
 
 			/* ... all sync points in the fence */
-			for (i = 0; i < psFence->uiNumSyncs; i++)
-			{
-				_SyncFbDebugRequestPrintSyncPt(psFence->apsFenceSyncList[i],
-                                               IMG_TRUE,
-				                               pfnDumpDebugPrintf,
-				                               pvDumpDebugFile);
+			for (i = 0; i < psFence->uiNumSyncs; i++) {
+				_SyncFbDebugRequestPrintSyncPt(
+					psFence->apsFenceSyncList[i], IMG_TRUE,
+					pfnDumpDebugPrintf, pvDumpDebugFile);
 			}
 		}
 
 		OSLockRelease(gsSyncFbContext.hFbContextLock);
 	}
-
 }
 
 /* Notify callback that is called as part of the RGX MISR e.g. after FW
@@ -635,53 +641,49 @@ static void _SyncFbTimelineUpdate_NotifyCMD(void *psSyncFbContext)
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
 	dllist_foreach_node(psTlList, psCurrentTl, psNextTl)
 	{
-		psTl = IMG_CONTAINER_OF(psCurrentTl,
-		                        PVRSRV_TIMELINE_SERVER,
-		                        sTlList);
+		psTl = IMG_CONTAINER_OF(psCurrentTl, PVRSRV_TIMELINE_SERVER,
+					sTlList);
 
 		/* Inner loop over all SyncPts in the timeline.
 		 * Check & Update all active SyncPts */
 		OSLockAcquire(psTl->hTlLock);
-		dllist_foreach_node(&psTl->sSyncActiveList, psCurrentPt, psNextPt)
+		dllist_foreach_node(&psTl->sSyncActiveList, psCurrentPt,
+				    psNextPt)
 		{
-			psSyncPt = IMG_CONTAINER_OF(psCurrentPt,
-			                            PVRSRV_SYNC_PT,
-			                            sTlSyncActiveList);
+			psSyncPt = IMG_CONTAINER_OF(psCurrentPt, PVRSRV_SYNC_PT,
+						    sTlSyncActiveList);
 
 			/* If the SyncPt has been signalled we have to
 			 * update all attached syncs */
-			bSignalled = psTl->sTlOps.pfnSyncPtHasSignalled(psSyncPt);
-			if (bSignalled)
-			{
+			bSignalled =
+				psTl->sTlOps.pfnSyncPtHasSignalled(psSyncPt);
+			if (bSignalled) {
 				/* Wake up waiters after releasing the locks */
 				bSignal = IMG_TRUE;
 
 				/* Remove the SyncPt from the active list of the timeline. */
 				dllist_remove_node(psCurrentPt);
-			}
-			else
-			{
+			} else {
 				/* No need to check further points on this timeline because
 				 * this sync pt will be signalled first */
 				break;
 			}
 
-		}/* End inner loop */
+		} /* End inner loop */
 		OSLockRelease(psTl->hTlLock);
 
 	} /* End outer loop */
 	OSLockRelease(gsSyncFbContext.hFbContextLock);
 
-	if (bSignal)
-	{
+	if (bSignal) {
 		PVR_LOG_IF_ERROR(_SyncFbSignalEO(), "_SyncFbSignalEO");
 	}
 
 	PVR_DPF_RETURN;
 }
 
-static IMG_UINT32
-_SyncCheckpointFWAddrHash(size_t uKeySize, void *pKey, IMG_UINT32 uHashTabLen)
+static IMG_UINT32 _SyncCheckpointFWAddrHash(size_t uKeySize, void *pKey,
+					    IMG_UINT32 uHashTabLen)
 {
 	IMG_UINT32 *p = (IMG_UINT32 *)pKey;
 	IMG_UINT32 uKeyLen = uKeySize / sizeof(IMG_UINT32);
@@ -690,8 +692,7 @@ _SyncCheckpointFWAddrHash(size_t uKeySize, void *pKey, IMG_UINT32 uHashTabLen)
 
 	PVR_UNREFERENCED_PARAMETER(uHashTabLen);
 
-	for (ui = 0; ui < uKeyLen; ui++)
-	{
+	for (ui = 0; ui < uKeyLen; ui++) {
 		IMG_UINT32 uHashPart = *p++;
 
 		uHashPart += (uHashPart << 12);
@@ -709,16 +710,15 @@ _SyncCheckpointFWAddrHash(size_t uKeySize, void *pKey, IMG_UINT32 uHashTabLen)
 	return uHashKey;
 }
 
-static IMG_BOOL
-_SyncCheckpointFWAddrCompare(size_t uKeySize, void *pKey1, void *pKey2)
+static IMG_BOOL _SyncCheckpointFWAddrCompare(size_t uKeySize, void *pKey1,
+					     void *pKey2)
 {
 	IMG_UINT32 *p1 = (IMG_UINT32 *)pKey1;
 	IMG_UINT32 *p2 = (IMG_UINT32 *)pKey2;
 	IMG_UINT32 uKeyLen = uKeySize / sizeof(IMG_UINT32);
 	IMG_UINT32 ui;
 
-	for (ui = 0; ui < uKeyLen; ui++)
-	{
+	for (ui = 0; ui < uKeyLen; ui++) {
 		if (*p1++ != *p2++)
 			return IMG_FALSE;
 	}
@@ -727,8 +727,9 @@ _SyncCheckpointFWAddrCompare(size_t uKeySize, void *pKey1, void *pKey2)
 }
 
 #if defined(PDUMP)
-static PVRSRV_ERROR SyncFbFenceGetCheckpoints(PVRSRV_FENCE hFence, IMG_UINT32 *puiNumCheckpoints,
-		                                PSYNC_CHECKPOINT **papsCheckpoints)
+static PVRSRV_ERROR
+SyncFbFenceGetCheckpoints(PVRSRV_FENCE hFence, IMG_UINT32 *puiNumCheckpoints,
+			  PSYNC_CHECKPOINT **papsCheckpoints)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_FENCE_SERVER *psFence;
@@ -740,8 +741,7 @@ static PVRSRV_ERROR SyncFbFenceGetCheckpoints(PVRSRV_FENCE hFence, IMG_UINT32 *p
 	PDLLIST_NODE psNode;
 	IMG_UINT32 i, uiNumCheckpoints = 0;
 
-	if (hFence == PVRSRV_NO_FENCE)
-	{
+	if (hFence == PVRSRV_NO_FENCE) {
 		*puiNumCheckpoints = 0;
 		eError = PVRSRV_OK;
 		goto e0;
@@ -750,14 +750,14 @@ static PVRSRV_ERROR SyncFbFenceGetCheckpoints(PVRSRV_FENCE hFence, IMG_UINT32 *p
 	eError = _SyncFbAcquireProcHandleBase(&psProcBase);
 	PVR_GOTO_IF_ERROR(eError, e0);
 
-	eError = PVRSRVLookupHandle(psProcBase->psHandleBase,
-	                           (void**)&psFence,
-	                           (IMG_HANDLE) (uintptr_t) hFence,
-	                           PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
-	                           IMG_TRUE);
+	eError = PVRSRVLookupHandle(psProcBase->psHandleBase, (void **)&psFence,
+				    (IMG_HANDLE)(uintptr_t)hFence,
+				    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
+				    IMG_TRUE);
 	PVR_GOTO_IF_ERROR(eError, err_release_proc_base);
 
-	apsCheckpoints = OSAllocMem(sizeof(*apsCheckpoints) * psFence->uiNumSyncs);
+	apsCheckpoints =
+		OSAllocMem(sizeof(*apsCheckpoints) * psFence->uiNumSyncs);
 	PVR_LOG_GOTO_IF_NOMEM(apsCheckpoints, eError, e1);
 
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
@@ -766,16 +766,17 @@ static PVRSRV_ERROR SyncFbFenceGetCheckpoints(PVRSRV_FENCE hFence, IMG_UINT32 *p
 	_SyncFbFenceAcquire(psFence);
 
 	/* Go through all syncs and add them to the list */
-	for (i = 0; i < psFence->uiNumSyncs; i++)
-	{
+	for (i = 0; i < psFence->uiNumSyncs; i++) {
 		psSyncPt = psFence->apsFenceSyncList[i];
 
 		psNode = dllist_get_next_node(&psSyncPt->sSignalCallbacks);
-		psSyncCB = IMG_CONTAINER_OF(psNode, PVRSRV_SYNC_SIGNAL_CB, sCallbackNode);
+		psSyncCB = IMG_CONTAINER_OF(psNode, PVRSRV_SYNC_SIGNAL_CB,
+					    sCallbackNode);
 
-		if (_SyncFbSyncPtHandleType(psSyncCB) == PVRSRV_SYNC_HANDLE_PVR)
-		{
-			psCheckpoint = (PSYNC_CHECKPOINT) psSyncCB->hAttachedSync;
+		if (_SyncFbSyncPtHandleType(psSyncCB) ==
+		    PVRSRV_SYNC_HANDLE_PVR) {
+			psCheckpoint =
+				(PSYNC_CHECKPOINT)psSyncCB->hAttachedSync;
 			SyncCheckpointTakeRef(psCheckpoint);
 			apsCheckpoints[uiNumCheckpoints++] = psCheckpoint;
 		}
@@ -790,8 +791,8 @@ static PVRSRV_ERROR SyncFbFenceGetCheckpoints(PVRSRV_FENCE hFence, IMG_UINT32 *p
 
 e1:
 	PVRSRVReleaseHandle(psProcBase->psHandleBase,
-	                    (IMG_HANDLE) (uintptr_t) hFence,
-	                    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
+			    (IMG_HANDLE)(uintptr_t)hFence,
+			    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
 err_release_proc_base:
 	_SyncFbReleaseProcHandleBase(psProcBase);
 e0:
@@ -802,19 +803,28 @@ e0:
 PVRSRV_ERROR SyncFbRegisterSyncFunctions(void)
 {
 	/* Initialise struct and register with sync_checkpoint.c */
-	gsSyncFbContext.sSyncCheckpointReg.pfnFenceResolve = &SyncFbFenceResolvePVR;
-	gsSyncFbContext.sSyncCheckpointReg.pfnFenceCreate = &SyncFbFenceCreatePVR;
-	gsSyncFbContext.sSyncCheckpointReg.pfnFenceDataRollback = &SyncFbFenceRollbackPVR;
-	gsSyncFbContext.sSyncCheckpointReg.pfnFenceFinalise = NULL; /* no fence finalise function required */
-	gsSyncFbContext.sSyncCheckpointReg.pfnNoHWUpdateTimelines = &_SyncFbTimelineUpdate_NotifyCMD;
+	gsSyncFbContext.sSyncCheckpointReg.pfnFenceResolve =
+		&SyncFbFenceResolvePVR;
+	gsSyncFbContext.sSyncCheckpointReg.pfnFenceCreate =
+		&SyncFbFenceCreatePVR;
+	gsSyncFbContext.sSyncCheckpointReg.pfnFenceDataRollback =
+		&SyncFbFenceRollbackPVR;
+	gsSyncFbContext.sSyncCheckpointReg.pfnFenceFinalise =
+		NULL; /* no fence finalise function required */
+	gsSyncFbContext.sSyncCheckpointReg.pfnNoHWUpdateTimelines =
+		&_SyncFbTimelineUpdate_NotifyCMD;
 	gsSyncFbContext.sSyncCheckpointReg.pfnFreeCheckpointListMem = OSFreeMem;
-	gsSyncFbContext.sSyncCheckpointReg.pfnDumpInfoOnStalledUFOs = &SyncFbDumpInfoOnStalledUFOs;
-	OSStringSafeCopy(gsSyncFbContext.sSyncCheckpointReg.pszImplName, "SyncFb", SYNC_CHECKPOINT_IMPL_MAX_STRLEN);
+	gsSyncFbContext.sSyncCheckpointReg.pfnDumpInfoOnStalledUFOs =
+		&SyncFbDumpInfoOnStalledUFOs;
+	OSStringSafeCopy(gsSyncFbContext.sSyncCheckpointReg.pszImplName,
+			 "SyncFb", SYNC_CHECKPOINT_IMPL_MAX_STRLEN);
 #if defined(PDUMP)
-	gsSyncFbContext.sSyncCheckpointReg.pfnSyncFenceGetCheckpoints = &SyncFbFenceGetCheckpoints;
+	gsSyncFbContext.sSyncCheckpointReg.pfnSyncFenceGetCheckpoints =
+		&SyncFbFenceGetCheckpoints;
 #endif
 
-	return SyncCheckpointRegisterFunctions(&gsSyncFbContext.sSyncCheckpointReg);
+	return SyncCheckpointRegisterFunctions(
+		&gsSyncFbContext.sSyncCheckpointReg);
 }
 
 PVRSRV_ERROR SyncFbRegisterDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
@@ -825,23 +835,24 @@ PVRSRV_ERROR SyncFbRegisterDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
 	PVR_DPF_ENTERED;
 
 	/* Initialise the sync fallback context */
-	if (gsSyncFbContext.hSyncEventObject == NULL)
-	{
+	if (gsSyncFbContext.hSyncEventObject == NULL) {
 		eError = OSEventObjectCreate("Sync event object",
-		                             &gsSyncFbContext.hSyncEventObject);
+					     &gsSyncFbContext.hSyncEventObject);
 		PVR_GOTO_IF_ERROR(eError, e1);
 
 		dllist_init(&gsSyncFbContext.sTlList);
 		dllist_init(&gsSyncFbContext.sFenceList);
 		dllist_init(&gsSyncFbContext.sDeviceList);
-		gsSyncFbContext.sCheckpointHashTable = HASH_Create_Extended(64, sizeof(IMG_UINT32), _SyncCheckpointFWAddrHash, _SyncCheckpointFWAddrCompare);
+		gsSyncFbContext.sCheckpointHashTable = HASH_Create_Extended(
+			64, sizeof(IMG_UINT32), _SyncCheckpointFWAddrHash,
+			_SyncCheckpointFWAddrCompare);
 
 		eError = OSLockCreate(&gsSyncFbContext.hFbContextLock);
 		PVR_GOTO_IF_ERROR(eError, e2);
 
-		eError = PVRSRVRegisterCmdCompleteNotify(&gsSyncFbContext.hCMDNotify,
-		                                         &_SyncFbTimelineUpdate_NotifyCMD,
-		                                         &gsSyncFbContext);
+		eError = PVRSRVRegisterCmdCompleteNotify(
+			&gsSyncFbContext.hCMDNotify,
+			&_SyncFbTimelineUpdate_NotifyCMD, &gsSyncFbContext);
 		PVR_GOTO_IF_ERROR(eError, e3);
 	}
 
@@ -851,18 +862,16 @@ PVRSRV_ERROR SyncFbRegisterDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
 	psNewDeviceEntry->psDevice = psDeviceNode;
 
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
-	dllist_add_to_tail(&gsSyncFbContext.sDeviceList, &psNewDeviceEntry->sDeviceListNode);
+	dllist_add_to_tail(&gsSyncFbContext.sDeviceList,
+			   &psNewDeviceEntry->sDeviceListNode);
 	OSLockRelease(gsSyncFbContext.hFbContextLock);
 
-	eError = PVRSRVRegisterDeviceDbgRequestNotify(&psNewDeviceEntry->hDBGNotify,
-	                                              psDeviceNode,
-	                                              _SyncFbDebugRequest,
-	                                              DEBUG_REQUEST_FALLBACKSYNC,
-	                                              NULL);
+	eError = PVRSRVRegisterDeviceDbgRequestNotify(
+		&psNewDeviceEntry->hDBGNotify, psDeviceNode,
+		_SyncFbDebugRequest, DEBUG_REQUEST_FALLBACKSYNC, NULL);
 	PVR_GOTO_IF_ERROR(eError, e5);
 
 	PVR_DPF_RETURN_RC(eError);
-
 
 e5:
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
@@ -895,13 +904,12 @@ PVRSRV_ERROR SyncFbDeregisterDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
 	/* Check device list for the given device and remove it */
 	dllist_foreach_node(&gsSyncFbContext.sDeviceList, psNode, psNext)
 	{
-		psDeviceEntry = IMG_CONTAINER_OF(psNode,
-		                                 SYNC_FB_CONTEXT_DEVICE_LIST,
-		                                 sDeviceListNode);
+		psDeviceEntry = IMG_CONTAINER_OF(
+			psNode, SYNC_FB_CONTEXT_DEVICE_LIST, sDeviceListNode);
 
-		if (psDeviceEntry->psDevice == psDeviceNode)
-		{
-			PVRSRVUnregisterDeviceDbgRequestNotify(psDeviceEntry->hDBGNotify);
+		if (psDeviceEntry->psDevice == psDeviceNode) {
+			PVRSRVUnregisterDeviceDbgRequestNotify(
+				psDeviceEntry->hDBGNotify);
 
 			OSLockAcquire(gsSyncFbContext.hFbContextLock);
 			dllist_remove_node(psNode);
@@ -913,8 +921,7 @@ PVRSRV_ERROR SyncFbDeregisterDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
 	}
 
 	/* If there are still devices registered with us don't deinit module */
-	if (!dllist_is_empty(&gsSyncFbContext.sDeviceList))
-	{
+	if (!dllist_is_empty(&gsSyncFbContext.sDeviceList)) {
 		goto e1;
 	}
 
@@ -935,8 +942,8 @@ e1:
 /* HOLD TL LOCK!
  * Creates a new sync point on a timeline */
 static PVRSRV_ERROR _SyncFbSyncPtCreate(PVRSRV_SYNC_PT **ppsSyncPt,
-                                       PVRSRV_TIMELINE_SERVER *psTl,
-                                       IMG_UINT32 uiSeqNumber)
+					PVRSRV_TIMELINE_SERVER *psTl,
+					IMG_UINT32 uiSeqNumber)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_SYNC_PT *psNewSyncPt;
@@ -951,7 +958,7 @@ static PVRSRV_ERROR _SyncFbSyncPtCreate(PVRSRV_SYNC_PT **ppsSyncPt,
 
 	psNewSyncPt->uiSeqNum = uiSeqNumber;
 	psNewSyncPt->uiPID = OSGetCurrentClientProcessIDKM();
-	PT_REF_SET(&psNewSyncPt->iRef, 1,psNewSyncPt);
+	PT_REF_SET(&psNewSyncPt->iRef, 1, psNewSyncPt);
 
 	dllist_init(&psNewSyncPt->sTlSyncList);
 	dllist_init(&psNewSyncPt->sTlSyncActiveList);
@@ -961,7 +968,8 @@ static PVRSRV_ERROR _SyncFbSyncPtCreate(PVRSRV_SYNC_PT **ppsSyncPt,
 	_SyncFbTimelineAcquire(psTl);
 
 	dllist_add_to_tail(&psTl->sSyncList, &psNewSyncPt->sTlSyncList);
-	dllist_add_to_tail(&psTl->sSyncActiveList, &psNewSyncPt->sTlSyncActiveList);
+	dllist_add_to_tail(&psTl->sSyncActiveList,
+			   &psNewSyncPt->sTlSyncActiveList);
 
 	*ppsSyncPt = psNewSyncPt;
 
@@ -979,7 +987,7 @@ static void _SyncFbSyncPtAcquire(PVRSRV_SYNC_PT *psSyncPt)
 
 /* Release and maybe destroy sync point if refcount is 0 */
 static PVRSRV_ERROR _SyncFbSyncPtRelease(PVRSRV_SYNC_PT *psSyncPt,
-                                         IMG_BOOL bError)
+					 IMG_BOOL bError)
 {
 	PVRSRV_ERROR eError;
 	PDLLIST_NODE psNode, psNext;
@@ -989,8 +997,7 @@ static PVRSRV_ERROR _SyncFbSyncPtRelease(PVRSRV_SYNC_PT *psSyncPt,
 	PVR_DPF_ENTERED1(psSyncPt);
 
 	iRef = PT_REF_DEC(&psSyncPt->iRef, psSyncPt);
-	if (iRef != 0)
-	{
+	if (iRef != 0) {
 		eError = PVRSRV_OK;
 		goto e1;
 	}
@@ -999,16 +1006,18 @@ static PVRSRV_ERROR _SyncFbSyncPtRelease(PVRSRV_SYNC_PT *psSyncPt,
 	/* Remove all checkpoints from the ufo lookup table. */
 	dllist_foreach_node(&psSyncPt->sSignalCallbacks, psNode, psNext)
 	{
-		psSyncCB = IMG_CONTAINER_OF(psNode,
-		                            PVRSRV_SYNC_SIGNAL_CB,
-		                            sCallbackNode);
+		psSyncCB = IMG_CONTAINER_OF(psNode, PVRSRV_SYNC_SIGNAL_CB,
+					    sCallbackNode);
 
-		if (_SyncFbSyncPtHandleType(psSyncCB) == PVRSRV_SYNC_HANDLE_PVR)
-		{
-			IMG_UINT32 ui32FwAddr = SyncCheckpointGetFirmwareAddr((PSYNC_CHECKPOINT) psSyncCB->hAttachedSync);
+		if (_SyncFbSyncPtHandleType(psSyncCB) ==
+		    PVRSRV_SYNC_HANDLE_PVR) {
+			IMG_UINT32 ui32FwAddr = SyncCheckpointGetFirmwareAddr(
+				(PSYNC_CHECKPOINT)psSyncCB->hAttachedSync);
 
 			DBG(("%s: Removing key <%#08x>", __func__, ui32FwAddr));
-			HASH_Remove_Extended(gsSyncFbContext.sCheckpointHashTable, &ui32FwAddr);
+			HASH_Remove_Extended(
+				gsSyncFbContext.sCheckpointHashTable,
+				&ui32FwAddr);
 		}
 	}
 	OSLockRelease(gsSyncFbContext.hFbContextLock);
@@ -1019,19 +1028,16 @@ static PVRSRV_ERROR _SyncFbSyncPtRelease(PVRSRV_SYNC_PT *psSyncPt,
 
 	dllist_remove_node(&psSyncPt->sTlSyncList);
 
-	if (bError)
-	{
+	if (bError) {
 		_SyncFbSyncPtSignalAttached(psSyncPt, PVRSRV_SYNC_ERRORED);
 	}
 	OSLockRelease(psSyncPt->psTl->hTlLock);
 
 	/* Remove all attached nodes and signal them. */
-	while (!dllist_is_empty(&psSyncPt->sSignalCallbacks))
-	{
+	while (!dllist_is_empty(&psSyncPt->sSignalCallbacks)) {
 		psNode = dllist_get_next_node(&psSyncPt->sSignalCallbacks);
-		psSyncCB = IMG_CONTAINER_OF(psNode,
-		                            PVRSRV_SYNC_SIGNAL_CB,
-		                            sCallbackNode);
+		psSyncCB = IMG_CONTAINER_OF(psNode, PVRSRV_SYNC_SIGNAL_CB,
+					    sCallbackNode);
 
 		psSyncCB->pfnSyncFree(psSyncCB->hAttachedSync);
 		dllist_remove_node(&psSyncCB->sCallbackNode);
@@ -1052,7 +1058,7 @@ e1:
 /* HOLD TL LOCK!
  * Mark all attached syncs of a sync point with the state eSignal */
 static PVRSRV_ERROR _SyncFbSyncPtSignalAttached(PVRSRV_SYNC_PT *psSyncPt,
-                                                PVRSRV_SYNC_STATE eSignal)
+						PVRSRV_SYNC_STATE eSignal)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK, eRet;
 	PDLLIST_NODE psCurrentCB, psNextCB;
@@ -1060,8 +1066,7 @@ static PVRSRV_ERROR _SyncFbSyncPtSignalAttached(PVRSRV_SYNC_PT *psSyncPt,
 
 	PVR_DPF_ENTERED1(psSyncPt);
 
-	if (dllist_is_empty(&psSyncPt->sSignalCallbacks))
-	{
+	if (dllist_is_empty(&psSyncPt->sSignalCallbacks)) {
 		ERR("Sync pt has no attached syncs. Make sure to attach one "
 		    "when creating a new sync pt to define its flavour");
 		eError = PVRSRV_ERROR_INVALID_PARAMS;
@@ -1070,12 +1075,10 @@ static PVRSRV_ERROR _SyncFbSyncPtSignalAttached(PVRSRV_SYNC_PT *psSyncPt,
 
 	dllist_foreach_node(&psSyncPt->sSignalCallbacks, psCurrentCB, psNextCB)
 	{
-		psCB = IMG_CONTAINER_OF(psCurrentCB,
-		                        PVRSRV_SYNC_SIGNAL_CB,
-		                        sCallbackNode);
+		psCB = IMG_CONTAINER_OF(psCurrentCB, PVRSRV_SYNC_SIGNAL_CB,
+					sCallbackNode);
 		eRet = psCB->pfnSignal(psCB->hAttachedSync, eSignal);
-		if (eRet != PVRSRV_OK)
-		{
+		if (eRet != PVRSRV_OK) {
 			ERR("Failed to signal an attached sync, system might block!");
 			eError = eRet;
 			/* Don't jump to exit but try to signal remaining syncs */
@@ -1088,17 +1091,17 @@ e1:
 
 /* HOLD TL LOCK!
  * Mark all a sync point with the state eSignal */
-static PVRSRV_ERROR _SyncFbSyncPtSignal(PVRSRV_SYNC_PT *psSyncPt, PVRSRV_SYNC_STATE eSignal)
+static PVRSRV_ERROR _SyncFbSyncPtSignal(PVRSRV_SYNC_PT *psSyncPt,
+					PVRSRV_SYNC_STATE eSignal)
 {
 	PVR_DPF_ENTERED1(psSyncPt);
 
 	OSAtomicWrite(&psSyncPt->iStatus, eSignal);
 
 	if (psSyncPt->uiSeqNum >
-	    OSAtomicRead(&psSyncPt->psTl->iLastSignalledSeqNum))
-	{
+	    OSAtomicRead(&psSyncPt->psTl->iLastSignalledSeqNum)) {
 		OSAtomicWrite(&psSyncPt->psTl->iLastSignalledSeqNum,
-		              psSyncPt->uiSeqNum);
+			      psSyncPt->uiSeqNum);
 	}
 
 	PVR_DPF_RETURN_OK;
@@ -1111,17 +1114,14 @@ static IMG_BOOL _SyncFbFenceSyncsHaveSignalled(PVRSRV_FENCE_SERVER *psFence)
 
 	PVR_DPF_ENTERED1(psFence);
 
-	for (i = 0; i < psFence->uiNumSyncs; i++)
-	{
+	for (i = 0; i < psFence->uiNumSyncs; i++) {
 		if (OSAtomicRead(&psFence->apsFenceSyncList[i]->iStatus) ==
-			PVRSRV_SYNC_NOT_SIGNALLED)
-		{
+		    PVRSRV_SYNC_NOT_SIGNALLED) {
 			PVR_DPF_RETURN_RC1(IMG_FALSE, psFence);
 		}
 	}
 
-	OSAtomicWrite(&psFence->iStatus,
-	              PVRSRV_FENCE_SIGNALLED);
+	OSAtomicWrite(&psFence->iStatus, PVRSRV_FENCE_SIGNALLED);
 
 	PVR_DPF_RETURN_RC1(IMG_TRUE, psFence);
 }
@@ -1139,13 +1139,11 @@ PVRSRV_ERROR SyncFbTimelineRelease(PVRSRV_TIMELINE_SERVER *psTl)
 	PVR_DPF_ENTERED1(psTl);
 
 	iRef = TL_REF_DEC(&psTl->iRef, psTl);
-	if (iRef != 0)
-	{
+	if (iRef != 0) {
 		PVR_DPF_RETURN_OK;
 	}
 
-	if (_SyncFbTimelineHandleType(psTl) == PVRSRV_SYNC_HANDLE_SW)
-	{
+	if (_SyncFbTimelineHandleType(psTl) == PVRSRV_SYNC_HANDLE_SW) {
 		_SyncSWTimelineCheckForUnsignalledPts(psTl);
 	}
 
@@ -1182,61 +1180,56 @@ PVRSRV_ERROR SyncFbFenceRelease(PVRSRV_FENCE_SERVER *psFence)
 	/* If cleanup thread, force cleanup of SW fences, otherwise
 	 * simply decrement psFence->iRef
 	 */
-	if (OSGetCurrentClientProcessIDKM() == PVRSRVGetPVRSRVData()->cleanupThreadPid)
-	{
+	if (OSGetCurrentClientProcessIDKM() ==
+	    PVRSRVGetPVRSRVData()->cleanupThreadPid) {
 		IMG_UINT32 uiSyncPt;
 
 		/* Force erroring of any SW sync pts this fence may contain */
-		for (uiSyncPt=0; uiSyncPt < psFence->uiNumSyncs; uiSyncPt++)
-		{
-			PVRSRV_SYNC_PT *psSyncPt = psFence->apsFenceSyncList[uiSyncPt];
+		for (uiSyncPt = 0; uiSyncPt < psFence->uiNumSyncs; uiSyncPt++) {
+			PVRSRV_SYNC_PT *psSyncPt =
+				psFence->apsFenceSyncList[uiSyncPt];
 
 			/* If this is a SW sync point from a timeline which was created
 			 * by the process being cleaned-up, then error it
 			 */
-			if ((_SyncFbTimelineHandleType(psSyncPt->psTl) == PVRSRV_SYNC_HANDLE_SW) &&
-			    (PVRSRVGetPurgeConnectionPid() == psSyncPt->psTl->uiPID))
-			{
+			if ((_SyncFbTimelineHandleType(psSyncPt->psTl) ==
+			     PVRSRV_SYNC_HANDLE_SW) &&
+			    (PVRSRVGetPurgeConnectionPid() ==
+			     psSyncPt->psTl->uiPID)) {
 				OSLockAcquire(psSyncPt->psTl->hTlLock);
-				_SyncFbSyncPtSignalAttached(psSyncPt, PVRSRV_SYNC_ERRORED);
+				_SyncFbSyncPtSignalAttached(
+					psSyncPt, PVRSRV_SYNC_ERRORED);
 				OSLockRelease(psSyncPt->psTl->hTlLock);
 			}
 		}
 	}
 
 	iRef = FENCE_REF_DEC(&psFence->iRef, psFence);
-	if (iRef != 0)
-	{
+	if (iRef != 0) {
 		goto e1;
 	}
 
 	PDUMPCOMMENTWITHFLAGS(psFence->psDevNode, 0,
-	                      "Destroy Fence %s (ID:%"IMG_UINT64_FMTSPEC")",
-	                      psFence->pszName,
-	                      psFence->iUID);
+			      "Destroy Fence %s (ID:%" IMG_UINT64_FMTSPEC ")",
+			      psFence->pszName, psFence->iUID);
 
 	if (OSGetCurrentClientProcessIDKM() ==
-			PVRSRVGetPVRSRVData()->cleanupThreadPid)
-	{
+	    PVRSRVGetPVRSRVData()->cleanupThreadPid) {
 		bCleanup = IMG_TRUE;
 	}
 
 	_SyncFbFenceListDel(psFence);
 
-	for (i = 0; i < psFence->uiNumSyncs; i++)
-	{
+	for (i = 0; i < psFence->uiNumSyncs; i++) {
 		PVRSRV_SYNC_PT *psSyncPt = psFence->apsFenceSyncList[i];
 
-		if (bCleanup &&
-				_SyncFbTimelineHandleType(psSyncPt->psTl) == PVRSRV_SYNC_HANDLE_SW)
-		{
+		if (bCleanup && _SyncFbTimelineHandleType(psSyncPt->psTl) ==
+					PVRSRV_SYNC_HANDLE_SW) {
 			bError = IMG_TRUE;
 		}
 
-		eRet = _SyncFbSyncPtRelease(psSyncPt,
-		                            bError);
-		if (eRet != PVRSRV_OK)
-		{
+		eRet = _SyncFbSyncPtRelease(psSyncPt, bError);
+		if (eRet != PVRSRV_OK) {
 			ERR("Error when releasing SyncPt, this might leak memory")
 			eError = eRet;
 			/* Try to continue and release the other sync pts, return error */
@@ -1245,8 +1238,7 @@ PVRSRV_ERROR SyncFbFenceRelease(PVRSRV_FENCE_SERVER *psFence)
 
 #if defined(DEBUG)
 	{
-		for (i = 0; i < psFence->uiNumSyncs; i++)
-		{
+		for (i = 0; i < psFence->uiNumSyncs; i++) {
 			psFence->apsFenceSyncList[i] = NULL;
 		}
 		psFence->uiNumSyncs = 0;
@@ -1261,16 +1253,15 @@ e1:
 }
 
 PVRSRV_ERROR SyncFbFenceDup(PVRSRV_FENCE_SERVER *psInFence,
-                            PVRSRV_FENCE_SERVER **ppsOutFence)
+			    PVRSRV_FENCE_SERVER **ppsOutFence)
 {
 	PVR_DPF_ENTERED1(psInFence);
 
 	FENCE_REF_INC(&psInFence->iRef, psInFence);
 
 	PDUMPCOMMENTWITHFLAGS(psInFence->psDevNode, 0,
-	                      "Dup Fence %s (ID:%"IMG_UINT64_FMTSPEC").",
-	                      psInFence->pszName,
-	                      psInFence->iUID);
+			      "Dup Fence %s (ID:%" IMG_UINT64_FMTSPEC ").",
+			      psInFence->pszName, psInFence->iUID);
 
 	*ppsOutFence = psInFence;
 
@@ -1282,9 +1273,8 @@ static IMG_BOOL _SyncFbSyncPtHasSignalled(PVRSRV_SYNC_PT *psSyncPt)
 	return psSyncPt->psTl->sTlOps.pfnSyncPtHasSignalled(psSyncPt);
 }
 
-static IMG_BOOL _SyncFbFenceAddPt(PVRSRV_FENCE_SERVER *psFence,
-                                  IMG_UINT32 *i,
-                                  PVRSRV_SYNC_PT *psSyncPt)
+static IMG_BOOL _SyncFbFenceAddPt(PVRSRV_FENCE_SERVER *psFence, IMG_UINT32 *i,
+				  PVRSRV_SYNC_PT *psSyncPt)
 {
 	/*
 	 * If the fence is signalled there is no need to add it to the fence.
@@ -1292,7 +1282,8 @@ static IMG_BOOL _SyncFbFenceAddPt(PVRSRV_FENCE_SERVER *psFence,
 	 * set up proper synchronisation in the pdump stream.
 	 */
 #if !defined(PDUMP)
-	if (_SyncFbSyncPtHasSignalled(psSyncPt)) return IMG_FALSE;
+	if (_SyncFbSyncPtHasSignalled(psSyncPt))
+		return IMG_FALSE;
 #endif
 	_SyncFbSyncPtAcquire(psSyncPt);
 	psFence->apsFenceSyncList[*i] = psSyncPt;
@@ -1301,10 +1292,10 @@ static IMG_BOOL _SyncFbFenceAddPt(PVRSRV_FENCE_SERVER *psFence,
 }
 
 PVRSRV_ERROR SyncFbFenceMerge(PVRSRV_FENCE_SERVER *psInFence1,
-                              PVRSRV_FENCE_SERVER *psInFence2,
-                              IMG_UINT32 uiFenceNameSize,
-                              const IMG_CHAR *pszFenceName,
-                              PVRSRV_FENCE_SERVER **ppsOutFence)
+			      PVRSRV_FENCE_SERVER *psInFence2,
+			      IMG_UINT32 uiFenceNameSize,
+			      const IMG_CHAR *pszFenceName,
+			      PVRSRV_FENCE_SERVER **ppsOutFence)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	PVRSRV_FENCE_SERVER *psNewFence;
@@ -1319,27 +1310,19 @@ PVRSRV_ERROR SyncFbFenceMerge(PVRSRV_FENCE_SERVER *psInFence1,
 	psNewFence->psDevNode = psInFence1->psDevNode;
 
 	uiFenceSyncListSize = sizeof(*(psNewFence->apsFenceSyncList)) *
-			(psInFence1->uiNumSyncs + psInFence2->uiNumSyncs);
+			      (psInFence1->uiNumSyncs + psInFence2->uiNumSyncs);
 
 	psNewFence->apsFenceSyncList = OSAllocMem(uiFenceSyncListSize);
 	PVR_LOG_GOTO_IF_NOMEM(psNewFence->apsFenceSyncList, eError, e2);
 
-	if (uiFenceNameSize == 1)
-	{
-		OSSNPrintf(psNewFence->pszName,
-		           SYNC_FB_FENCE_MAX_LENGTH,
-		           "Fence-Merged");
-	}
-	else
-	{
-		if (pszFenceName)
-		{
-			OSStringSafeCopy(psNewFence->pszName,
-						  pszFenceName,
-						  SYNC_FB_FENCE_MAX_LENGTH);
-		}
-		else
-		{
+	if (uiFenceNameSize == 1) {
+		OSSNPrintf(psNewFence->pszName, SYNC_FB_FENCE_MAX_LENGTH,
+			   "Fence-Merged");
+	} else {
+		if (pszFenceName) {
+			OSStringSafeCopy(psNewFence->pszName, pszFenceName,
+					 SYNC_FB_FENCE_MAX_LENGTH);
+		} else {
 			psNewFence->pszName[0] = '\0';
 		}
 	}
@@ -1350,38 +1333,28 @@ PVRSRV_ERROR SyncFbFenceMerge(PVRSRV_FENCE_SERVER *psInFence1,
 	 *
 	 * */
 	for (i = 0, i1 = 0, i2 = 0;
-	     i1 < psInFence1->uiNumSyncs && i2 < psInFence2->uiNumSyncs;)
-	{
+	     i1 < psInFence1->uiNumSyncs && i2 < psInFence2->uiNumSyncs;) {
 		PVRSRV_SYNC_PT *psSyncPt1 = psInFence1->apsFenceSyncList[i1];
 		PVRSRV_SYNC_PT *psSyncPt2 = psInFence2->apsFenceSyncList[i2];
 
 		/* Adding sync pts in order of their timeline UID, smaller ID first */
-		if (psSyncPt1->psTl->iUID <
-            psSyncPt2->psTl->iUID)
-		{
+		if (psSyncPt1->psTl->iUID < psSyncPt2->psTl->iUID) {
 			_SyncFbFenceAddPt(psNewFence, &i, psSyncPt1);
 			i1++;
-		}
-		else if (psSyncPt1->psTl->iUID >
-		         psSyncPt2->psTl->iUID)
-		{
+		} else if (psSyncPt1->psTl->iUID > psSyncPt2->psTl->iUID) {
 			_SyncFbFenceAddPt(psNewFence, &i, psSyncPt2);
 			i2++;
 		}
 		/* In case the timeline UID is the same just add the point that is
 		 * later on that timeline. */
-		else
-		{
+		else {
 			/* --> Some C magic to find out if 'a' is a point later in the
 			 * timeline than 'b', wrap around is taken into account:
 			 *			(a - b <= ((IMG_INT)(~0U>>1)) ) */
-			if ( psSyncPt1->uiSeqNum - psSyncPt2->uiSeqNum <=
-			    ((IMG_INT)(~0U>>1)) )
-			{
+			if (psSyncPt1->uiSeqNum - psSyncPt2->uiSeqNum <=
+			    ((IMG_INT)(~0U >> 1))) {
 				_SyncFbFenceAddPt(psNewFence, &i, psSyncPt1);
-			}
-			else
-			{
+			} else {
 				_SyncFbFenceAddPt(psNewFence, &i, psSyncPt2);
 			}
 
@@ -1394,19 +1367,19 @@ PVRSRV_ERROR SyncFbFenceMerge(PVRSRV_FENCE_SERVER *psInFence1,
 	 * either the first or the second loop because one fence has
 	 * more sync pts than the other.
 	 */
-	for (; i1 < psInFence1->uiNumSyncs; i1++)
-	{
-		_SyncFbFenceAddPt(psNewFence, &i, psInFence1->apsFenceSyncList[i1]);
+	for (; i1 < psInFence1->uiNumSyncs; i1++) {
+		_SyncFbFenceAddPt(psNewFence, &i,
+				  psInFence1->apsFenceSyncList[i1]);
 	}
 
-	for (; i2 < psInFence2->uiNumSyncs; i2++)
-	{
-		_SyncFbFenceAddPt(psNewFence, &i, psInFence2->apsFenceSyncList[i2]);
+	for (; i2 < psInFence2->uiNumSyncs; i2++) {
+		_SyncFbFenceAddPt(psNewFence, &i,
+				  psInFence2->apsFenceSyncList[i2]);
 	}
 
 	/* Fill remaining fields */
 	psNewFence->uiNumSyncs = i;
-	psNewFence->iUID = (IMG_INT64)(uintptr_t) psNewFence;
+	psNewFence->iUID = (IMG_INT64)(uintptr_t)psNewFence;
 	FENCE_REF_SET(&psNewFence->iRef, 1, psNewFence);
 
 	OSAtomicWrite(&psNewFence->iStatus, PVRSRV_SYNC_NOT_SIGNALLED);
@@ -1414,14 +1387,12 @@ PVRSRV_ERROR SyncFbFenceMerge(PVRSRV_FENCE_SERVER *psInFence1,
 	_SyncFbFenceListAdd(psNewFence);
 
 	PDUMPCOMMENTWITHFLAGS(psInFence1->psDevNode, 0,
-	                      "Merge Fence1 %s (ID:%"IMG_UINT64_FMTSPEC"), Fence2 %s (ID:%"IMG_UINT64_FMTSPEC") "
-	                      "to Fence %s (ID:%"IMG_UINT64_FMTSPEC")",
-	                      psInFence1->pszName,
-	                      psInFence1->iUID,
-	                      psInFence2->pszName,
-	                      psInFence2->iUID,
-	                      psNewFence->pszName,
-	                      psNewFence->iUID);
+			      "Merge Fence1 %s (ID:%" IMG_UINT64_FMTSPEC
+			      "), Fence2 %s (ID:%" IMG_UINT64_FMTSPEC ") "
+			      "to Fence %s (ID:%" IMG_UINT64_FMTSPEC ")",
+			      psInFence1->pszName, psInFence1->iUID,
+			      psInFence2->pszName, psInFence2->iUID,
+			      psNewFence->pszName, psNewFence->iUID);
 
 	*ppsOutFence = psNewFence;
 
@@ -1433,9 +1404,8 @@ e1:
 	PVR_DPF_RETURN_RC(eError);
 }
 
-
 PVRSRV_ERROR SyncFbFenceWait(PVRSRV_FENCE_SERVER *psFence,
-                             IMG_UINT32 ui32TimeoutInMs)
+			     IMG_UINT32 ui32TimeoutInMs)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	IMG_HANDLE hOSEvent;
@@ -1446,8 +1416,7 @@ PVRSRV_ERROR SyncFbFenceWait(PVRSRV_FENCE_SERVER *psFence,
 	/* Increase refcount to make sure fence is not destroyed while waiting */
 	_SyncFbFenceAcquire(psFence);
 
-	if (OSAtomicRead(&psFence->iStatus) == PVRSRV_FENCE_NOT_SIGNALLED)
-	{
+	if (OSAtomicRead(&psFence->iStatus) == PVRSRV_FENCE_NOT_SIGNALLED) {
 		PVRSRV_ERROR eErrorClose;
 
 		/* If the status of the fence is not signalled it could mean that
@@ -1456,54 +1425,45 @@ PVRSRV_ERROR SyncFbFenceWait(PVRSRV_FENCE_SERVER *psFence,
 		 * check now and return in case they are. If they are not, go
 		 * to sleep and wait. */
 
-		if (_SyncFbFenceSyncsHaveSignalled(psFence))
-		{
+		if (_SyncFbFenceSyncsHaveSignalled(psFence)) {
 			goto e1;
-		}
-		else if (ui32TimeoutInMs == 0)
-		{
+		} else if (ui32TimeoutInMs == 0) {
 			eError = PVRSRV_ERROR_TIMEOUT;
 			goto e1;
 		}
 
 		eError = OSEventObjectOpen(gsSyncFbContext.hSyncEventObject,
-		                           &hOSEvent);
+					   &hOSEvent);
 		PVR_GOTO_IF_ERROR(eError, e1);
 
-		while (!_SyncFbFenceSyncsHaveSignalled(psFence) && ui32TimeoutInMs)
-		{
+		while (!_SyncFbFenceSyncsHaveSignalled(psFence) &&
+		       ui32TimeoutInMs) {
 			t1 = OSClockms();
 			/* Wait for EO to be signalled */
-			eError = OSEventObjectWaitTimeout(hOSEvent,
-			                                  ui32TimeoutInMs * 1000);
+			eError = OSEventObjectWaitTimeout(
+				hOSEvent, ui32TimeoutInMs * 1000);
 			t2 = OSClockms();
 
-			if (eError != PVRSRV_OK && eError != PVRSRV_ERROR_TIMEOUT)
-			{
+			if (eError != PVRSRV_OK &&
+			    eError != PVRSRV_ERROR_TIMEOUT) {
 				break;
 			}
 
-
 			/* Reduce timeout by the time we have just waited */
-			if (ui32TimeoutInMs < (t2-t1))
-			{
+			if (ui32TimeoutInMs < (t2 - t1)) {
 				ui32TimeoutInMs = 0;
-			}
-			else
-			{
-				ui32TimeoutInMs -= (t2-t1);
+			} else {
+				ui32TimeoutInMs -= (t2 - t1);
 			}
 		}
 
 		eErrorClose = OSEventObjectClose(hOSEvent);
-		if (eErrorClose != PVRSRV_OK)
-		{
+		if (eErrorClose != PVRSRV_OK) {
 			ERR("Unable to close Event Object");
 
 			/* Do not overwrite previous error
 			 * if it was something else than PVRSRV_OK */
-			if (eError == PVRSRV_OK)
-			{
+			if (eError == PVRSRV_OK) {
 				eError = eErrorClose;
 			}
 		}
@@ -1515,16 +1475,12 @@ e1:
 	PVR_DPF_RETURN_RC1(eError, psFence);
 }
 
-PVRSRV_ERROR SyncFbFenceDump(PVRSRV_FENCE_SERVER *psFence,
-                             IMG_UINT32 uiLine,
-                             IMG_UINT32 uiFileNameLength,
-                             const IMG_CHAR *pszFile,
-                             IMG_UINT32 uiModuleLength,
-                             const IMG_CHAR *pszModule,
-                             IMG_UINT32 uiDescLength,
-                             const IMG_CHAR *pszDesc)
+PVRSRV_ERROR SyncFbFenceDump(PVRSRV_FENCE_SERVER *psFence, IMG_UINT32 uiLine,
+			     IMG_UINT32 uiFileNameLength,
+			     const IMG_CHAR *pszFile, IMG_UINT32 uiModuleLength,
+			     const IMG_CHAR *pszModule, IMG_UINT32 uiDescLength,
+			     const IMG_CHAR *pszDesc)
 {
-
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	IMG_UINT32 i;
 
@@ -1544,33 +1500,38 @@ PVRSRV_ERROR SyncFbFenceDump(PVRSRV_FENCE_SERVER *psFence,
 #endif
 	PVR_LOG(("  Desc: %s", pszDesc));
 	PVR_LOG(("---------------- FENCE ----------------"));
-	PVR_LOG(("%s (UID: %"IMG_UINT64_FMTSPEC")", psFence->pszName, psFence->iUID));
+	PVR_LOG(("%s (UID: %" IMG_UINT64_FMTSPEC ")", psFence->pszName,
+		 psFence->iUID));
 
 	PVR_LOG(("  Signalled: %s",
-	        _SyncFbFenceSyncsHaveSignalled(psFence)?"Yes":"No"));
-	PVR_LOG(("  Ref: %d", OSAtomicRead(&psFence->iRef) ));
+		 _SyncFbFenceSyncsHaveSignalled(psFence) ? "Yes" : "No"));
+	PVR_LOG(("  Ref: %d", OSAtomicRead(&psFence->iRef)));
 
 	PVR_LOG(("  Sync Points:"));
-	for (i = 0; i < psFence->uiNumSyncs; i++)
-	{
+	for (i = 0; i < psFence->uiNumSyncs; i++) {
 		PVRSRV_SYNC_PT *psSP = psFence->apsFenceSyncList[i];
 		PVR_LOG(("    Point %u)", i));
-		PVR_LOG(("      On timeline:     %s (UID: %"IMG_UINT64_FMTSPEC")",
-		         psSP->psTl->pszName, psSP->psTl->iUID));
+		PVR_LOG(("      On timeline:     %s (UID: %" IMG_UINT64_FMTSPEC
+			 ")",
+			 psSP->psTl->pszName, psSP->psTl->iUID));
 		PVR_LOG(("      Sequence number: %u", psSP->uiSeqNum));
 		PVR_LOG(("      Signalled:       %s",
-		        psSP->psTl->sTlOps.pfnSyncPtHasSignalled(psSP)? "Yes":"No"));
-		PVR_LOG(("      Ref:             %d", OSAtomicRead(&psSP->iRef)));
+			 psSP->psTl->sTlOps.pfnSyncPtHasSignalled(psSP) ?
+				 "Yes" :
+				 "No"));
+		PVR_LOG(("      Ref:             %d",
+			 OSAtomicRead(&psSP->iRef)));
 	}
 	PVR_LOG(("----------------------------------------"));
 
 	PVR_DPF_RETURN_RC1(eError, psFence);
 }
 
-static PVRSRV_ERROR _SyncFbTimelineCreate(PFN_SYNC_PT_HAS_SIGNALLED pfnHasPtSignalled,
-                                          IMG_UINT32 uiTimelineNameSize,
-                                          const IMG_CHAR *pszTimelineName,
-                                          PVRSRV_TIMELINE_SERVER **ppsTimeline)
+static PVRSRV_ERROR
+_SyncFbTimelineCreate(PFN_SYNC_PT_HAS_SIGNALLED pfnHasPtSignalled,
+		      IMG_UINT32 uiTimelineNameSize,
+		      const IMG_CHAR *pszTimelineName,
+		      PVRSRV_TIMELINE_SERVER **ppsTimeline)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_TIMELINE_SERVER *psNewTl;
@@ -1585,24 +1546,16 @@ static PVRSRV_ERROR _SyncFbTimelineCreate(PFN_SYNC_PT_HAS_SIGNALLED pfnHasPtSign
 	eError = OSLockCreate(&psNewTl->hTlLock);
 	PVR_LOG_GOTO_IF_ERROR(eError, "OSLockCreate", e3);
 
-	if (uiTimelineNameSize == 1)
-	{
-		OSSNPrintf(psNewTl->pszName,
-		           SYNC_FB_TIMELINE_MAX_LENGTH,
-		           "TL-%s-%d",
-		           OSGetCurrentClientProcessNameKM(),
-		           OSGetCurrentClientProcessIDKM());
-	}
-	else
-	{
-		if (pszTimelineName)
-		{
-			OSStringSafeCopy((IMG_CHAR*) psNewTl->pszName,
-			              pszTimelineName,
-			              SYNC_FB_TIMELINE_MAX_LENGTH);
-		}
-		else
-		{
+	if (uiTimelineNameSize == 1) {
+		OSSNPrintf(psNewTl->pszName, SYNC_FB_TIMELINE_MAX_LENGTH,
+			   "TL-%s-%d", OSGetCurrentClientProcessNameKM(),
+			   OSGetCurrentClientProcessIDKM());
+	} else {
+		if (pszTimelineName) {
+			OSStringSafeCopy((IMG_CHAR *)psNewTl->pszName,
+					 pszTimelineName,
+					 SYNC_FB_TIMELINE_MAX_LENGTH);
+		} else {
 			psNewTl->pszName[0] = '\0';
 		}
 	}
@@ -1612,7 +1565,8 @@ static PVRSRV_ERROR _SyncFbTimelineCreate(PFN_SYNC_PT_HAS_SIGNALLED pfnHasPtSign
 	dllist_init(&psNewTl->sTlList);
 
 	psNewTl->sTlOps.pfnSyncPtHasSignalled = pfnHasPtSignalled;
-	psNewTl->iUID = (IMG_INT64)(uintptr_t) psNewTl; /* Not unique throughout the driver lifetime */
+	psNewTl->iUID = (IMG_INT64)(uintptr_t)
+		psNewTl; /* Not unique throughout the driver lifetime */
 	OSAtomicWrite(&psNewTl->iSeqNum, 0);
 	OSAtomicWrite(&psNewTl->iLastSignalledSeqNum, 0);
 	psNewTl->uiPID = OSGetCurrentClientProcessIDKM();
@@ -1644,35 +1598,35 @@ static void _SyncFbSyncPtFreePVR(IMG_HANDLE hSync)
 {
 	PVR_DPF_ENTERED1(hSync);
 
-	SyncCheckpointFree((PSYNC_CHECKPOINT) hSync);
+	SyncCheckpointFree((PSYNC_CHECKPOINT)hSync);
 
 	PVR_DPF_RETURN;
 }
 
-
 /* Mark a sync checkpoint with the given state.
  * MAKE SURE TO WAKE UP FW AFTER CALLING THIS */
 static PVRSRV_ERROR _SyncFbSyncPtSignalPVR(IMG_HANDLE hSync,
-                                           PVRSRV_SYNC_STATE eState)
+					   PVRSRV_SYNC_STATE eState)
 {
-	PSYNC_CHECKPOINT psSyncCheck = (PSYNC_CHECKPOINT) hSync;
+	PSYNC_CHECKPOINT psSyncCheck = (PSYNC_CHECKPOINT)hSync;
 
 	PVR_DPF_ENTERED1(hSync);
 
-	if (!SyncCheckpointIsSignalled(psSyncCheck, PVRSRV_FENCE_FLAG_SUPPRESS_HWP_PKT))
-	{
-		switch (eState)
-		{
-			case PVRSRV_SYNC_SIGNALLED:
-				SyncCheckpointSignal(psSyncCheck, PVRSRV_FENCE_FLAG_NONE);
-				break;
-			case PVRSRV_SYNC_ERRORED:
-				SyncCheckpointError(psSyncCheck, PVRSRV_FENCE_FLAG_NONE);
-				break;
-			default:
-				ERR("Passed unknown sync state, "
-						"please use a valid one for signalling.");
-				return PVRSRV_ERROR_INVALID_PARAMS;
+	if (!SyncCheckpointIsSignalled(psSyncCheck,
+				       PVRSRV_FENCE_FLAG_SUPPRESS_HWP_PKT)) {
+		switch (eState) {
+		case PVRSRV_SYNC_SIGNALLED:
+			SyncCheckpointSignal(psSyncCheck,
+					     PVRSRV_FENCE_FLAG_NONE);
+			break;
+		case PVRSRV_SYNC_ERRORED:
+			SyncCheckpointError(psSyncCheck,
+					    PVRSRV_FENCE_FLAG_NONE);
+			break;
+		default:
+			ERR("Passed unknown sync state, "
+			    "please use a valid one for signalling.");
+			return PVRSRV_ERROR_INVALID_PARAMS;
 		}
 	}
 
@@ -1698,61 +1652,56 @@ static IMG_BOOL _SyncFbSyncPtHasSignalledPVR(PVRSRV_SYNC_PT *psSyncPt)
 	 * Change SyncPt state to signalled or errored if yes.
 	 * Also notify other attached syncs.
 	 */
-	if (OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_NOT_SIGNALLED)
-	{
+	if (OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_NOT_SIGNALLED) {
 		/* List must have at least the device sync attached if we are called */
 		PVR_ASSERT(!dllist_is_empty(&psSyncPt->sSignalCallbacks));
 
 		/* Retrieve the first sync checkpoint of that sync pt */
 		psCBNode = dllist_get_next_node(&psSyncPt->sSignalCallbacks);
-		psCB = IMG_CONTAINER_OF(psCBNode, PVRSRV_SYNC_SIGNAL_CB, sCallbackNode);
-		psSyncCheck = (PSYNC_CHECKPOINT) psCB->hAttachedSync;
+		psCB = IMG_CONTAINER_OF(psCBNode, PVRSRV_SYNC_SIGNAL_CB,
+					sCallbackNode);
+		psSyncCheck = (PSYNC_CHECKPOINT)psCB->hAttachedSync;
 
-		if (SyncCheckpointIsSignalled(psSyncCheck, PVRSRV_FENCE_FLAG_SUPPRESS_HWP_PKT))
-		{
+		if (SyncCheckpointIsSignalled(
+			    psSyncCheck, PVRSRV_FENCE_FLAG_SUPPRESS_HWP_PKT)) {
 			_SyncFbSyncPtSignal(psSyncPt, PVRSRV_SYNC_SIGNALLED);
 
 			/* Signal all other attached syncs */
-			PVR_LOG_IF_ERROR(_SyncFbSyncPtSignalAttached(psSyncPt, PVRSRV_SYNC_SIGNALLED),
-			                 "_SyncFbSyncPtSignalAttached");
+			PVR_LOG_IF_ERROR(_SyncFbSyncPtSignalAttached(
+						 psSyncPt,
+						 PVRSRV_SYNC_SIGNALLED),
+					 "_SyncFbSyncPtSignalAttached");
 
 			bRet = IMG_TRUE;
 		}
 
 		PVR_DPF_RETURN_RC1(bRet, psSyncPt);
-	}
-	else
-	{
+	} else {
 		PVR_DPF_RETURN_RC1(IMG_TRUE, psSyncPt);
 	}
 }
 
 PVRSRV_ERROR SyncFbTimelineCreatePVR(IMG_UINT32 uiTimelineNameSize,
-                                     const IMG_CHAR *pszTimelineName,
-                                     PVRSRV_TIMELINE_SERVER **ppsTimeline)
+				     const IMG_CHAR *pszTimelineName,
+				     PVRSRV_TIMELINE_SERVER **ppsTimeline)
 {
 	return _SyncFbTimelineCreate(&_SyncFbSyncPtHasSignalledPVR,
-	                             uiTimelineNameSize,
-	                             pszTimelineName,
-	                             ppsTimeline);
+				     uiTimelineNameSize, pszTimelineName,
+				     ppsTimeline);
 }
 
-PVRSRV_ERROR SyncFbFenceCreatePVR(PPVRSRV_DEVICE_NODE psDeviceNode,
-                                  const IMG_CHAR *pszName,
-                                  PVRSRV_TIMELINE iTl,
-                                  PSYNC_CHECKPOINT_CONTEXT psSyncCheckpointContext,
-                                  PVRSRV_FENCE *piOutFence,
-                                  IMG_UINT64 *puiFenceUID,
-                                  void **ppvFenceFinaliseData,
-                                  PSYNC_CHECKPOINT *ppsOutCheckpoint,
-                                  void **ppvTimelineUpdateSync,
-                                  IMG_UINT32 *puiTimelineUpdateValue)
+PVRSRV_ERROR SyncFbFenceCreatePVR(
+	PPVRSRV_DEVICE_NODE psDeviceNode, const IMG_CHAR *pszName,
+	PVRSRV_TIMELINE iTl, PSYNC_CHECKPOINT_CONTEXT psSyncCheckpointContext,
+	PVRSRV_FENCE *piOutFence, IMG_UINT64 *puiFenceUID,
+	void **ppvFenceFinaliseData, PSYNC_CHECKPOINT *ppsOutCheckpoint,
+	void **ppvTimelineUpdateSync, IMG_UINT32 *puiTimelineUpdateValue)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_FENCE_SERVER *psNewFence;
 	PVRSRV_SYNC_PT *psNewSyncPt = NULL;
 	PVRSRV_SYNC_SIGNAL_CB *psNewSyncSignalCB;
-	PROCESS_HANDLE_BASE	*psProcBase;
+	PROCESS_HANDLE_BASE *psProcBase;
 	PVRSRV_TIMELINE_SERVER *psTl;
 	IMG_HANDLE hOutFence;
 	IMG_UINT32 ui32FwAddr;
@@ -1766,8 +1715,7 @@ PVRSRV_ERROR SyncFbFenceCreatePVR(PPVRSRV_DEVICE_NODE psDeviceNode,
 	 * the fence, so set the ppvFenceFinaliseData to NULL
 	 * (if provided)
 	 */
-	if (ppvFenceFinaliseData != NULL )
-	{
+	if (ppvFenceFinaliseData != NULL) {
 		*ppvFenceFinaliseData = NULL;
 	}
 
@@ -1778,16 +1726,16 @@ PVRSRV_ERROR SyncFbFenceCreatePVR(PPVRSRV_DEVICE_NODE psDeviceNode,
 	eError = _SyncFbAcquireProcHandleBase(&psProcBase);
 	PVR_LOG_GOTO_IF_ERROR(eError, "_SyncFbAcquireProcHandleBase", e0);
 
-	eError = PVRSRVLookupHandle(psProcBase->psHandleBase,
-	                            (void**) &psTl,
-	                            (IMG_HANDLE) (uintptr_t) iTl,
-	                            PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER,
-	                            IMG_TRUE);
+	eError = PVRSRVLookupHandle(psProcBase->psHandleBase, (void **)&psTl,
+				    (IMG_HANDLE)(uintptr_t)iTl,
+				    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER,
+				    IMG_TRUE);
 	PVR_GOTO_IF_ERROR(eError, err_release_proc_base);
 
-	if (unlikely(_SyncFbTimelineHandleType(psTl) != PVRSRV_SYNC_HANDLE_PVR))
-	{
-		PVR_LOG_GOTO_WITH_ERROR("_SyncFbTimelineHandleType", eError, PVRSRV_ERROR_INVALID_PARAMS, e1);
+	if (unlikely(_SyncFbTimelineHandleType(psTl) !=
+		     PVRSRV_SYNC_HANDLE_PVR)) {
+		PVR_LOG_GOTO_WITH_ERROR("_SyncFbTimelineHandleType", eError,
+					PVRSRV_ERROR_INVALID_PARAMS, e1);
 	}
 
 	/* Allocate:
@@ -1805,7 +1753,8 @@ PVRSRV_ERROR SyncFbFenceCreatePVR(PPVRSRV_DEVICE_NODE psDeviceNode,
 	psNewSyncSignalCB = OSAllocMem(sizeof(*psNewSyncSignalCB));
 	PVR_LOG_GOTO_IF_NOMEM(psNewSyncSignalCB, eError, e3);
 
-	psNewFence->apsFenceSyncList = OSAllocMem(sizeof(*(psNewFence->apsFenceSyncList)));
+	psNewFence->apsFenceSyncList =
+		OSAllocMem(sizeof(*(psNewFence->apsFenceSyncList)));
 	PVR_LOG_GOTO_IF_NOMEM(psNewFence->apsFenceSyncList, eError, e4);
 
 	psNewFence->psDevNode = psDeviceNode;
@@ -1813,23 +1762,18 @@ PVRSRV_ERROR SyncFbFenceCreatePVR(PPVRSRV_DEVICE_NODE psDeviceNode,
 	/* Lock down TL until new point is fully created and inserted */
 	OSLockAcquire(psTl->hTlLock);
 
-	eError = _SyncFbSyncPtCreate(&psNewSyncPt,
-	                             psTl,
-	                             OSAtomicIncrement(&psTl->iSeqNum));
-	if (unlikely(eError != PVRSRV_OK))
-	{
+	eError = _SyncFbSyncPtCreate(&psNewSyncPt, psTl,
+				     OSAtomicIncrement(&psTl->iSeqNum));
+	if (unlikely(eError != PVRSRV_OK)) {
 		OSLockRelease(psTl->hTlLock);
 		ERR("Cannot allocate SyncPt.");
 		goto e5;
 	}
 
-	eError = SyncCheckpointAlloc(psSyncCheckpointContext,
-	                             iTl,
-	                             PVRSRV_NO_FENCE,
-	                             pszName,
-	                             ppsOutCheckpoint);
-	if (unlikely(eError != PVRSRV_OK))
-	{
+	eError = SyncCheckpointAlloc(psSyncCheckpointContext, iTl,
+				     PVRSRV_NO_FENCE, pszName,
+				     ppsOutCheckpoint);
+	if (unlikely(eError != PVRSRV_OK)) {
 		OSLockRelease(psTl->hTlLock);
 		ERR("Cannot allocate SyncCheckpoint.");
 		goto e6;
@@ -1838,60 +1782,61 @@ PVRSRV_ERROR SyncFbFenceCreatePVR(PPVRSRV_DEVICE_NODE psDeviceNode,
 	ui32FwAddr = SyncCheckpointGetFirmwareAddr(*ppsOutCheckpoint);
 
 	/* Init Sync Signal CB */
-	psNewSyncSignalCB->hAttachedSync = (IMG_HANDLE) *ppsOutCheckpoint;
+	psNewSyncSignalCB->hAttachedSync = (IMG_HANDLE)*ppsOutCheckpoint;
 	psNewSyncSignalCB->pfnSignal = &_SyncFbSyncPtSignalPVR;
 	psNewSyncSignalCB->pfnSyncFree = &_SyncFbSyncPtFreePVR;
-	psNewSyncSignalCB->hPrivData = (IMG_HANDLE) psSyncCheckpointContext;
+	psNewSyncSignalCB->hPrivData = (IMG_HANDLE)psSyncCheckpointContext;
 
 	dllist_add_to_tail(&psNewSyncPt->sSignalCallbacks,
-	                   &psNewSyncSignalCB->sCallbackNode);
+			   &psNewSyncSignalCB->sCallbackNode);
 
 	OSLockRelease(psTl->hTlLock);
 
-	DBG(("%s: Inserting key <%p> = %p", __func__, *ppsOutCheckpoint, psNewSyncPt));
+	DBG(("%s: Inserting key <%p> = %p", __func__, *ppsOutCheckpoint,
+	     psNewSyncPt));
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
-	HASH_Insert_Extended(gsSyncFbContext.sCheckpointHashTable, (void *)&ui32FwAddr, (uintptr_t) psNewSyncPt);
+	HASH_Insert_Extended(gsSyncFbContext.sCheckpointHashTable,
+			     (void *)&ui32FwAddr, (uintptr_t)psNewSyncPt);
 	OSLockRelease(gsSyncFbContext.hFbContextLock);
 
 	/* Init Fence */
-	OSStringSafeCopy(psNewFence->pszName,
-	              pszName,
-	              SYNC_FB_FENCE_MAX_LENGTH);
+	OSStringSafeCopy(psNewFence->pszName, pszName,
+			 SYNC_FB_FENCE_MAX_LENGTH);
 
 	psNewFence->apsFenceSyncList[0] = psNewSyncPt;
 	psNewFence->uiNumSyncs = 1;
 	FENCE_REF_SET(&psNewFence->iRef, 1, psNewFence);
 	OSAtomicWrite(&psNewFence->iStatus, PVRSRV_SYNC_NOT_SIGNALLED);
-	psNewFence->iUID = (IMG_INT64)(uintptr_t) psNewFence; /* Not unique throughout the driver lifetime */
+	psNewFence->iUID = (IMG_INT64)(uintptr_t)
+		psNewFence; /* Not unique throughout the driver lifetime */
 
-	eError = PVRSRVAllocHandle(psProcBase->psHandleBase,
-	                           &hOutFence,
-	                           (void*) psNewFence,
-	                           PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
-	                           PVRSRV_HANDLE_ALLOC_FLAG_MULTI,
-	                           &SyncFbFenceReleaseKM);
+	eError = PVRSRVAllocHandle(psProcBase->psHandleBase, &hOutFence,
+				   (void *)psNewFence,
+				   PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
+				   PVRSRV_HANDLE_ALLOC_FLAG_MULTI,
+				   &SyncFbFenceReleaseKM);
 	PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVAllocHandle", e7);
 
 	_SyncFbFenceListAdd(psNewFence);
 
-	PDUMPCOMMENTWITHFLAGS(psNewFence->psDevNode, 0,
-	                      "Allocated PVR Fence %s (ID:%"IMG_UINT64_FMTSPEC") with Checkpoint (ID:%d) "
-	                      "on Timeline %s (ID:%"IMG_UINT64_FMTSPEC")",
-	                      psNewFence->pszName,
-	                      psNewFence->iUID,
-	                      SyncCheckpointGetId(psNewSyncSignalCB->hAttachedSync),
-	                      psTl->pszName,
-	                      psTl->iUID);
+	PDUMPCOMMENTWITHFLAGS(
+		psNewFence->psDevNode, 0,
+		"Allocated PVR Fence %s (ID:%" IMG_UINT64_FMTSPEC
+		") with Checkpoint (ID:%d) "
+		"on Timeline %s (ID:%" IMG_UINT64_FMTSPEC ")",
+		psNewFence->pszName, psNewFence->iUID,
+		SyncCheckpointGetId(psNewSyncSignalCB->hAttachedSync),
+		psTl->pszName, psTl->iUID);
 
 	PVRSRVReleaseHandle(psProcBase->psHandleBase,
-	                    (IMG_HANDLE) (uintptr_t) iTl,
-	                    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
+			    (IMG_HANDLE)(uintptr_t)iTl,
+			    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
 
 	eError = _SyncFbReleaseProcHandleBase(psProcBase);
 	PVR_ASSERT(eError == PVRSRV_OK);
 
 	*puiFenceUID = psNewFence->iUID;
-	*piOutFence = (PVRSRV_FENCE) (uintptr_t) hOutFence;
+	*piOutFence = (PVRSRV_FENCE)(uintptr_t)hOutFence;
 
 	PVR_DPF_RETURN_RC1(PVRSRV_OK, psNewFence);
 
@@ -1908,8 +1853,8 @@ e3:
 e2:
 e1:
 	PVRSRVReleaseHandle(psProcBase->psHandleBase,
-	                    (IMG_HANDLE) (uintptr_t) iTl,
-	                    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
+			    (IMG_HANDLE)(uintptr_t)iTl,
+			    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
 err_release_proc_base:
 	(void)_SyncFbReleaseProcHandleBase(psProcBase);
 e0:
@@ -1919,10 +1864,10 @@ e0:
 /* Resolve caller has to free the sync checkpoints and free the
  * array that holds the pointers. */
 PVRSRV_ERROR SyncFbFenceResolvePVR(PSYNC_CHECKPOINT_CONTEXT psContext,
-                                   PVRSRV_FENCE iFence,
-                                   IMG_UINT32 *puiNumCheckpoints,
-                                   PSYNC_CHECKPOINT **papsCheckpoints,
-                                   IMG_UINT64 *pui64FenceUID)
+				   PVRSRV_FENCE iFence,
+				   IMG_UINT32 *puiNumCheckpoints,
+				   PSYNC_CHECKPOINT **papsCheckpoints,
+				   IMG_UINT64 *pui64FenceUID)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_FENCE_SERVER *psFence;
@@ -1936,8 +1881,7 @@ PVRSRV_ERROR SyncFbFenceResolvePVR(PSYNC_CHECKPOINT_CONTEXT psContext,
 
 	PVR_DPF_ENTERED;
 
-	if (iFence == PVRSRV_NO_FENCE)
-	{
+	if (iFence == PVRSRV_NO_FENCE) {
 		*puiNumCheckpoints = 0;
 		eError = PVRSRV_OK;
 		goto e0;
@@ -1946,91 +1890,103 @@ PVRSRV_ERROR SyncFbFenceResolvePVR(PSYNC_CHECKPOINT_CONTEXT psContext,
 	eError = _SyncFbAcquireProcHandleBase(&psProcBase);
 	PVR_GOTO_IF_ERROR(eError, e0);
 
-	eError = PVRSRVLookupHandle(psProcBase->psHandleBase,
-	                            (void**)&psFence,
-	                            (IMG_HANDLE) (uintptr_t) iFence,
-	                            PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
-	                            IMG_TRUE);
+	eError = PVRSRVLookupHandle(psProcBase->psHandleBase, (void **)&psFence,
+				    (IMG_HANDLE)(uintptr_t)iFence,
+				    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
+				    IMG_TRUE);
 	PVR_GOTO_IF_ERROR(eError, err_release_proc_base);
 
-	if (psFence->uiNumSyncs > 0)
-	{
-		apsCheckpoints = OSAllocMem(sizeof(*apsCheckpoints) * psFence->uiNumSyncs);
+	if (psFence->uiNumSyncs > 0) {
+		apsCheckpoints = OSAllocMem(sizeof(*apsCheckpoints) *
+					    psFence->uiNumSyncs);
 		PVR_LOG_GOTO_IF_NOMEM(apsCheckpoints, eError, e1);
 
 		/* Go through all syncs and add them to the list */
-		for (i = 0; i < psFence->uiNumSyncs; i++)
-		{
+		for (i = 0; i < psFence->uiNumSyncs; i++) {
 			psNewSyncCB = NULL;
 			psSyncPt = psFence->apsFenceSyncList[i];
 
 			/* Don't skip signalled fences on PDUMP to make sure we set up proper
 			   synchronisation in the pdump stream. */
 #if !defined(PDUMP)
-			if (_SyncFbSyncPtHasSignalled(psSyncPt))
-			{
+			if (_SyncFbSyncPtHasSignalled(psSyncPt)) {
 				continue;
 			}
 #endif
 
 			OSLockAcquire(gsSyncFbContext.hFbContextLock);
 			OSLockAcquire(psSyncPt->psTl->hTlLock);
-			psNode = dllist_get_next_node(&psSyncPt->sSignalCallbacks);
-			psSyncCB = IMG_CONTAINER_OF(psNode, PVRSRV_SYNC_SIGNAL_CB, sCallbackNode);
+			psNode = dllist_get_next_node(
+				&psSyncPt->sSignalCallbacks);
+			psSyncCB = IMG_CONTAINER_OF(
+				psNode, PVRSRV_SYNC_SIGNAL_CB, sCallbackNode);
 
 			/* If we have a sync checkpoint AND
 			 * it uses the same context as the given one,
 			 * just add the checkpoint to the resolve list. */
-			if ((_SyncFbSyncPtHandleType(psSyncCB) == PVRSRV_SYNC_HANDLE_PVR) &&
-			    (psContext == (PSYNC_CHECKPOINT_CONTEXT) psSyncCB->hPrivData))
-			{
-				psCheckpoint = (PSYNC_CHECKPOINT) psSyncCB->hAttachedSync;
+			if ((_SyncFbSyncPtHandleType(psSyncCB) ==
+			     PVRSRV_SYNC_HANDLE_PVR) &&
+			    (psContext ==
+			     (PSYNC_CHECKPOINT_CONTEXT)psSyncCB->hPrivData)) {
+				psCheckpoint = (PSYNC_CHECKPOINT)
+						       psSyncCB->hAttachedSync;
 			}
 			/* Else create a new sync checkpoint in the given context */
-			else
-			{
+			else {
 				IMG_UINT32 ui32FwAddr;
 
-				eError = SyncCheckpointAlloc(psContext,
-				                 SYNC_CHECKPOINT_FOREIGN_CHECKPOINT,
-				                 iFence,
-				                 psFence->pszName,
-				                 &psCheckpoint);
-				if (eError != PVRSRV_OK)
-				{
+				eError = SyncCheckpointAlloc(
+					psContext,
+					SYNC_CHECKPOINT_FOREIGN_CHECKPOINT,
+					iFence, psFence->pszName,
+					&psCheckpoint);
+				if (eError != PVRSRV_OK) {
 					OSLockRelease(psSyncPt->psTl->hTlLock);
-					OSLockRelease(gsSyncFbContext.hFbContextLock);
+					OSLockRelease(
+						gsSyncFbContext.hFbContextLock);
 					goto e2;
 				}
 
 				psNewSyncCB = OSAllocMem(sizeof(*psNewSyncCB));
-				if (psNewSyncCB == NULL)
-				{
+				if (psNewSyncCB == NULL) {
 					eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 					OSLockRelease(psSyncPt->psTl->hTlLock);
-					OSLockRelease(gsSyncFbContext.hFbContextLock);
+					OSLockRelease(
+						gsSyncFbContext.hFbContextLock);
 					goto e3;
 				}
 
-				psNewSyncCB->hAttachedSync = (IMG_HANDLE) psCheckpoint;
-				psNewSyncCB->hPrivData = (IMG_HANDLE) psContext;
-				psNewSyncCB->pfnSignal = &_SyncFbSyncPtSignalPVR;
-				psNewSyncCB->pfnSyncFree = &_SyncFbSyncPtFreePVR;
-				dllist_add_to_tail(&psFence->apsFenceSyncList[i]->sSignalCallbacks,
-				                   &psNewSyncCB->sCallbackNode);
+				psNewSyncCB->hAttachedSync =
+					(IMG_HANDLE)psCheckpoint;
+				psNewSyncCB->hPrivData = (IMG_HANDLE)psContext;
+				psNewSyncCB->pfnSignal =
+					&_SyncFbSyncPtSignalPVR;
+				psNewSyncCB->pfnSyncFree =
+					&_SyncFbSyncPtFreePVR;
+				dllist_add_to_tail(&psFence->apsFenceSyncList[i]
+							    ->sSignalCallbacks,
+						   &psNewSyncCB->sCallbackNode);
 
 				/* Insert the checkpoint into the firmware address lookup table,
 				 * in case this checkpoint gets errored by the host driver. */
-				ui32FwAddr = SyncCheckpointGetFirmwareAddr(psCheckpoint);
+				ui32FwAddr = SyncCheckpointGetFirmwareAddr(
+					psCheckpoint);
 
-				DBG(("%s: Inserting key (fwAddr0x%x)<%p> = %p", __func__, ui32FwAddr, psCheckpoint, psSyncPt));
-				HASH_Insert_Extended(gsSyncFbContext.sCheckpointHashTable, (void *)&ui32FwAddr, (uintptr_t) psSyncPt);
+				DBG(("%s: Inserting key (fwAddr0x%x)<%p> = %p",
+				     __func__, ui32FwAddr, psCheckpoint,
+				     psSyncPt));
+				HASH_Insert_Extended(
+					gsSyncFbContext.sCheckpointHashTable,
+					(void *)&ui32FwAddr,
+					(uintptr_t)psSyncPt);
 
 				/* If the existing sync pt has already been signalled, then signal
 				 * this new sync too */
-				if (_SyncFbSyncPtHasSignalled(psFence->apsFenceSyncList[i]))
-				{
-					_SyncFbSyncPtSignalPVR(psNewSyncCB->hAttachedSync, PVRSRV_SYNC_SIGNALLED);
+				if (_SyncFbSyncPtHasSignalled(
+					    psFence->apsFenceSyncList[i])) {
+					_SyncFbSyncPtSignalPVR(
+						psNewSyncCB->hAttachedSync,
+						PVRSRV_SYNC_SIGNALLED);
 				}
 			}
 			OSLockRelease(psSyncPt->psTl->hTlLock);
@@ -2046,9 +2002,7 @@ PVRSRV_ERROR SyncFbFenceResolvePVR(PSYNC_CHECKPOINT_CONTEXT psContext,
 
 		*puiNumCheckpoints = uiNumCheckpoints;
 		*papsCheckpoints = apsCheckpoints;
-	}
-	else
-	{
+	} else {
 		*puiNumCheckpoints = 0;
 		*papsCheckpoints = NULL;
 	}
@@ -2056,8 +2010,8 @@ PVRSRV_ERROR SyncFbFenceResolvePVR(PSYNC_CHECKPOINT_CONTEXT psContext,
 	*pui64FenceUID = psFence->iUID;
 
 	PVRSRVReleaseHandle(psProcBase->psHandleBase,
-	                    (IMG_HANDLE) (uintptr_t) iFence,
-	                    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
+			    (IMG_HANDLE)(uintptr_t)iFence,
+			    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
 
 	eError = _SyncFbReleaseProcHandleBase(psProcBase);
 	PVR_ASSERT(eError == PVRSRV_OK);
@@ -2070,17 +2024,16 @@ e4:
 e3:
 	SyncCheckpointFree(psCheckpoint);
 e2:
-	for (; i > 0; i--)
-	{
-		SyncCheckpointDropRef(apsCheckpoints[i-1]);
-		SyncCheckpointFree(apsCheckpoints[i-1]);
+	for (; i > 0; i--) {
+		SyncCheckpointDropRef(apsCheckpoints[i - 1]);
+		SyncCheckpointFree(apsCheckpoints[i - 1]);
 	}
 
 	OSFreeMem(apsCheckpoints);
 e1:
 	PVRSRVReleaseHandle(psProcBase->psHandleBase,
-	                    (IMG_HANDLE) (uintptr_t) iFence,
-	                    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
+			    (IMG_HANDLE)(uintptr_t)iFence,
+			    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
 err_release_proc_base:
 	(void)_SyncFbReleaseProcHandleBase(psProcBase);
 e0:
@@ -2089,7 +2042,8 @@ e0:
 
 /* In case something went wrong after FenceCreate we can roll back (destroy)
  * the fence in the server */
-static PVRSRV_ERROR SyncFbFenceRollbackPVR(PVRSRV_FENCE iFence, void *pvFenceData)
+static PVRSRV_ERROR SyncFbFenceRollbackPVR(PVRSRV_FENCE iFence,
+					   void *pvFenceData)
 {
 	PVRSRV_ERROR eError;
 
@@ -2098,8 +2052,8 @@ static PVRSRV_ERROR SyncFbFenceRollbackPVR(PVRSRV_FENCE iFence, void *pvFenceDat
 
 	PVR_GOTO_IF_INVALID_PARAM(iFence != PVRSRV_NO_FENCE, eError, e1);
 
-	eError = _SyncFbDestroyHandle((IMG_HANDLE) (uintptr_t) iFence,
-	                              PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
+	eError = _SyncFbDestroyHandle((IMG_HANDLE)(uintptr_t)iFence,
+				      PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER);
 	PVR_GOTO_IF_ERROR(eError, e1);
 
 	PVR_DPF_RETURN_OK;
@@ -2123,77 +2077,76 @@ IMG_UINT32 SyncFbDumpInfoOnStalledUFOs(IMG_UINT32 nr_ufos, IMG_UINT32 *vaddrs)
 
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
 
-	for (ui32CurrentUfo=0; ui32CurrentUfo<nr_ufos; ui32CurrentUfo++)
-	{
-		if (pui32NextFWAddr)
-		{
+	for (ui32CurrentUfo = 0; ui32CurrentUfo < nr_ufos; ui32CurrentUfo++) {
+		if (pui32NextFWAddr) {
 			/* Iterate over all fences */
 			dllist_foreach_node(&gsSyncFbContext.sFenceList,
-								psFenceNode,
-								psNextFenceNode)
+					    psFenceNode, psNextFenceNode)
 			{
 				IMG_UINT32 i;
 				IMG_BOOL bFenceDumped = IMG_FALSE;
-				IMG_UINT32			  ui32SyncPtBitmask = 0;
-				IMG_UINT32			  ui32SyncCheckpointFWAddr = 0;
-				PVRSRV_SYNC_PT		  *psSyncPt = NULL;
+				IMG_UINT32 ui32SyncPtBitmask = 0;
+				IMG_UINT32 ui32SyncCheckpointFWAddr = 0;
+				PVRSRV_SYNC_PT *psSyncPt = NULL;
 
 				psFence = IMG_CONTAINER_OF(psFenceNode,
-										   PVRSRV_FENCE_SERVER,
-										   sFenceListNode);
+							   PVRSRV_FENCE_SERVER,
+							   sFenceListNode);
 
 				/* ... all sync points in the fence */
-				for (i = 0; i < psFence->uiNumSyncs; i++)
-				{
+				for (i = 0; i < psFence->uiNumSyncs; i++) {
 					PDLLIST_NODE psCBNode, psNextCBNode;
 
 					psSyncPt = psFence->apsFenceSyncList[i];
 
-					dllist_foreach_node(&psSyncPt->sSignalCallbacks,
-										psCBNode,
-										psNextCBNode)
+					dllist_foreach_node(
+						&psSyncPt->sSignalCallbacks,
+						psCBNode, psNextCBNode)
 					{
-						PVRSRV_SYNC_SIGNAL_CB *psCb = IMG_CONTAINER_OF(psCBNode,
-						                                               PVRSRV_SYNC_SIGNAL_CB,
-						                                               sCallbackNode);
+						PVRSRV_SYNC_SIGNAL_CB *psCb =
+							IMG_CONTAINER_OF(
+								psCBNode,
+								PVRSRV_SYNC_SIGNAL_CB,
+								sCallbackNode);
 
-						switch (_SyncFbSyncPtHandleType(psCb))
-						{
-							case PVRSRV_SYNC_HANDLE_PVR:
-							{
-								ui32SyncCheckpointFWAddr = SyncCheckpointGetFirmwareAddr(psCb->hAttachedSync);
-								ui32SyncPtBitmask |= 1;
-								break;
-							}
-							case PVRSRV_SYNC_HANDLE_SW:
-							{
-								ui32SyncPtBitmask |= 2;
-								break;
-							}
-							default:
-								break;
+						switch (_SyncFbSyncPtHandleType(
+							psCb)) {
+						case PVRSRV_SYNC_HANDLE_PVR: {
+							ui32SyncCheckpointFWAddr =
+								SyncCheckpointGetFirmwareAddr(
+									psCb->hAttachedSync);
+							ui32SyncPtBitmask |= 1;
+							break;
+						}
+						case PVRSRV_SYNC_HANDLE_SW: {
+							ui32SyncPtBitmask |= 2;
+							break;
+						}
+						default:
+							break;
 						}
 					}
 				}
 
 				if ((ui32SyncPtBitmask == 0x3) &&
-					(ui32SyncCheckpointFWAddr == *pui32NextFWAddr))
-				{
+				    (ui32SyncCheckpointFWAddr ==
+				     *pui32NextFWAddr)) {
 					/* Print fence info (if not already done so) */
-					if (!bFenceDumped)
-					{
-						PVR_LOG(("Fence: %s, ID: %"IMG_UINT64_FMTSPEC", %s - (0x%p)",
-								  psFence->pszName,
-								  psFence->iUID,
-								  _SyncFbFenceSyncsHaveSignalled(psFence) ?
-										  "Signalled" : "Pending  ",
-								  psFence));
+					if (!bFenceDumped) {
+						PVR_LOG((
+							"Fence: %s, ID: %" IMG_UINT64_FMTSPEC
+							", %s - (0x%p)",
+							psFence->pszName,
+							psFence->iUID,
+							_SyncFbFenceSyncsHaveSignalled(
+								psFence) ?
+								"Signalled" :
+								"Pending  ",
+							psFence));
 						bFenceDumped = IMG_TRUE;
 					}
-					_SyncFbDebugRequestPrintSyncPt(psSyncPt,
-					                               IMG_TRUE,
-												   NULL,
-												   NULL);
+					_SyncFbDebugRequestPrintSyncPt(
+						psSyncPt, IMG_TRUE, NULL, NULL);
 					ui32NumFallbackUfos++;
 				}
 			}
@@ -2205,23 +2158,24 @@ IMG_UINT32 SyncFbDumpInfoOnStalledUFOs(IMG_UINT32 nr_ufos, IMG_UINT32 *vaddrs)
 	return ui32NumFallbackUfos;
 }
 
-static inline PVRSRV_SYNC_STATE _SyncFbCheckpointToSyncState(PVRSRV_SYNC_CHECKPOINT_STATE eState)
+static inline PVRSRV_SYNC_STATE
+_SyncFbCheckpointToSyncState(PVRSRV_SYNC_CHECKPOINT_STATE eState)
 {
-	switch (eState)
-	{
-		case PVRSRV_SYNC_CHECKPOINT_SIGNALLED:
-			return PVRSRV_SYNC_SIGNALLED;
-		case PVRSRV_SYNC_CHECKPOINT_ERRORED:
-			return PVRSRV_SYNC_ERRORED;
-		case PVRSRV_SYNC_CHECKPOINT_ACTIVE:
-			return PVRSRV_SYNC_NOT_SIGNALLED;
-		default:
-			PVR_ASSERT("Unknown sync checkpoint state");
-			return PVRSRV_SYNC_ERRORED;
+	switch (eState) {
+	case PVRSRV_SYNC_CHECKPOINT_SIGNALLED:
+		return PVRSRV_SYNC_SIGNALLED;
+	case PVRSRV_SYNC_CHECKPOINT_ERRORED:
+		return PVRSRV_SYNC_ERRORED;
+	case PVRSRV_SYNC_CHECKPOINT_ACTIVE:
+		return PVRSRV_SYNC_NOT_SIGNALLED;
+	default:
+		PVR_ASSERT("Unknown sync checkpoint state");
+		return PVRSRV_SYNC_ERRORED;
 	}
 }
 
-IMG_BOOL SyncFbCheckpointHasSignalled(IMG_UINT32 ui32FwAddr, IMG_UINT32 ui32Value)
+IMG_BOOL SyncFbCheckpointHasSignalled(IMG_UINT32 ui32FwAddr,
+				      IMG_UINT32 ui32Value)
 {
 	PVRSRV_SYNC_PT *psSyncPt;
 	PVRSRV_SYNC_STATE eSignal;
@@ -2233,11 +2187,11 @@ IMG_BOOL SyncFbCheckpointHasSignalled(IMG_UINT32 ui32FwAddr, IMG_UINT32 ui32Valu
 	OSLockAcquire(gsSyncFbContext.hFbContextLock);
 
 	DBG(("%s: Looking up key (fwAddr=0x%x)", __func__, ui32FwAddr));
-	psSyncPt = (PVRSRV_SYNC_PT *) HASH_Retrieve_Extended(gsSyncFbContext.sCheckpointHashTable, (void *) &ui32FwAddr);
+	psSyncPt = (PVRSRV_SYNC_PT *)HASH_Retrieve_Extended(
+		gsSyncFbContext.sCheckpointHashTable, (void *)&ui32FwAddr);
 	DBG(("%s: Found sync pt <%p>", __func__, psSyncPt));
 
-	if (!psSyncPt)
-	{
+	if (!psSyncPt) {
 		/* Sync Fallback does not know about this UFO, skip processing it. */
 		goto err_release;
 	}
@@ -2250,26 +2204,24 @@ IMG_BOOL SyncFbCheckpointHasSignalled(IMG_UINT32 ui32FwAddr, IMG_UINT32 ui32Valu
 	 * checkpoint.
 	 */
 
-	if (dllist_is_empty(&psSyncPt->sSignalCallbacks))
-	{
+	if (dllist_is_empty(&psSyncPt->sSignalCallbacks)) {
 		ERR("Sync pt has no attached syncs. Make sure to attach one "
 		    "when creating a new sync pt to define its flavour");
 	}
 
 	dllist_foreach_node(&psSyncPt->sSignalCallbacks, psCurrentCB, psNextCB)
 	{
-		psCB = IMG_CONTAINER_OF(psCurrentCB,
-		                        PVRSRV_SYNC_SIGNAL_CB,
-		                        sCallbackNode);
+		psCB = IMG_CONTAINER_OF(psCurrentCB, PVRSRV_SYNC_SIGNAL_CB,
+					sCallbackNode);
 
 		if (_SyncFbSyncPtHandleType(psCB) == PVRSRV_SYNC_HANDLE_PVR &&
-		    SyncCheckpointGetFirmwareAddr(psCB->hAttachedSync) == ui32FwAddr)
-		{
+		    SyncCheckpointGetFirmwareAddr(psCB->hAttachedSync) ==
+			    ui32FwAddr) {
 			continue;
 		}
 
-		if (psCB->pfnSignal(psCB->hAttachedSync, eSignal) != PVRSRV_OK)
-		{
+		if (psCB->pfnSignal(psCB->hAttachedSync, eSignal) !=
+		    PVRSRV_OK) {
 			ERR("Failed to signal an attached sync, system might block!");
 			/* Don't jump to exit but try to signal remaining syncs */
 		}
@@ -2315,31 +2267,30 @@ static IMG_BOOL _SyncFbSyncPtHasSignalledSW(PVRSRV_SYNC_PT *psSyncPt)
 	 * Change SyncPt state to signalled or errored if yes.
 	 * Also notify other attached syncs.
 	 */
-	if (OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_NOT_SIGNALLED)
-	{
+	if (OSAtomicRead(&psSyncPt->iStatus) == PVRSRV_SYNC_NOT_SIGNALLED) {
 		/* List must have at least the device sync attached if we are called */
 		PVR_ASSERT(!dllist_is_empty(&psSyncPt->sSignalCallbacks));
 
 		/* Retrieve the first sync checkpoint of that sync pt */
 		psCBNode = dllist_get_next_node(&psSyncPt->sSignalCallbacks);
-		psCB = IMG_CONTAINER_OF(psCBNode, PVRSRV_SYNC_SIGNAL_CB, sCallbackNode);
-		psSWSyncPt = (PVRSRV_SYNC_PT_SW*) psCB->hAttachedSync;
+		psCB = IMG_CONTAINER_OF(psCBNode, PVRSRV_SYNC_SIGNAL_CB,
+					sCallbackNode);
+		psSWSyncPt = (PVRSRV_SYNC_PT_SW *)psCB->hAttachedSync;
 
-		if (psSWSyncPt->bSignalled)
-		{
+		if (psSWSyncPt->bSignalled) {
 			_SyncFbSyncPtSignal(psSyncPt, PVRSRV_SYNC_SIGNALLED);
 
 			/* Signal all other attached syncs */
-			PVR_LOG_IF_ERROR(_SyncFbSyncPtSignalAttached(psSyncPt, PVRSRV_SYNC_SIGNALLED),
-			                 "_SyncFbSyncPtSignalAttached");
+			PVR_LOG_IF_ERROR(_SyncFbSyncPtSignalAttached(
+						 psSyncPt,
+						 PVRSRV_SYNC_SIGNALLED),
+					 "_SyncFbSyncPtSignalAttached");
 
 			bRet = IMG_TRUE;
 		}
 
 		PVR_DPF_RETURN_RC1(bRet, psSyncPt);
-	}
-	else
-	{
+	} else {
 		PVR_DPF_RETURN_RC1(IMG_TRUE, psSyncPt);
 	}
 }
@@ -2347,25 +2298,23 @@ static IMG_BOOL _SyncFbSyncPtHasSignalledSW(PVRSRV_SYNC_PT *psSyncPt)
 /* Mark an attached sw sync pt with the given state.
  * MAKE SURE TO WAKE UP FW AFTER CALLING THIS (if enqueued) */
 static PVRSRV_ERROR _SyncFbSyncPtSignalSW(IMG_HANDLE hSync,
-                                          PVRSRV_SYNC_STATE eState)
+					  PVRSRV_SYNC_STATE eState)
 {
-	PVRSRV_SYNC_PT_SW *psSWSyncPt = (PVRSRV_SYNC_PT_SW*) hSync;
+	PVRSRV_SYNC_PT_SW *psSWSyncPt = (PVRSRV_SYNC_PT_SW *)hSync;
 
 	PVR_DPF_ENTERED1(hSync);
 
-	if (!psSWSyncPt->bSignalled)
-	{
-		switch (eState)
-		{
-			case PVRSRV_SYNC_SIGNALLED:
-			case PVRSRV_SYNC_ERRORED:
-				psSWSyncPt->bSignalled = IMG_TRUE;
-				break;
-			default:
-				ERR("Passed unknown sync state (%d), "
-						"please use a valid one for signalling.",
-						eState);
-				return PVRSRV_ERROR_INVALID_PARAMS;
+	if (!psSWSyncPt->bSignalled) {
+		switch (eState) {
+		case PVRSRV_SYNC_SIGNALLED:
+		case PVRSRV_SYNC_ERRORED:
+			psSWSyncPt->bSignalled = IMG_TRUE;
+			break;
+		default:
+			ERR("Passed unknown sync state (%d), "
+			    "please use a valid one for signalling.",
+			    eState);
+			return PVRSRV_ERROR_INVALID_PARAMS;
 		}
 	}
 
@@ -2373,13 +2322,12 @@ static PVRSRV_ERROR _SyncFbSyncPtSignalSW(IMG_HANDLE hSync,
 }
 
 PVRSRV_ERROR SyncFbTimelineCreateSW(IMG_UINT32 uiTimelineNameSize,
-                                    const IMG_CHAR *pszTimelineName,
-                                    PVRSRV_TIMELINE_SERVER **ppsTimeline)
+				    const IMG_CHAR *pszTimelineName,
+				    PVRSRV_TIMELINE_SERVER **ppsTimeline)
 {
 	return _SyncFbTimelineCreate(&_SyncFbSyncPtHasSignalledSW,
-	                             uiTimelineNameSize,
-	                             pszTimelineName,
-	                             ppsTimeline);
+				     uiTimelineNameSize, pszTimelineName,
+				     ppsTimeline);
 }
 
 /*****************************************************************************/
@@ -2387,11 +2335,10 @@ PVRSRV_ERROR SyncFbTimelineCreateSW(IMG_UINT32 uiTimelineNameSize,
 /*                       SOFTWARE_TIMELINE FUNCTIONS                         */
 /*                                                                           */
 /*****************************************************************************/
-static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(PVRSRV_DEVICE_NODE *psDeviceNode,
-                                          PVRSRV_TIMELINE_SERVER *psTl,
-                                          const IMG_CHAR *pszFenceName,
-                                          PVRSRV_FENCE_SERVER **ppsOutputFence,
-                                          IMG_UINT64 *pui64SyncPtIdx)
+static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(
+	PVRSRV_DEVICE_NODE *psDeviceNode, PVRSRV_TIMELINE_SERVER *psTl,
+	const IMG_CHAR *pszFenceName, PVRSRV_FENCE_SERVER **ppsOutputFence,
+	IMG_UINT64 *pui64SyncPtIdx)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	PVRSRV_FENCE_SERVER *psNewFence;
@@ -2400,8 +2347,7 @@ static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(PVRSRV_DEVICE_NODE *psDeviceNod
 	PVRSRV_SYNC_SIGNAL_CB *psNewSyncSignalCB;
 	IMG_INT iNextSeqNum;
 
-	if (_SyncFbTimelineHandleType(psTl) != PVRSRV_SYNC_HANDLE_SW)
-	{
+	if (_SyncFbTimelineHandleType(psTl) != PVRSRV_SYNC_HANDLE_SW) {
 		ERR("Passed timeline is not a SW timeline.");
 		eError = PVRSRV_ERROR_NOT_SW_TIMELINE;
 		goto e1;
@@ -2424,7 +2370,8 @@ static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(PVRSRV_DEVICE_NODE *psDeviceNod
 	psNewSyncSignalCB = OSAllocMem(sizeof(*psNewSyncSignalCB));
 	PVR_LOG_GOTO_IF_NOMEM(psNewSyncSignalCB, eError, e2);
 
-	psNewFence->apsFenceSyncList = OSAllocMem(sizeof(*(psNewFence->apsFenceSyncList)));
+	psNewFence->apsFenceSyncList =
+		OSAllocMem(sizeof(*(psNewFence->apsFenceSyncList)));
 	PVR_LOG_GOTO_IF_NOMEM(psNewFence->apsFenceSyncList, eError, e3);
 
 	psNewSWSyncPt = OSAllocMem(sizeof(*psNewSWSyncPt));
@@ -2440,45 +2387,37 @@ static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(PVRSRV_DEVICE_NODE *psDeviceNod
 	iNextSeqNum = OSAtomicRead(&psTl->iSeqNum) + 1;
 
 	eError = _SyncFbSyncPtCreate(&psNewSyncPt, psTl, iNextSeqNum);
-	if (eError != PVRSRV_OK)
-	{
+	if (eError != PVRSRV_OK) {
 		OSLockRelease(psTl->hTlLock);
 		goto e5;
 	}
 
-	if (OSAtomicRead(&psTl->iLastSignalledSeqNum) < psNewSyncPt->uiSeqNum)
-	{
+	if (OSAtomicRead(&psTl->iLastSignalledSeqNum) < psNewSyncPt->uiSeqNum) {
 		psNewSWSyncPt->bSignalled = IMG_FALSE;
-	}
-	else
-	{
+	} else {
 		psNewSWSyncPt->bSignalled = IMG_TRUE;
 		OSAtomicWrite(&psNewSyncPt->iStatus, PVRSRV_SYNC_SIGNALLED);
 	}
 
 	/* Init Sync Signal CB */
-	psNewSyncSignalCB->hAttachedSync = (IMG_HANDLE) psNewSWSyncPt;
+	psNewSyncSignalCB->hAttachedSync = (IMG_HANDLE)psNewSWSyncPt;
 	psNewSyncSignalCB->pfnSignal = &_SyncFbSyncPtSignalSW;
 	psNewSyncSignalCB->pfnSyncFree = &_SyncFbSyncPtFreeSW;
 	psNewSyncSignalCB->hPrivData = NULL;
 
 	dllist_add_to_tail(&psNewSyncPt->sSignalCallbacks,
-					   &psNewSyncSignalCB->sCallbackNode);
+			   &psNewSyncSignalCB->sCallbackNode);
 
 	/* Now that the fence has been created, increment iSeqNum */
 	OSAtomicIncrement(&psTl->iSeqNum);
 
 	OSLockRelease(psTl->hTlLock);
 
-	if (pszFenceName)
-	{
+	if (pszFenceName) {
 		/* Init Fence */
-		OSStringSafeCopy(psNewFence->pszName,
-		              pszFenceName,
-		              SYNC_FB_FENCE_MAX_LENGTH);
-	}
-	else
-	{
+		OSStringSafeCopy(psNewFence->pszName, pszFenceName,
+				 SYNC_FB_FENCE_MAX_LENGTH);
+	} else {
 		psNewFence->pszName[0] = '\0';
 	}
 
@@ -2486,22 +2425,19 @@ static PVRSRV_ERROR _SyncFbSWTimelineFenceCreate(PVRSRV_DEVICE_NODE *psDeviceNod
 	psNewFence->uiNumSyncs = 1;
 	FENCE_REF_SET(&psNewFence->iRef, 1, psNewFence);
 	OSAtomicWrite(&psNewFence->iStatus, PVRSRV_FENCE_NOT_SIGNALLED);
-	psNewFence->iUID = (IMG_INT64)(uintptr_t) psNewFence;
+	psNewFence->iUID = (IMG_INT64)(uintptr_t)psNewFence;
 
 	_SyncFbFenceListAdd(psNewFence);
 
 	PDUMPCOMMENTWITHFLAGS(psDeviceNode, 0,
-						  "Allocated SW Fence %s (ID:%"IMG_UINT64_FMTSPEC") with sequence number %u "
-						  "on Timeline %s (ID:%"IMG_UINT64_FMTSPEC")",
-						  psNewFence->pszName,
-						  psNewFence->iUID,
-						  psNewSyncPt->uiSeqNum,
-						  psTl->pszName,
-						  psTl->iUID);
+			      "Allocated SW Fence %s (ID:%" IMG_UINT64_FMTSPEC
+			      ") with sequence number %u "
+			      "on Timeline %s (ID:%" IMG_UINT64_FMTSPEC ")",
+			      psNewFence->pszName, psNewFence->iUID,
+			      psNewSyncPt->uiSeqNum, psTl->pszName, psTl->iUID);
 
 	*ppsOutputFence = psNewFence;
-	if (pui64SyncPtIdx != NULL)
-	{
+	if (pui64SyncPtIdx != NULL) {
 		*pui64SyncPtIdx = psNewSyncPt->uiSeqNum;
 	}
 
@@ -2521,15 +2457,14 @@ e1:
 
 /* Kernel mode function (SyncFb implementation) to create fence on a SW timeline */
 PVRSRV_ERROR SyncFbSWTimelineFenceCreateKM(PVRSRV_DEVICE_NODE *psDeviceNode,
-                                           PVRSRV_TIMELINE iSWTimeline,
-                                           const IMG_CHAR *pszFenceName,
-                                           PVRSRV_FENCE *piOutputFence,
-                                           IMG_UINT64 *pui64SyncPtIdx)
+					   PVRSRV_TIMELINE iSWTimeline,
+					   const IMG_CHAR *pszFenceName,
+					   PVRSRV_FENCE *piOutputFence,
+					   IMG_UINT64 *pui64SyncPtIdx)
 {
-
 	PVRSRV_ERROR eError;
 	PVRSRV_FENCE_SERVER *psNewFence;
-	PROCESS_HANDLE_BASE	*psProcBase;
+	PROCESS_HANDLE_BASE *psProcBase;
 	PVRSRV_TIMELINE_SERVER *psTl;
 	IMG_HANDLE hOutFence;
 
@@ -2543,36 +2478,32 @@ PVRSRV_ERROR SyncFbSWTimelineFenceCreateKM(PVRSRV_DEVICE_NODE *psDeviceNode,
 	/* Lookup up the ST Timeline (and take a reference on it while
 	 * we are creating the new sync pt and fence)
 	 */
-	eError = PVRSRVLookupHandle(psProcBase->psHandleBase,
-                                (void**) &psTl,
-                                (IMG_HANDLE) (uintptr_t) iSWTimeline,
-                                PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER,
-                                IMG_TRUE);
+	eError = PVRSRVLookupHandle(psProcBase->psHandleBase, (void **)&psTl,
+				    (IMG_HANDLE)(uintptr_t)iSWTimeline,
+				    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER,
+				    IMG_TRUE);
 	PVR_GOTO_IF_ERROR(eError, err_release_proc_base);
 
-	eError = _SyncFbSWTimelineFenceCreate(psDeviceNode, psTl,
-	                                      pszFenceName,
-	                                      &psNewFence,
-	                                      pui64SyncPtIdx);
+	eError = _SyncFbSWTimelineFenceCreate(psDeviceNode, psTl, pszFenceName,
+					      &psNewFence, pui64SyncPtIdx);
 	PVR_GOTO_IF_ERROR(eError, e1);
 
-	eError = PVRSRVAllocHandle(psProcBase->psHandleBase,
-							   &hOutFence,
-							   (void*) psNewFence,
-							   PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
-							   PVRSRV_HANDLE_ALLOC_FLAG_MULTI,
-							   &SyncFbFenceReleaseKM);
+	eError = PVRSRVAllocHandle(psProcBase->psHandleBase, &hOutFence,
+				   (void *)psNewFence,
+				   PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
+				   PVRSRV_HANDLE_ALLOC_FLAG_MULTI,
+				   &SyncFbFenceReleaseKM);
 	PVR_GOTO_IF_ERROR(eError, e2);
 
 	/* Drop the reference we took on the timeline earlier */
 	PVRSRVReleaseHandle(psProcBase->psHandleBase,
-	                    (IMG_HANDLE) (uintptr_t) iSWTimeline,
-	                    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
+			    (IMG_HANDLE)(uintptr_t)iSWTimeline,
+			    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
 
 	eError = _SyncFbReleaseProcHandleBase(psProcBase);
 	PVR_ASSERT(eError == PVRSRV_OK);
 
-	*piOutputFence = (PVRSRV_FENCE) (uintptr_t) hOutFence;
+	*piOutputFence = (PVRSRV_FENCE)(uintptr_t)hOutFence;
 
 	return PVRSRV_OK;
 
@@ -2584,41 +2515,38 @@ e2:
 e1:
 	/* Drop the reference we took on the timeline earlier */
 	PVRSRVReleaseHandle(psProcBase->psHandleBase,
-	                    (IMG_HANDLE) (uintptr_t) iSWTimeline,
-	                    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
+			    (IMG_HANDLE)(uintptr_t)iSWTimeline,
+			    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER);
 err_release_proc_base:
 	(void)_SyncFbReleaseProcHandleBase(psProcBase);
 e0:
 	PVR_DPF_RETURN_RC(eError);
-
 }
 
 /* Client (bridge) interface to the SyncSWTimelineFenceCreateKM() function */
 PVRSRV_ERROR SyncFbFenceCreateSW(CONNECTION_DATA *psConnection,
-                                 PVRSRV_DEVICE_NODE *psDeviceNode,
-                                 PVRSRV_TIMELINE_SERVER *psTimeline,
-                                 IMG_UINT32 uiFenceNameSize,
-                                 const IMG_CHAR *pszFenceName,
-                                 PVRSRV_FENCE_SERVER **ppsOutputFence,
-                                 IMG_UINT64 *pui64SyncPtIdx)
+				 PVRSRV_DEVICE_NODE *psDeviceNode,
+				 PVRSRV_TIMELINE_SERVER *psTimeline,
+				 IMG_UINT32 uiFenceNameSize,
+				 const IMG_CHAR *pszFenceName,
+				 PVRSRV_FENCE_SERVER **ppsOutputFence,
+				 IMG_UINT64 *pui64SyncPtIdx)
 {
 	PVRSRV_ERROR eError;
 
 	PVR_UNREFERENCED_PARAMETER(psConnection);
 	PVR_UNREFERENCED_PARAMETER(uiFenceNameSize);
 
-	eError =  _SyncFbSWTimelineFenceCreate(psDeviceNode,
-	                                       psTimeline,
-	                                       pszFenceName,
-	                                       ppsOutputFence,
-	                                       pui64SyncPtIdx);
+	eError = _SyncFbSWTimelineFenceCreate(psDeviceNode, psTimeline,
+					      pszFenceName, ppsOutputFence,
+					      pui64SyncPtIdx);
 
 	return eError;
 }
 
 static PVRSRV_ERROR _SyncSWTimelineAdvanceSigErr(PVRSRV_TIMELINE_SERVER *psTl,
-                                                 PVRSRV_SYNC_STATE eState,
-                                                 IMG_UINT64 *pui64SyncPtIdx)
+						 PVRSRV_SYNC_STATE eState,
+						 IMG_UINT64 *pui64SyncPtIdx)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	PDLLIST_NODE psPtNode, psNextNode;
@@ -2629,8 +2557,7 @@ static PVRSRV_ERROR _SyncSWTimelineAdvanceSigErr(PVRSRV_TIMELINE_SERVER *psTl,
 
 	PVR_LOG_GOTO_IF_INVALID_PARAM(psTl, eError, errExit);
 
-	if (_SyncFbTimelineHandleType(psTl) != PVRSRV_SYNC_HANDLE_SW)
-	{
+	if (_SyncFbTimelineHandleType(psTl) != PVRSRV_SYNC_HANDLE_SW) {
 		ERR("Passed timeline is not a SW timeline.");
 		eError = PVRSRV_ERROR_NOT_SW_TIMELINE;
 		goto errExit;
@@ -2639,9 +2566,12 @@ static PVRSRV_ERROR _SyncSWTimelineAdvanceSigErr(PVRSRV_TIMELINE_SERVER *psTl,
 	OSLockAcquire(psTl->hTlLock);
 
 	/* Don't allow incrementing of SW timeline beyond its last created pt */
-	if (OSAtomicRead(&psTl->iLastSignalledSeqNum) == OSAtomicRead(&psTl->iSeqNum))
-	{
-		DBG(("%s: !! TL<%p> (%d->%d/%d) !!", __func__, (void*)psTl, OSAtomicRead(&psTl->iLastSignalledSeqNum), OSAtomicRead(&psTl->iLastSignalledSeqNum)+1, OSAtomicRead(&psTl->iSeqNum)));
+	if (OSAtomicRead(&psTl->iLastSignalledSeqNum) ==
+	    OSAtomicRead(&psTl->iSeqNum)) {
+		DBG(("%s: !! TL<%p> (%d->%d/%d) !!", __func__, (void *)psTl,
+		     OSAtomicRead(&psTl->iLastSignalledSeqNum),
+		     OSAtomicRead(&psTl->iLastSignalledSeqNum) + 1,
+		     OSAtomicRead(&psTl->iSeqNum)));
 		WRN("Attempt to advance SW timeline beyond last created point.");
 		eError = PVRSRV_ERROR_SW_TIMELINE_AT_LATEST_POINT;
 		goto errUnlockAndExit;
@@ -2653,16 +2583,15 @@ static PVRSRV_ERROR _SyncSWTimelineAdvanceSigErr(PVRSRV_TIMELINE_SERVER *psTl,
 	 * signal the points that are met now */
 	dllist_foreach_node(&psTl->sSyncActiveList, psPtNode, psNextNode)
 	{
-		psSyncPt = IMG_CONTAINER_OF(psPtNode,
-		                            PVRSRV_SYNC_PT,
-		                            sTlSyncActiveList);
-		if (psSyncPt->uiSeqNum <= uiTlSeqNum)
-		{
+		psSyncPt = IMG_CONTAINER_OF(psPtNode, PVRSRV_SYNC_PT,
+					    sTlSyncActiveList);
+		if (psSyncPt->uiSeqNum <= uiTlSeqNum) {
 			_SyncFbSyncPtSignal(psSyncPt, eState);
 
 			/* Signal all other attached syncs */
-			PVR_LOG_IF_ERROR(_SyncFbSyncPtSignalAttached(psSyncPt, eState),
-			                 "_SyncFbSyncPtSignalAttached");
+			PVR_LOG_IF_ERROR(_SyncFbSyncPtSignalAttached(psSyncPt,
+								     eState),
+					 "_SyncFbSyncPtSignalAttached");
 
 			dllist_remove_node(psPtNode);
 		}
@@ -2670,8 +2599,7 @@ static PVRSRV_ERROR _SyncSWTimelineAdvanceSigErr(PVRSRV_TIMELINE_SERVER *psTl,
 
 	OSLockRelease(psTl->hTlLock);
 
-	if (pui64SyncPtIdx != NULL)
-	{
+	if (pui64SyncPtIdx != NULL) {
 		*pui64SyncPtIdx = uiTlSeqNum;
 	}
 
@@ -2692,31 +2620,34 @@ errExit:
 static void _SyncSWTimelineCheckForUnsignalledPts(PVRSRV_TIMELINE_SERVER *psTl)
 {
 	IMG_UINT32 ui32TlSeqNum = OSAtomicRead(&psTl->iSeqNum);
-	IMG_UINT32 ui32TlLastSigSeqNum = OSAtomicRead(&psTl->iLastSignalledSeqNum);
+	IMG_UINT32 ui32TlLastSigSeqNum =
+		OSAtomicRead(&psTl->iLastSignalledSeqNum);
 
-	while (ui32TlLastSigSeqNum < ui32TlSeqNum)
-	{
+	while (ui32TlLastSigSeqNum < ui32TlSeqNum) {
 		ui32TlLastSigSeqNum++;
-		PVR_DPF((PVR_DBG_WARNING,"%s: Found unsignalled SW timeline <%p> '%s' sync pt (%d/%d)",__func__, psTl, psTl->pszName, ui32TlLastSigSeqNum, ui32TlSeqNum));
+		PVR_DPF((
+			PVR_DBG_WARNING,
+			"%s: Found unsignalled SW timeline <%p> '%s' sync pt (%d/%d)",
+			__func__, psTl, psTl->pszName, ui32TlLastSigSeqNum,
+			ui32TlSeqNum));
 		_SyncSWTimelineAdvanceSigErr(psTl, PVRSRV_SYNC_ERRORED, NULL);
 	}
 }
 
 /* kernel mode function to advance a SW timeline */
-PVRSRV_ERROR SyncFbSWTimelineAdvanceKM(void *pvSWTimelineObj, IMG_UINT64 *pui64SyncPtIdx)
+PVRSRV_ERROR SyncFbSWTimelineAdvanceKM(void *pvSWTimelineObj,
+				       IMG_UINT64 *pui64SyncPtIdx)
 {
-	return _SyncSWTimelineAdvanceSigErr(pvSWTimelineObj,
-	                                    PVRSRV_SYNC_SIGNALLED,
-	                                    pui64SyncPtIdx);
+	return _SyncSWTimelineAdvanceSigErr(
+		pvSWTimelineObj, PVRSRV_SYNC_SIGNALLED, pui64SyncPtIdx);
 }
 
 /* Client (bridge) interface to the SyncSWTimelineAdvanceKM() function */
 PVRSRV_ERROR SyncFbTimelineAdvanceSW(PVRSRV_TIMELINE_SERVER *psTimeline,
-                                     IMG_UINT64 *pui64SyncPtIdx)
+				     IMG_UINT64 *pui64SyncPtIdx)
 {
-	return _SyncSWTimelineAdvanceSigErr(psTimeline,
-	                                    PVRSRV_SYNC_SIGNALLED,
-	                                    pui64SyncPtIdx);
+	return _SyncSWTimelineAdvanceSigErr(psTimeline, PVRSRV_SYNC_SIGNALLED,
+					    pui64SyncPtIdx);
 }
 
 PVRSRV_ERROR SyncFbFenceReleaseKM(void *pvFenceObj)
@@ -2727,36 +2658,37 @@ PVRSRV_ERROR SyncFbFenceReleaseKM(void *pvFenceObj)
 
 	PVR_LOG_GOTO_IF_INVALID_PARAM(pvFenceObj, eError, e0);
 
-	eError = SyncFbFenceRelease((PVRSRV_FENCE_SERVER*) pvFenceObj);
+	eError = SyncFbFenceRelease((PVRSRV_FENCE_SERVER *)pvFenceObj);
 
 e0:
 	PVR_DPF_RETURN_RC(eError);
 }
 
 PVRSRV_ERROR SyncFbSWGetTimelineObj(PVRSRV_TIMELINE iSWTimeline,
-                                    void **ppvSWTimelineObj)
+				    void **ppvSWTimelineObj)
 {
 	PVRSRV_ERROR eError;
 	PROCESS_HANDLE_BASE *psProcBase;
 
 	PVR_DPF_ENTERED1(iSWTimeline);
 
-	PVR_LOG_GOTO_IF_INVALID_PARAM(iSWTimeline != PVRSRV_NO_TIMELINE, eError, err_out);
+	PVR_LOG_GOTO_IF_INVALID_PARAM(iSWTimeline != PVRSRV_NO_TIMELINE, eError,
+				      err_out);
 
 	eError = _SyncFbAcquireProcHandleBase(&psProcBase);
 	PVR_LOG_GOTO_IF_ERROR(eError, "_SyncFbAcquireProcHandleBase", err_out);
 
-	eError = PVRSRVLookupHandle(psProcBase->psHandleBase,
-                                ppvSWTimelineObj,
-                                (IMG_HANDLE)(uintptr_t) iSWTimeline,
-                                PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER,
-                                IMG_FALSE);
-	PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVLookupHandle", err_release_proc_base);
+	eError = PVRSRVLookupHandle(psProcBase->psHandleBase, ppvSWTimelineObj,
+				    (IMG_HANDLE)(uintptr_t)iSWTimeline,
+				    PVRSRV_HANDLE_TYPE_PVRSRV_TIMELINE_SERVER,
+				    IMG_FALSE);
+	PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVLookupHandle",
+			      err_release_proc_base);
 
 	eError = _SyncFbReleaseProcHandleBase(psProcBase);
 	PVR_LOG_GOTO_IF_ERROR(eError, "_SyncFbReleaseProcHandleBase", err_out);
 
-	_SyncFbTimelineAcquire((PVRSRV_TIMELINE_SERVER*) *ppvSWTimelineObj);
+	_SyncFbTimelineAcquire((PVRSRV_TIMELINE_SERVER *)*ppvSWTimelineObj);
 
 	PVR_DPF_RETURN_RC(eError);
 
@@ -2766,77 +2698,74 @@ err_out:
 	PVR_DPF_RETURN_RC(eError);
 }
 
-
-PVRSRV_ERROR SyncFbGetFenceObj(PVRSRV_FENCE iFence,
-                               void **ppvFenceObj)
+PVRSRV_ERROR SyncFbGetFenceObj(PVRSRV_FENCE iFence, void **ppvFenceObj)
 {
 	PVRSRV_ERROR eError;
 	PROCESS_HANDLE_BASE *psProcBase;
 
 	PVR_DPF_ENTERED1(iFence);
 
-	PVR_LOG_GOTO_IF_INVALID_PARAM(iFence != PVRSRV_NO_FENCE, eError, err_out);
+	PVR_LOG_GOTO_IF_INVALID_PARAM(iFence != PVRSRV_NO_FENCE, eError,
+				      err_out);
 
 	eError = _SyncFbAcquireProcHandleBase(&psProcBase);
 	PVR_LOG_GOTO_IF_ERROR(eError, "_SyncFbAcquireProcHandleBase", err_out);
 
-	eError = PVRSRVLookupHandle(psProcBase->psHandleBase,
-	                            ppvFenceObj,
-	                            (IMG_HANDLE)(uintptr_t) iFence,
-	                            PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
-	                            IMG_FALSE);
-	PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVLookupHandle", err_release_proc_base);
+	eError = PVRSRVLookupHandle(psProcBase->psHandleBase, ppvFenceObj,
+				    (IMG_HANDLE)(uintptr_t)iFence,
+				    PVRSRV_HANDLE_TYPE_PVRSRV_FENCE_SERVER,
+				    IMG_FALSE);
+	PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVLookupHandle",
+			      err_release_proc_base);
 
-	_SyncFbFenceAcquire((PVRSRV_FENCE_SERVER*) *ppvFenceObj);
+	_SyncFbFenceAcquire((PVRSRV_FENCE_SERVER *)*ppvFenceObj);
 
-err_release_proc_base:
-	{
-		PVRSRV_ERROR eError1;
-		eError1 = _SyncFbReleaseProcHandleBase(psProcBase);
-		PVR_LOG_IF_ERROR(eError1, "_SyncFbReleaseProcHandleBase");
-	}
+err_release_proc_base : {
+	PVRSRV_ERROR eError1;
+	eError1 = _SyncFbReleaseProcHandleBase(psProcBase);
+	PVR_LOG_IF_ERROR(eError1, "_SyncFbReleaseProcHandleBase");
+}
 err_out:
 	PVR_DPF_RETURN_RC(eError);
 }
 
 PVRSRV_ERROR SyncFbDumpFenceKM(void *pvSWFenceObj,
-	                           DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
-	                           void *pvDumpDebugFile)
+			       DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
+			       void *pvDumpDebugFile)
 {
-	PVRSRV_FENCE_SERVER *psFence = (PVRSRV_FENCE_SERVER *) pvSWFenceObj;
+	PVRSRV_FENCE_SERVER *psFence = (PVRSRV_FENCE_SERVER *)pvSWFenceObj;
 	IMG_UINT32 i;
 
-	PVR_DUMPDEBUG_LOG("Fence: %s, %-9s - <%#"IMG_UINT64_FMTSPECx">",
-	                  psFence->pszName,
-	                  _SyncFbFenceSyncsHaveSignalled(psFence) ?
-	                      "Signalled" : "Active",
-	                  psFence->iUID);
+	PVR_DUMPDEBUG_LOG("Fence: %s, %-9s - <%#" IMG_UINT64_FMTSPECx ">",
+			  psFence->pszName,
+			  _SyncFbFenceSyncsHaveSignalled(psFence) ?
+				  "Signalled" :
+				  "Active",
+			  psFence->iUID);
 
 	/* ... all sync points in the fence */
-	for (i = 0; i < psFence->uiNumSyncs; i++)
-	{
+	for (i = 0; i < psFence->uiNumSyncs; i++) {
 		_SyncFbDebugRequestPrintSyncPt(psFence->apsFenceSyncList[i],
-		                               IMG_TRUE,
-		                               pfnDumpDebugPrintf,
-		                               pvDumpDebugFile);
+					       IMG_TRUE, pfnDumpDebugPrintf,
+					       pvDumpDebugFile);
 	}
 
 	return PVRSRV_OK;
 }
 
 PVRSRV_ERROR SyncFbSWDumpTimelineKM(void *pvSWTimelineObj,
-                                    DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
-                                    void *pvDumpDebugFile)
+				    DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
+				    void *pvDumpDebugFile)
 {
-	PVRSRV_TIMELINE_SERVER *psTl = (PVRSRV_TIMELINE_SERVER *) pvSWTimelineObj;
+	PVRSRV_TIMELINE_SERVER *psTl =
+		(PVRSRV_TIMELINE_SERVER *)pvSWTimelineObj;
 
 	OSLockAcquire(psTl->hTlLock);
 
-	PVR_DUMPDEBUG_LOG("TL: %s, SeqNum: %d/%d - <%#"IMG_UINT64_FMTSPECx">",
-	                  psTl->pszName,
-	                  OSAtomicRead(&psTl->iLastSignalledSeqNum),
-	                  OSAtomicRead(&psTl->iSeqNum),
-	                  psTl->iUID);
+	PVR_DUMPDEBUG_LOG("TL: %s, SeqNum: %d/%d - <%#" IMG_UINT64_FMTSPECx ">",
+			  psTl->pszName,
+			  OSAtomicRead(&psTl->iLastSignalledSeqNum),
+			  OSAtomicRead(&psTl->iSeqNum), psTl->iUID);
 
 	OSLockRelease(psTl->hTlLock);
 
@@ -2850,7 +2779,7 @@ PVRSRV_ERROR SyncFbSWDumpTimelineKM(void *pvSWTimelineObj,
 /*****************************************************************************/
 
 static PVRSRV_ERROR _SyncFbFenceExport(PVRSRV_FENCE_SERVER *psFence,
-                                       PVRSRV_FENCE_EXPORT **ppsExport)
+				       PVRSRV_FENCE_EXPORT **ppsExport)
 {
 	PVRSRV_FENCE_EXPORT *psExport;
 	PVRSRV_ERROR eError;
@@ -2881,7 +2810,7 @@ static PVRSRV_ERROR _SyncFbFenceExportDestroy(PVRSRV_FENCE_EXPORT *psExport)
 }
 
 static PVRSRV_ERROR _SyncFbFenceImport(PVRSRV_FENCE_EXPORT *psImport,
-                                       PVRSRV_FENCE_SERVER **psFenceOut)
+				       PVRSRV_FENCE_SERVER **psFenceOut)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_FENCE_SERVER *psFence;
@@ -2897,7 +2826,7 @@ static PVRSRV_ERROR _SyncFbFenceImport(PVRSRV_FENCE_EXPORT *psImport,
 
 #if defined(SUPPORT_INSECURE_EXPORT)
 PVRSRV_ERROR SyncFbFenceExportInsecure(PVRSRV_FENCE_SERVER *psFence,
-                                       PVRSRV_FENCE_EXPORT **ppsExport)
+				       PVRSRV_FENCE_EXPORT **ppsExport)
 {
 	return _SyncFbFenceExport(psFence, ppsExport);
 }
@@ -2908,9 +2837,9 @@ PVRSRV_ERROR SyncFbFenceExportDestroyInsecure(PVRSRV_FENCE_EXPORT *psExport)
 }
 
 PVRSRV_ERROR SyncFbFenceImportInsecure(CONNECTION_DATA *psConnection,
-                                       PVRSRV_DEVICE_NODE *psDevice,
-                                       PVRSRV_FENCE_EXPORT *psImport,
-                                       PVRSRV_FENCE_SERVER **psFenceOut)
+				       PVRSRV_DEVICE_NODE *psDevice,
+				       PVRSRV_FENCE_EXPORT *psImport,
+				       PVRSRV_FENCE_SERVER **psFenceOut)
 {
 	PVR_UNREFERENCED_PARAMETER(psConnection);
 	PVR_UNREFERENCED_PARAMETER(psDevice);
@@ -2936,11 +2865,11 @@ static PVRSRV_ERROR _SyncFbReleaseSecureExport(void *pvExport)
 }
 
 PVRSRV_ERROR SyncFbFenceExportSecure(CONNECTION_DATA *psConnection,
-                                     PVRSRV_DEVICE_NODE * psDevNode,
-                                     PVRSRV_FENCE_SERVER *psFence,
-                                     IMG_SECURE_TYPE *phSecure,
-                                     PVRSRV_FENCE_EXPORT **ppsExport,
-                                     CONNECTION_DATA **ppsSecureConnection)
+				     PVRSRV_DEVICE_NODE *psDevNode,
+				     PVRSRV_FENCE_SERVER *psFence,
+				     IMG_SECURE_TYPE *phSecure,
+				     PVRSRV_FENCE_EXPORT **ppsExport,
+				     CONNECTION_DATA **ppsSecureConnection)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_FENCE_EXPORT *psExport;
@@ -2955,10 +2884,8 @@ PVRSRV_ERROR SyncFbFenceExportSecure(CONNECTION_DATA *psConnection,
 	PVR_LOG_GOTO_IF_ERROR(eError, "_SyncFbFenceExport", err_out);
 
 	/* Transform it into a secure export */
-	eError = OSSecureExport("fallback_fence",
-	                        _SyncFbReleaseSecureExport,
-	                        (void *) psExport,
-	                        phSecure);
+	eError = OSSecureExport("fallback_fence", _SyncFbReleaseSecureExport,
+				(void *)psExport, phSecure);
 	PVR_LOG_GOTO_IF_ERROR(eError, "OSSecureExport", err_export);
 
 	*ppsExport = psExport;
@@ -2970,9 +2897,9 @@ err_out:
 }
 
 PVRSRV_ERROR SyncFbFenceImportSecure(CONNECTION_DATA *psConnection,
-                                     PVRSRV_DEVICE_NODE *psDevice,
-                                     IMG_SECURE_TYPE hSecure,
-                                     PVRSRV_FENCE_SERVER **ppsFence)
+				     PVRSRV_DEVICE_NODE *psDevice,
+				     IMG_SECURE_TYPE hSecure,
+				     PVRSRV_FENCE_SERVER **ppsFence)
 {
 	PVRSRV_ERROR eError;
 	PVRSRV_FENCE_EXPORT *psImport;
@@ -2982,7 +2909,7 @@ PVRSRV_ERROR SyncFbFenceImportSecure(CONNECTION_DATA *psConnection,
 
 	PVR_DPF_ENTERED1(hSecure);
 
-	eError = OSSecureImport(hSecure, (void **) &psImport);
+	eError = OSSecureImport(hSecure, (void **)&psImport);
 	PVR_LOG_GOTO_IF_ERROR(eError, "OSSecureImport", err_out);
 
 	eError = _SyncFbFenceImport(psImport, ppsFence);

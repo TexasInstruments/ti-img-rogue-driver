@@ -98,8 +98,7 @@ PVRSRV_ERROR RGXRiscvResume(PVRSRV_RGXDEV_INFO *psDevInfo);
 @Return         PVRSRV_ERROR
 ******************************************************************************/
 PVRSRV_ERROR RGXRiscvReadReg(PVRSRV_RGXDEV_INFO *psDevInfo,
-                             IMG_UINT32 ui32RegAddr,
-                             IMG_UINT32 *pui32Value);
+			     IMG_UINT32 ui32RegAddr, IMG_UINT32 *pui32Value);
 
 /*!
 *******************************************************************************
@@ -114,8 +113,7 @@ PVRSRV_ERROR RGXRiscvReadReg(PVRSRV_RGXDEV_INFO *psDevInfo,
 @Return         PVRSRV_ERROR
 ******************************************************************************/
 PVRSRV_ERROR RGXRiscvPollReg(PVRSRV_RGXDEV_INFO *psDevInfo,
-                             IMG_UINT32 ui32RegAddr,
-                             IMG_UINT32 ui32Value);
+			     IMG_UINT32 ui32RegAddr, IMG_UINT32 ui32Value);
 
 /*!
 *******************************************************************************
@@ -130,8 +128,7 @@ PVRSRV_ERROR RGXRiscvPollReg(PVRSRV_RGXDEV_INFO *psDevInfo,
 @Return         PVRSRV_ERROR
 ******************************************************************************/
 PVRSRV_ERROR RGXRiscvWriteReg(PVRSRV_RGXDEV_INFO *psDevInfo,
-                              IMG_UINT32 ui32RegAddr,
-                              IMG_UINT32 ui32Value);
+			      IMG_UINT32 ui32RegAddr, IMG_UINT32 ui32Value);
 
 /*!
 *******************************************************************************
@@ -145,9 +142,8 @@ PVRSRV_ERROR RGXRiscvWriteReg(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 @Return         PVRSRV_ERROR
 ******************************************************************************/
-PVRSRV_ERROR RGXRiscvPollMem(PVRSRV_RGXDEV_INFO *psDevInfo,
-                             IMG_UINT32 ui32Addr,
-                             IMG_UINT32 ui32Value);
+PVRSRV_ERROR RGXRiscvPollMem(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32Addr,
+			     IMG_UINT32 ui32Value);
 
 /*!
 *******************************************************************************
@@ -162,9 +158,8 @@ PVRSRV_ERROR RGXRiscvPollMem(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 @Return         PVRSRV_ERROR
 ******************************************************************************/
-PVRSRV_ERROR RGXRiscvReadMem(PVRSRV_RGXDEV_INFO *psDevInfo,
-                             IMG_UINT32 ui32Addr,
-                             IMG_UINT32 *pui32Value);
+PVRSRV_ERROR RGXRiscvReadMem(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32Addr,
+			     IMG_UINT32 *pui32Value);
 
 /*!
 *******************************************************************************
@@ -179,8 +174,7 @@ PVRSRV_ERROR RGXRiscvReadMem(PVRSRV_RGXDEV_INFO *psDevInfo,
 @Return         PVRSRV_ERROR
 ******************************************************************************/
 PVRSRV_ERROR RGXRiscvWriteMem(PVRSRV_RGXDEV_INFO *psDevInfo,
-                              IMG_UINT32 ui32Addr,
-                              IMG_UINT32 ui32Value);
+			      IMG_UINT32 ui32Addr, IMG_UINT32 ui32Value);
 
 /*!
 *******************************************************************************
@@ -198,8 +192,7 @@ PVRSRV_ERROR RGXRiscvWriteMem(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 @Return         PVRSRV_ERROR
 ******************************************************************************/
-PVRSRV_ERROR RGXRiscvDmiOp(PVRSRV_RGXDEV_INFO *psDevInfo,
-                           IMG_UINT64 *pui64DMI);
+PVRSRV_ERROR RGXRiscvDmiOp(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT64 *pui64DMI);
 
 #endif /* RGXFWRISCV_H */
 /******************************************************************************

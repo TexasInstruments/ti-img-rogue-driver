@@ -47,9 +47,11 @@
 
 struct pvr_fence_print_ops {
 	void (*fence_value_str)(struct dma_fence *fence, char *str, int size);
-	void (*timeline_value_str)(struct dma_fence *fence, char *str, int size);
+	void (*timeline_value_str)(struct dma_fence *fence, char *str,
+				   int size);
 };
 
-const struct pvr_fence_print_ops *pvr_fence_get_print_ops(const struct dma_fence *fence);
+const struct pvr_fence_print_ops *
+pvr_fence_get_print_ops(const struct dma_fence *fence);
 
 #endif /* !defined(__PVR_FENCE_PRINT_OPS_H__) */

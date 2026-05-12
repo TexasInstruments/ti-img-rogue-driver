@@ -171,15 +171,14 @@ void pdp_debugfs_init(struct drm_minor *minor);
 struct drm_plane *pdp_plane_create(struct drm_device *dev,
 				   enum drm_plane_type type);
 void pdp_plane_set_surface(struct drm_crtc *crtc, struct drm_plane *plane,
-			   struct drm_framebuffer *fb,
-			   const uint32_t src_x, const uint32_t src_y);
+			   struct drm_framebuffer *fb, const uint32_t src_x,
+			   const uint32_t src_y);
 
 struct drm_crtc *pdp_crtc_create(struct drm_device *dev, uint32_t number,
 				 struct drm_plane *primary_plane);
 void pdp_crtc_set_plane_enabled(struct drm_crtc *crtc, bool enable);
 void pdp_crtc_set_vblank_enabled(struct drm_crtc *crtc, bool enable);
 void pdp_crtc_irq_handler(struct drm_crtc *crtc);
-
 
 struct drm_connector *pdp_dvi_connector_create(struct drm_device *dev);
 
@@ -201,11 +200,9 @@ void pdp_fbdev_destroy(struct pdp_fbdev *fbdev);
 #if defined(CONFIG_DRM_FBDEV_EMULATION)
 int pdp_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
 				 struct drm_fb_helper_surface_size *sizes);
-#define PDP_FBDEV_DRIVER_OPS \
-	.fbdev_probe = pdp_fbdev_driver_fbdev_probe
+#define PDP_FBDEV_DRIVER_OPS .fbdev_probe = pdp_fbdev_driver_fbdev_probe
 #else
-#define PDP_FBDEV_DRIVER_OPS \
-	.fbdev_probe = NULL
+#define PDP_FBDEV_DRIVER_OPS .fbdev_probe = NULL
 #endif /* defined(CONFIG_DRM_FBDEV_EMULATION) */
 #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0)) */
 

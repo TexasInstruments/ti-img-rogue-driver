@@ -64,26 +64,29 @@ typedef struct SYNC_CHECKPOINT_TAG *PSYNC_CHECKPOINT;
  */
 typedef IMG_UINT32 PVRSRV_SYNC_CHECKPOINT_STATE;
 
-#define PVRSRV_SYNC_CHECKPOINT_UNDEF         0x000U
-#define PVRSRV_SYNC_CHECKPOINT_ACTIVE        0xac1U  /*!< checkpoint has not signalled */
-#define PVRSRV_SYNC_CHECKPOINT_SIGNALLED     0x519U  /*!< checkpoint has signalled */
-#define PVRSRV_SYNC_CHECKPOINT_ERRORED       0xeffU  /*!< checkpoint has been errored */
+#define PVRSRV_SYNC_CHECKPOINT_UNDEF 0x000U
+#define PVRSRV_SYNC_CHECKPOINT_ACTIVE \
+	0xac1U /*!< checkpoint has not signalled */
+#define PVRSRV_SYNC_CHECKPOINT_SIGNALLED 0x519U /*!< checkpoint has signalled */
+#define PVRSRV_SYNC_CHECKPOINT_ERRORED \
+	0xeffU /*!< checkpoint has been errored */
 
-#define PVRSRV_UFO_TYPE_MASK                 (~RGXFWIF_UFO_ADDR_MASK)
-#define PVRSRV_UFO_TYPE_SYNCPRIM             0x00    /*!< is sync prim */
-#define PVRSRV_UFO_TYPE_SYNC_CP              0x01    /*!< is sync checkpoint */
-#define PVRSRV_UFO_TYPE_UNUSED               0x02    /*!< unused */
-#define PVRSRV_UFO_TYPE_MIRRORED_SYNC_CP     0x03    /*!< is mirrored sync checkpoint */
+#define PVRSRV_UFO_TYPE_MASK (~RGXFWIF_UFO_ADDR_MASK)
+#define PVRSRV_UFO_TYPE_SYNCPRIM 0x00 /*!< is sync prim */
+#define PVRSRV_UFO_TYPE_SYNC_CP 0x01 /*!< is sync checkpoint */
+#define PVRSRV_UFO_TYPE_UNUSED 0x02 /*!< unused */
+#define PVRSRV_UFO_TYPE_MIRRORED_SYNC_CP \
+	0x03 /*!< is mirrored sync checkpoint */
 
-#define PVRSRV_UFO_TYPE_SET(addr, type) \
-	do { \
-		PVR_ASSERT(((type) & PVRSRV_UFO_TYPE_MASK) == (type)); \
-		(addr) = ((addr) & ~PVRSRV_UFO_TYPE_MASK) | ((type) & PVRSRV_UFO_TYPE_MASK); \
+#define PVRSRV_UFO_TYPE_SET(addr, type)                              \
+	do {                                                         \
+		PVR_ASSERT(((type)&PVRSRV_UFO_TYPE_MASK) == (type)); \
+		(addr) = ((addr) & ~PVRSRV_UFO_TYPE_MASK) |          \
+			 ((type)&PVRSRV_UFO_TYPE_MASK);              \
 	} while (0)
-#define PVRSRV_UFO_TYPE_GET(addr) \
-	((addr) & PVRSRV_UFO_TYPE_MASK)
+#define PVRSRV_UFO_TYPE_GET(addr) ((addr)&PVRSRV_UFO_TYPE_MASK)
 
-#define PVRSRV_UFO_IS_SYNC_CHECKPOINT_FWADDR(fwaddr) \
+#define PVRSRV_UFO_IS_SYNC_CHECKPOINT_FWADDR(fwaddr)                 \
 	(PVRSRV_UFO_TYPE_GET((fwaddr)) == PVRSRV_UFO_TYPE_SYNC_CP || \
 	 PVRSRV_UFO_TYPE_GET((fwaddr)) == PVRSRV_UFO_TYPE_MIRRORED_SYNC_CP)
 #define PVRSRV_UFO_IS_SYNC_CHECKPOINT(ufoptr) \
@@ -94,8 +97,7 @@ typedef IMG_UINT32 PVRSRV_SYNC_CHECKPOINT_STATE;
 #define PVRSRV_UFO_IS_MIRROR(ufoptr) \
 	PVRSRV_UFO_IS_MIRROR_FWADDR((ufoptr)->puiAddrUFO.ui32Addr)
 
-#define PVRSRV_UFO_GET_FWADDR(fwaddr) \
-	((fwaddr) & ~PVRSRV_UFO_TYPE_MASK)
+#define PVRSRV_UFO_GET_FWADDR(fwaddr) ((fwaddr) & ~PVRSRV_UFO_TYPE_MASK)
 
 /* Maximum number of sync checkpoints the firmware supports in one fence */
 #define MAX_SYNC_CHECKPOINTS_PER_FENCE 32U
@@ -104,11 +106,11 @@ typedef IMG_UINT32 PVRSRV_SYNC_CHECKPOINT_STATE;
  * Define to be used with SyncCheckpointAlloc() to indicate a checkpoint which
  * represents a foreign sync point or collection of foreign sync points.
  */
-#define SYNC_CHECKPOINT_FOREIGN_CHECKPOINT ((PVRSRV_TIMELINE) - 2U)
+#define SYNC_CHECKPOINT_FOREIGN_CHECKPOINT ((PVRSRV_TIMELINE)-2U)
 /*!
  * Define to be used with SyncCheckpointAlloc() to indicate a checkpoint which
  * represents a mirrored cross-device foreign sync point
  */
-#define SYNC_CHECKPOINT_MIRRORED_CHECKPOINT ((PVRSRV_TIMELINE) - 3U)
+#define SYNC_CHECKPOINT_MIRRORED_CHECKPOINT ((PVRSRV_TIMELINE)-3U)
 
 #endif /* SYNC_CHECKPOINT_EXTERNAL_H */

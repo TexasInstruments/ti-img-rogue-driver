@@ -50,18 +50,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 struct fpf_token_generator_context;
 
-int
-pvr_sync_fpf_instantiate_token_generator(struct fpf_token_generator_context **ppsContext);
+int pvr_sync_fpf_instantiate_token_generator(
+	struct fpf_token_generator_context **ppsContext);
 
-void
-pvr_sync_fpf_destroy_token_generator(struct fpf_token_generator_context *psContext);
+void pvr_sync_fpf_destroy_token_generator(
+	struct fpf_token_generator_context *psContext);
 
-int
-pvr_sync_fpf_acquire_token(struct fpf_token_generator_context *psContext,
-                           PVRSRV_FAST_PATH_FENCE_TOKEN *puiToken);
+int pvr_sync_fpf_acquire_token(struct fpf_token_generator_context *psContext,
+			       PVRSRV_FAST_PATH_FENCE_TOKEN *puiToken);
 
-int
-pvr_sync_fpf_release_token(struct fpf_token_generator_context *psContext,
-                           PVRSRV_FAST_PATH_FENCE_TOKEN uiToken);
+int pvr_sync_fpf_release_token(struct fpf_token_generator_context *psContext,
+			       PVRSRV_FAST_PATH_FENCE_TOKEN uiToken);
 
 #endif /* PVR_SYNC_FPF_TOKEN_H */

@@ -47,122 +47,102 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "cache_ops.h"
 #include <linux/dma-map-ops.h>
 
-void OSCPUCacheFlushRangeKM(PVRSRV_DEVICE_NODE *psDevNode,
-							void *pvVirtStart,
-							void *pvVirtEnd,
-							IMG_CPU_PHYADDR sCPUPhysStart,
-							IMG_CPU_PHYADDR sCPUPhysEnd)
+void OSCPUCacheFlushRangeKM(PVRSRV_DEVICE_NODE *psDevNode, void *pvVirtStart,
+			    void *pvVirtEnd, IMG_CPU_PHYADDR sCPUPhysStart,
+			    IMG_CPU_PHYADDR sCPUPhysEnd)
 {
 	/*
 	 * RISC-V cache maintenance mechanism is not part of the core spec.
 	 * This leaves the actual mechanism of action to an implementer.
 	 * Here we let the system layer decide how maintenance is done.
 	 */
-	if (psDevNode->psDevConfig->pfnHostCacheMaintenance)
-	{
+	if (psDevNode->psDevConfig->pfnHostCacheMaintenance) {
 		psDevNode->psDevConfig->pfnHostCacheMaintenance(
-				psDevNode->psDevConfig->hSysData,
-				PVRSRV_CACHE_OP_FLUSH,
-				pvVirtStart,
-				pvVirtEnd,
-				sCPUPhysStart,
-				sCPUPhysEnd);
+			psDevNode->psDevConfig->hSysData, PVRSRV_CACHE_OP_FLUSH,
+			pvVirtStart, pvVirtEnd, sCPUPhysStart, sCPUPhysEnd);
 	}
 #if !defined(NO_HARDWARE)
-	else
-	{
+	else {
 		struct device *dev;
 		dev = psDevNode->psDevConfig->pvOSDevice;
 
-		if (dev)
-		{
+		if (dev) {
 			dma_sync_single_for_device(dev, sCPUPhysStart.uiAddr,
-			                           sCPUPhysEnd.uiAddr - sCPUPhysStart.uiAddr,
-			                           DMA_TO_DEVICE);
+						   sCPUPhysEnd.uiAddr -
+							   sCPUPhysStart.uiAddr,
+						   DMA_TO_DEVICE);
 
 			dma_sync_single_for_cpu(dev, sCPUPhysStart.uiAddr,
-			                        sCPUPhysEnd.uiAddr - sCPUPhysStart.uiAddr,
-			                        DMA_FROM_DEVICE);
+						sCPUPhysEnd.uiAddr -
+							sCPUPhysStart.uiAddr,
+						DMA_FROM_DEVICE);
 		}
 	}
 #endif
 }
 
-void OSCPUCacheCleanRangeKM(PVRSRV_DEVICE_NODE *psDevNode,
-							void *pvVirtStart,
-							void *pvVirtEnd,
-							IMG_CPU_PHYADDR sCPUPhysStart,
-							IMG_CPU_PHYADDR sCPUPhysEnd)
+void OSCPUCacheCleanRangeKM(PVRSRV_DEVICE_NODE *psDevNode, void *pvVirtStart,
+			    void *pvVirtEnd, IMG_CPU_PHYADDR sCPUPhysStart,
+			    IMG_CPU_PHYADDR sCPUPhysEnd)
 {
 	/*
 	 * RISC-V cache maintenance mechanism is not part of the core spec.
 	 * This leaves the actual mechanism of action to an implementer.
 	 * Here we let the system layer decide how maintenance is done.
 	 */
-	if (psDevNode->psDevConfig->pfnHostCacheMaintenance)
-	{
+	if (psDevNode->psDevConfig->pfnHostCacheMaintenance) {
 		psDevNode->psDevConfig->pfnHostCacheMaintenance(
-				psDevNode->psDevConfig->hSysData,
-				PVRSRV_CACHE_OP_CLEAN,
-				pvVirtStart,
-				pvVirtEnd,
-				sCPUPhysStart,
-				sCPUPhysEnd);
+			psDevNode->psDevConfig->hSysData, PVRSRV_CACHE_OP_CLEAN,
+			pvVirtStart, pvVirtEnd, sCPUPhysStart, sCPUPhysEnd);
 	}
 #if !defined(NO_HARDWARE)
-	else
-	{
+	else {
 		struct device *dev;
 		dev = psDevNode->psDevConfig->pvOSDevice;
 
-		if (dev)
-		{
+		if (dev) {
 			dma_sync_single_for_device(dev, sCPUPhysStart.uiAddr,
-			                           sCPUPhysEnd.uiAddr - sCPUPhysStart.uiAddr,
-			                           DMA_TO_DEVICE);
+						   sCPUPhysEnd.uiAddr -
+							   sCPUPhysStart.uiAddr,
+						   DMA_TO_DEVICE);
 		}
 	}
 #endif
 }
 
 void OSCPUCacheInvalidateRangeKM(PVRSRV_DEVICE_NODE *psDevNode,
-								 void *pvVirtStart,
-								 void *pvVirtEnd,
-								 IMG_CPU_PHYADDR sCPUPhysStart,
-								 IMG_CPU_PHYADDR sCPUPhysEnd)
+				 void *pvVirtStart, void *pvVirtEnd,
+				 IMG_CPU_PHYADDR sCPUPhysStart,
+				 IMG_CPU_PHYADDR sCPUPhysEnd)
 {
 	/*
 	 * RISC-V cache maintenance mechanism is not part of the core spec.
 	 * This leaves the actual mechanism of action to an implementer.
 	 * Here we let the system layer decide how maintenance is done.
 	 */
-	if (psDevNode->psDevConfig->pfnHostCacheMaintenance)
-	{
+	if (psDevNode->psDevConfig->pfnHostCacheMaintenance) {
 		psDevNode->psDevConfig->pfnHostCacheMaintenance(
-				psDevNode->psDevConfig->hSysData,
-				PVRSRV_CACHE_OP_INVALIDATE,
-				pvVirtStart,
-				pvVirtEnd,
-				sCPUPhysStart,
-				sCPUPhysEnd);
+			psDevNode->psDevConfig->hSysData,
+			PVRSRV_CACHE_OP_INVALIDATE, pvVirtStart, pvVirtEnd,
+			sCPUPhysStart, sCPUPhysEnd);
 	}
 #if !defined(NO_HARDWARE)
-	else
-	{
+	else {
 		struct device *dev;
 		dev = psDevNode->psDevConfig->pvOSDevice;
 
-		if (dev)
-		{
+		if (dev) {
 			dma_sync_single_for_cpu(dev, sCPUPhysStart.uiAddr,
-			                        sCPUPhysEnd.uiAddr - sCPUPhysStart.uiAddr,
-			                        DMA_FROM_DEVICE);
+						sCPUPhysEnd.uiAddr -
+							sCPUPhysStart.uiAddr,
+						DMA_FROM_DEVICE);
 		}
 	}
 #endif
 }
 
-OS_CACHE_OP_ADDR_TYPE OSCPUCacheOpAddressType(PVRSRV_DEVICE_NODE *psDevNode, PHYS_HEAP_TYPE ePhysHeapType)
+OS_CACHE_OP_ADDR_TYPE OSCPUCacheOpAddressType(PVRSRV_DEVICE_NODE *psDevNode,
+					      PHYS_HEAP_TYPE ePhysHeapType)
 {
 	/*
 	 * Need to obtain psDevNode here and do the following:

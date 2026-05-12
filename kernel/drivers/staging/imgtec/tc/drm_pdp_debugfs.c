@@ -62,10 +62,8 @@ static int display_enabled_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t display_enabled_read(struct file *file,
-				    char __user *user_buffer,
-				    size_t count,
-				    loff_t *position_ptr)
+static ssize_t display_enabled_read(struct file *file, char __user *user_buffer,
+				    size_t count, loff_t *position_ptr)
 {
 	struct drm_device *dev = file->private_data;
 	struct pdp_drm_private *dev_priv = dev->dev_private;
@@ -96,8 +94,7 @@ static ssize_t display_enabled_read(struct file *file,
 
 static ssize_t display_enabled_write(struct file *file,
 				     const char __user *user_buffer,
-				     size_t count,
-				     loff_t *position)
+				     size_t count, loff_t *position)
 {
 	struct drm_device *dev = file->private_data;
 	struct pdp_drm_private *dev_priv = dev->dev_private;
@@ -112,7 +109,8 @@ static ssize_t display_enabled_write(struct file *file,
 	buffer[count] = '\0';
 
 	if (!kstrtobool(buffer, &dev_priv->display_enabled) && dev_priv->crtc)
-		pdp_crtc_set_plane_enabled(dev_priv->crtc, dev_priv->display_enabled);
+		pdp_crtc_set_plane_enabled(dev_priv->crtc,
+					   dev_priv->display_enabled);
 
 	return count;
 }
@@ -125,7 +123,6 @@ static const struct file_operations pdp_display_enabled_fops = {
 	.llseek = default_llseek,
 };
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0))
 int pdp_debugfs_init(struct drm_minor *minor)
 #else
@@ -134,8 +131,7 @@ void pdp_debugfs_init(struct drm_minor *minor)
 {
 	int err;
 	struct dentry *dent = debugfs_create_file(PDP_DEBUGFS_DISPLAY_ENABLED,
-						  0100644,
-						  minor->debugfs_root,
+						  0100644, minor->debugfs_root,
 						  minor->dev,
 						  &pdp_display_enabled_fops);
 	err = !dent;

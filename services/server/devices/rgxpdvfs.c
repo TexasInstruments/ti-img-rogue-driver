@@ -50,15 +50,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define USEC_TO_MSEC 1000
 
-PVRSRV_ERROR PDVFSLimitMaxFrequency(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32MaxOPPPoint)
+PVRSRV_ERROR PDVFSLimitMaxFrequency(PVRSRV_RGXDEV_INFO *psDevInfo,
+				    IMG_UINT32 ui32MaxOPPPoint)
 {
-	RGXFWIF_RUNTIME_CFG		*psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
-	PVRSRV_ERROR			eError = PVRSRV_OK;
+	RGXFWIF_RUNTIME_CFG *psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
+	PVRSRV_ERROR eError = PVRSRV_OK;
 
-	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo, PVRSRV_ERROR_NOT_SUPPORTED);
+	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo,
+			      PVRSRV_ERROR_NOT_SUPPORTED);
 
-	if (!_PDVFSEnabled())
-	{
+	if (!_PDVFSEnabled()) {
 		/* No log message to avoid excessive messages */
 		return PVRSRV_OK;
 	}
@@ -71,30 +72,29 @@ PVRSRV_ERROR PDVFSLimitMaxFrequency(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui
 	/* Take power lock */
 	PVRSRVPowerLockWrite(psDevInfo->psDeviceNode);
 
-	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode))
-	{
-		RGXFWIF_KCCB_CMD		sGPCCBCmd;
-		IMG_UINT32				ui32CmdKCCBSlot;
+	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode)) {
+		RGXFWIF_KCCB_CMD sGPCCBCmd;
+		IMG_UINT32 ui32CmdKCCBSlot;
 
 		/* send feedback */
 		sGPCCBCmd.eCmdType = RGXFWIF_KCCB_CMD_PDVFS_SET_CONFIG;
 		sGPCCBCmd.uCmdData.sDVFSData.eReqType = RGXFWIF_DVFS_MAX_FREQ;
 
 		/* Submit command to the firmware. */
-		eError = RGXScheduleCommandAndGetKCCBSlot(psDevInfo,
-												  RGXFWIF_DM_GP,
-												  &sGPCCBCmd,
-												  PDUMP_FLAGS_CONTINUOUS,
-												  &ui32CmdKCCBSlot);
+		eError = RGXScheduleCommandAndGetKCCBSlot(
+			psDevInfo, RGXFWIF_DM_GP, &sGPCCBCmd,
+			PDUMP_FLAGS_CONTINUOUS, &ui32CmdKCCBSlot);
 
-		if (eError != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_WARNING, "%s: Unable to send command (%u).", __func__, eError));
+		if (eError != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_WARNING,
+				 "%s: Unable to send command (%u).", __func__,
+				 eError));
 			goto _ErrorUnlock;
 		}
 
 		/* Wait for FW to process the cmd */
-		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot, PDUMP_FLAGS_CONTINUOUS);
+		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot,
+						  PDUMP_FLAGS_CONTINUOUS);
 		PVR_LOG_IF_ERROR(eError, "RGXWaitForKCCBSlotUpdate");
 	}
 
@@ -103,15 +103,16 @@ _ErrorUnlock:
 	return eError;
 }
 
-PVRSRV_ERROR PDVFSLimitMinFrequency(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32MinOPPPoint)
+PVRSRV_ERROR PDVFSLimitMinFrequency(PVRSRV_RGXDEV_INFO *psDevInfo,
+				    IMG_UINT32 ui32MinOPPPoint)
 {
-	RGXFWIF_RUNTIME_CFG		*psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
-	PVRSRV_ERROR			eError = PVRSRV_OK;
+	RGXFWIF_RUNTIME_CFG *psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
+	PVRSRV_ERROR eError = PVRSRV_OK;
 
-	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo, PVRSRV_ERROR_NOT_SUPPORTED);
+	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo,
+			      PVRSRV_ERROR_NOT_SUPPORTED);
 
-	if (!_PDVFSEnabled())
-	{
+	if (!_PDVFSEnabled()) {
 		/* No log message to avoid excessive messages */
 		return PVRSRV_OK;
 	}
@@ -124,30 +125,29 @@ PVRSRV_ERROR PDVFSLimitMinFrequency(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui
 	/* Take power lock */
 	PVRSRVPowerLockWrite(psDevInfo->psDeviceNode);
 
-	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode))
-	{
-		RGXFWIF_KCCB_CMD		sGPCCBCmd;
-		IMG_UINT32				ui32CmdKCCBSlot;
+	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode)) {
+		RGXFWIF_KCCB_CMD sGPCCBCmd;
+		IMG_UINT32 ui32CmdKCCBSlot;
 
 		/* send feedback */
 		sGPCCBCmd.eCmdType = RGXFWIF_KCCB_CMD_PDVFS_SET_CONFIG;
 		sGPCCBCmd.uCmdData.sDVFSData.eReqType = RGXFWIF_DVFS_MIN_FREQ;
 
 		/* Submit command to the firmware. */
-		eError = RGXScheduleCommandAndGetKCCBSlot(psDevInfo,
-												  RGXFWIF_DM_GP,
-												  &sGPCCBCmd,
-												  PDUMP_FLAGS_CONTINUOUS,
-												  &ui32CmdKCCBSlot);
+		eError = RGXScheduleCommandAndGetKCCBSlot(
+			psDevInfo, RGXFWIF_DM_GP, &sGPCCBCmd,
+			PDUMP_FLAGS_CONTINUOUS, &ui32CmdKCCBSlot);
 
-		if (eError != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_WARNING, "%s: Unable to send command (%u).", __func__, eError));
+		if (eError != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_WARNING,
+				 "%s: Unable to send command (%u).", __func__,
+				 eError));
 			goto _ErrorUnlock;
 		}
 
 		/* Wait for FW to process the cmd */
-		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot, PDUMP_FLAGS_CONTINUOUS);
+		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot,
+						  PDUMP_FLAGS_CONTINUOUS);
 		PVR_LOG_IF_ERROR(eError, "RGXWaitForKCCBSlotUpdate");
 	}
 
@@ -158,12 +158,12 @@ _ErrorUnlock:
 
 PVRSRV_ERROR PDVFSResetFrequencyConstraints(PVRSRV_RGXDEV_INFO *psDevInfo)
 {
-	PVRSRV_ERROR			eError = PVRSRV_OK;
+	PVRSRV_ERROR eError = PVRSRV_OK;
 
-	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo, PVRSRV_ERROR_NOT_SUPPORTED);
+	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo,
+			      PVRSRV_ERROR_NOT_SUPPORTED);
 
-	if (!_PDVFSEnabled())
-	{
+	if (!_PDVFSEnabled()) {
 		/* No log message to avoid excessive messages */
 		return PVRSRV_OK;
 	}
@@ -171,30 +171,30 @@ PVRSRV_ERROR PDVFSResetFrequencyConstraints(PVRSRV_RGXDEV_INFO *psDevInfo)
 	/* Take power lock */
 	PVRSRVPowerLockWrite(psDevInfo->psDeviceNode);
 
-	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode))
-	{
-		RGXFWIF_KCCB_CMD		sGPCCBCmd;
-		IMG_UINT32				ui32CmdKCCBSlot;
+	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode)) {
+		RGXFWIF_KCCB_CMD sGPCCBCmd;
+		IMG_UINT32 ui32CmdKCCBSlot;
 
 		/* send feedback */
 		sGPCCBCmd.eCmdType = RGXFWIF_KCCB_CMD_PDVFS_SET_CONFIG;
-		sGPCCBCmd.uCmdData.sDVFSData.eReqType = RGXFWIF_DVFS_RESET_CONSTRAINTS;
+		sGPCCBCmd.uCmdData.sDVFSData.eReqType =
+			RGXFWIF_DVFS_RESET_CONSTRAINTS;
 
 		/* Submit command to the firmware. */
-		eError = RGXScheduleCommandAndGetKCCBSlot(psDevInfo,
-												  RGXFWIF_DM_GP,
-												  &sGPCCBCmd,
-												  PDUMP_FLAGS_CONTINUOUS,
-												  &ui32CmdKCCBSlot);
+		eError = RGXScheduleCommandAndGetKCCBSlot(
+			psDevInfo, RGXFWIF_DM_GP, &sGPCCBCmd,
+			PDUMP_FLAGS_CONTINUOUS, &ui32CmdKCCBSlot);
 
-		if (eError != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_WARNING, "%s: Unable to send command (%u).", __func__, eError));
+		if (eError != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_WARNING,
+				 "%s: Unable to send command (%u).", __func__,
+				 eError));
 			goto _ErrorUnlock;
 		}
 
 		/* Wait for FW to process the cmd */
-		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot, PDUMP_FLAGS_CONTINUOUS);
+		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot,
+						  PDUMP_FLAGS_CONTINUOUS);
 		PVR_LOG_IF_ERROR(eError, "RGXWaitForKCCBSlotUpdate");
 	}
 
@@ -204,15 +204,16 @@ _ErrorUnlock:
 }
 
 #if defined(SUPPORT_PDVFS_HEADROOM_EXT)
-PVRSRV_ERROR PDVFSSetFrequencyHeadroom(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_INT32 i32Headroom)
+PVRSRV_ERROR PDVFSSetFrequencyHeadroom(PVRSRV_RGXDEV_INFO *psDevInfo,
+				       IMG_INT32 i32Headroom)
 {
-	PVRSRV_ERROR			eError = PVRSRV_OK;
-	RGXFWIF_RUNTIME_CFG		*psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
+	PVRSRV_ERROR eError = PVRSRV_OK;
+	RGXFWIF_RUNTIME_CFG *psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
 
-	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo, PVRSRV_ERROR_NOT_SUPPORTED);
+	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo,
+			      PVRSRV_ERROR_NOT_SUPPORTED);
 
-	if (!_PDVFSEnabled())
-	{
+	if (!_PDVFSEnabled()) {
 		/* No log message to avoid excessive messages */
 		return PVRSRV_OK;
 	}
@@ -227,29 +228,29 @@ PVRSRV_ERROR PDVFSSetFrequencyHeadroom(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_INT32 
 	/* Take power lock */
 	PVRSRVPowerLockWrite(psDevInfo->psDeviceNode);
 
-	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode))
-	{
-		RGXFWIF_KCCB_CMD		sGPCCBCmd;
-		IMG_UINT32				ui32CmdKCCBSlot;
+	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode)) {
+		RGXFWIF_KCCB_CMD sGPCCBCmd;
+		IMG_UINT32 ui32CmdKCCBSlot;
 
 		sGPCCBCmd.eCmdType = RGXFWIF_KCCB_CMD_PDVFS_SET_CONFIG;
-		sGPCCBCmd.uCmdData.sDVFSData.eReqType = RGXFWIF_DVFS_CAPACITY_HEADROOM;
+		sGPCCBCmd.uCmdData.sDVFSData.eReqType =
+			RGXFWIF_DVFS_CAPACITY_HEADROOM;
 
 		/* Submit command to the firmware. */
-		eError = RGXScheduleCommandAndGetKCCBSlot(psDevInfo,
-												  RGXFWIF_DM_GP,
-												  &sGPCCBCmd,
-												  PDUMP_FLAGS_CONTINUOUS,
-												  &ui32CmdKCCBSlot);
+		eError = RGXScheduleCommandAndGetKCCBSlot(
+			psDevInfo, RGXFWIF_DM_GP, &sGPCCBCmd,
+			PDUMP_FLAGS_CONTINUOUS, &ui32CmdKCCBSlot);
 
-		if (eError != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_WARNING, "%s: Unable to send command (%u).", __func__, eError));
+		if (eError != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_WARNING,
+				 "%s: Unable to send command (%u).", __func__,
+				 eError));
 			goto _ErrorUnlock;
 		}
 
 		/* Wait for FW to process the cmd */
-		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot, PDUMP_FLAGS_CONTINUOUS);
+		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot,
+						  PDUMP_FLAGS_CONTINUOUS);
 		PVR_LOG_IF_ERROR(eError, "RGXWaitForKCCBSlotUpdate");
 	}
 
@@ -260,15 +261,16 @@ _ErrorUnlock:
 #endif
 
 #if defined(SUPPORT_PDVFS_POLLINT_EXT)
-PVRSRV_ERROR PDVFSSetReactivePollingInterval(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32PollingMs)
+PVRSRV_ERROR PDVFSSetReactivePollingInterval(PVRSRV_RGXDEV_INFO *psDevInfo,
+					     IMG_UINT32 ui32PollingMs)
 {
-	PVRSRV_ERROR			eError = PVRSRV_OK;
-	RGXFWIF_RUNTIME_CFG		*psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
+	PVRSRV_ERROR eError = PVRSRV_OK;
+	RGXFWIF_RUNTIME_CFG *psRuntimeCfg = psDevInfo->psRGXFWIfRuntimeCfg;
 
-	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo, PVRSRV_ERROR_NOT_SUPPORTED);
+	PVRSRV_VZ_RET_IF_MODE(GUEST, DEVINFO, psDevInfo,
+			      PVRSRV_ERROR_NOT_SUPPORTED);
 
-	if (!_PDVFSEnabled())
-	{
+	if (!_PDVFSEnabled()) {
 		/* No log message to avoid excessive messages */
 		return PVRSRV_OK;
 	}
@@ -281,29 +283,29 @@ PVRSRV_ERROR PDVFSSetReactivePollingInterval(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_
 	/* Take power lock */
 	PVRSRVPowerLockWrite(psDevInfo->psDeviceNode);
 
-	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode))
-	{
-		RGXFWIF_KCCB_CMD		sGPCCBCmd;
-		IMG_UINT32				ui32CmdKCCBSlot;
+	if (PVRSRVIsDevicePowered(psDevInfo->psDeviceNode)) {
+		RGXFWIF_KCCB_CMD sGPCCBCmd;
+		IMG_UINT32 ui32CmdKCCBSlot;
 
 		sGPCCBCmd.eCmdType = RGXFWIF_KCCB_CMD_PDVFS_SET_CONFIG;
-		sGPCCBCmd.uCmdData.sDVFSData.eReqType = RGXFWIF_DVFS_POLLING_INTERVAL;
+		sGPCCBCmd.uCmdData.sDVFSData.eReqType =
+			RGXFWIF_DVFS_POLLING_INTERVAL;
 
 		/* Submit command to the firmware. */
-		eError = RGXScheduleCommandAndGetKCCBSlot(psDevInfo,
-												  RGXFWIF_DM_GP,
-												  &sGPCCBCmd,
-												  PDUMP_FLAGS_CONTINUOUS,
-												  &ui32CmdKCCBSlot);
+		eError = RGXScheduleCommandAndGetKCCBSlot(
+			psDevInfo, RGXFWIF_DM_GP, &sGPCCBCmd,
+			PDUMP_FLAGS_CONTINUOUS, &ui32CmdKCCBSlot);
 
-		if (eError != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_WARNING, "%s: Unable to send command (%u).", __func__, eError));
+		if (eError != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_WARNING,
+				 "%s: Unable to send command (%u).", __func__,
+				 eError));
 			goto _ErrorUnlock;
 		}
 
 		/* Wait for FW to process the cmd */
-		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot, PDUMP_FLAGS_CONTINUOUS);
+		eError = RGXWaitForKCCBSlotUpdate(psDevInfo, ui32CmdKCCBSlot,
+						  PDUMP_FLAGS_CONTINUOUS);
 		PVR_LOG_IF_ERROR(eError, "RGXWaitForKCCBSlotUpdate");
 	}
 

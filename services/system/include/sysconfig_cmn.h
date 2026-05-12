@@ -51,7 +51,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #if defined(SUPPORT_NATIVE_FENCE_SYNC)
 #include <linux/dma-fence.h>
 
-#define DMA_FENCE_EXTRACT_USER_BITS(user_bits) ((user_bits) >> DMA_FENCE_FLAG_USER_BITS)
+#define DMA_FENCE_EXTRACT_USER_BITS(user_bits) \
+	((user_bits) >> DMA_FENCE_FLAG_USER_BITS)
 #endif
 
 /**************************************************************************/ /*!
@@ -69,7 +70,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 @Return         None.
 */ /***************************************************************************/
 void SysRGXErrorNotify(IMG_HANDLE hSysData,
-                       PVRSRV_ROBUSTNESS_NOTIFY_DATA *psErrorData);
+		       PVRSRV_ROBUSTNESS_NOTIFY_DATA *psErrorData);
 
 /**************************************************************************/ /*!
 @Function       SysRestrictGpuLocalPhysheap
@@ -124,9 +125,8 @@ void __iomem *SysDevMapEMURegbank(IMG_UINT64 ui64Base, IMG_UINT64 *pui64Size);
 @Output         pui16FFToken    token value extracted
 @Return         IMG_TRUE on success IMG_FALSE otherwise
 */ /***************************************************************************/
-IMG_BOOL SysDevExtractFFToken(IMG_HANDLE hSysData,
-                              IMG_HANDLE hEnvFenceObjPtr,
-                              IMG_UINT16 *pui16FFToken);
+IMG_BOOL SysDevExtractFFToken(IMG_HANDLE hSysData, IMG_HANDLE hEnvFenceObjPtr,
+			      IMG_UINT16 *pui16FFToken);
 #endif
 
 #if defined(RGX_FEATURE_AXI_ACE_BIT_MASK)
@@ -142,8 +142,9 @@ IMG_BOOL SysDevExtractFFToken(IMG_HANDLE hSysData,
 @Input          peCacheSnoopingMode   Cache snooping mode to be set.
 @Return         PVRSRV_OK if successful, a PVRSRV_ERROR otherwise.
 */ /***************************************************************************/
-PVRSRV_ERROR SysGetSystemCoherencyMode(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
-                                       PVRSRV_DEVICE_SNOOP_MODE *peCacheSnoopingMode);
+PVRSRV_ERROR
+SysGetSystemCoherencyMode(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
+			  PVRSRV_DEVICE_SNOOP_MODE *peCacheSnoopingMode);
 #endif
 
 #endif /* SYSCONFIG_CMN_H */

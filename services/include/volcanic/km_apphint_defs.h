@@ -45,15 +45,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef KM_APPHINT_DEFS_H
 #define KM_APPHINT_DEFS_H
 
-#define APPHINT_LIST_ALL \
-	APPHINT_LIST_BUILDVAR_COMMON \
-	APPHINT_LIST_BUILDVAR \
-	APPHINT_LIST_MODPARAM_COMMON \
-	APPHINT_LIST_MODPARAM \
-	APPHINT_LIST_DEBUGINFO_COMMON \
+#define APPHINT_LIST_ALL                     \
+	APPHINT_LIST_BUILDVAR_COMMON         \
+	APPHINT_LIST_BUILDVAR                \
+	APPHINT_LIST_MODPARAM_COMMON         \
+	APPHINT_LIST_MODPARAM                \
+	APPHINT_LIST_DEBUGINFO_COMMON        \
 	APPHINT_LIST_DEBUGINFO_DEVICE_COMMON \
 	APPHINT_LIST_DEBUGINFO_DEVICE
-
 
 /*
 *******************************************************************************
@@ -66,10 +65,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************
  Module parameters (volcanic-specific)
 ******************************************************************************/
-#define APPHINT_LIST_MODPARAM \
-/* name,                            type,           class,       default,                                         helper,          guest,         */ \
-X(EnableSPUClockGating,             BOOL,           ALWAYS,      PVRSRV_APPHINT_ENABLESPUCLOCKGATING,             NO_PARAM_TABLE,  ALWAYS          ) \
-X(EnableCrossDMPause,               BOOL,           ALWAYS,      PVRSRV_APPHINT_ENABLECROSSDMPAUSE,               NO_PARAM_TABLE,  NEVER           )
+#define APPHINT_LIST_MODPARAM                                                                                                                                \
+	/* name,                            type,           class,       default,                                         helper,          guest,         */ \
+	X(EnableSPUClockGating, BOOL, ALWAYS,                                                                                                                \
+	  PVRSRV_APPHINT_ENABLESPUCLOCKGATING, NO_PARAM_TABLE, ALWAYS)                                                                                       \
+	X(EnableCrossDMPause, BOOL, ALWAYS, PVRSRV_APPHINT_ENABLECROSSDMPAUSE,                                                                               \
+	  NO_PARAM_TABLE, NEVER)
 
 /*
 *******************************************************************************
@@ -80,7 +81,7 @@ X(EnableCrossDMPause,               BOOL,           ALWAYS,      PVRSRV_APPHINT_
  Debugfs parameters (volcanic-specific) - device configuration
 ******************************************************************************/
 #define APPHINT_LIST_DEBUGINFO_DEVICE \
-/* name,                            type,           class,       default,                                         helper,          guest,         */ \
+/* name,                            type,           class,       default,                                         helper,          guest,         */
 
 /*
 *******************************************************************************
@@ -99,45 +100,42 @@ X(EnableCrossDMPause,               BOOL,           ALWAYS,      PVRSRV_APPHINT_
 ******************************************************************************/
 /* Unique ID for all AppHints */
 typedef enum {
-#define X(a, b, c, d, e, f) APPHINT_ID_ ## a,
+#define X(a, b, c, d, e, f) APPHINT_ID_##a,
 	APPHINT_LIST_ALL
 #undef X
-	APPHINT_ID_MAX
+		APPHINT_ID_MAX
 } APPHINT_ID;
 
 /* ID for build variable Apphints - used for build variable only structures */
 typedef enum {
-#define X(a, b, c, d, e, f) APPHINT_BUILDVAR_ID_ ## a,
-	APPHINT_LIST_BUILDVAR_COMMON
-	APPHINT_LIST_BUILDVAR
+#define X(a, b, c, d, e, f) APPHINT_BUILDVAR_ID_##a,
+	APPHINT_LIST_BUILDVAR_COMMON APPHINT_LIST_BUILDVAR
 #undef X
-	APPHINT_BUILDVAR_ID_MAX
+		APPHINT_BUILDVAR_ID_MAX
 } APPHINT_BUILDVAR_ID;
 
 /* ID for Modparam Apphints - used for modparam only structures */
 typedef enum {
-#define X(a, b, c, d, e, f) APPHINT_MODPARAM_ID_ ## a,
-	APPHINT_LIST_MODPARAM_COMMON
-	APPHINT_LIST_MODPARAM
+#define X(a, b, c, d, e, f) APPHINT_MODPARAM_ID_##a,
+	APPHINT_LIST_MODPARAM_COMMON APPHINT_LIST_MODPARAM
 #undef X
-	APPHINT_MODPARAM_ID_MAX
+		APPHINT_MODPARAM_ID_MAX
 } APPHINT_MODPARAM_ID;
 
 /* ID for Debugfs Apphints - used for debugfs only structures */
 typedef enum {
-#define X(a, b, c, d, e, f) APPHINT_DEBUGINFO_ID_ ## a,
+#define X(a, b, c, d, e, f) APPHINT_DEBUGINFO_ID_##a,
 	APPHINT_LIST_DEBUGINFO_COMMON
 #undef X
-	APPHINT_DEBUGINFO_ID_MAX
+		APPHINT_DEBUGINFO_ID_MAX
 } APPHINT_DEBUGINFO_ID;
 
 /* ID for Debugfs Device Apphints - used for debugfs device only structures */
 typedef enum {
-#define X(a, b, c, d, e, f) APPHINT_DEBUGINFO_DEVICE_ID_ ## a,
-	APPHINT_LIST_DEBUGINFO_DEVICE_COMMON
-	APPHINT_LIST_DEBUGINFO_DEVICE
+#define X(a, b, c, d, e, f) APPHINT_DEBUGINFO_DEVICE_ID_##a,
+	APPHINT_LIST_DEBUGINFO_DEVICE_COMMON APPHINT_LIST_DEBUGINFO_DEVICE
 #undef X
-	APPHINT_DEBUGINFO_DEVICE_ID_MAX
+		APPHINT_DEBUGINFO_DEVICE_ID_MAX
 } APPHINT_DEBUGINFO_DEVICE_ID;
 
 #endif /* KM_APPHINT_DEFS_H */

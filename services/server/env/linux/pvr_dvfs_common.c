@@ -71,7 +71,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "kernel_compatibility.h"
 
-
 int GetDevID(struct device *dev)
 {
 	struct drm_device *ddev = dev_get_drvdata(dev);
@@ -100,11 +99,9 @@ int GetDevID(struct device *dev)
 @Return			PVRSRV_ERROR
 */ /**************************************************************************/
 #if defined(CONFIG_PM_OPP)
-int GetOPPValues(struct device *dev,
-                 unsigned long *min_freq,
-                 unsigned long *min_volt,
-                 unsigned long *max_freq,
-                 struct pvr_opp_freq_table *pvr_freq_table)
+int GetOPPValues(struct device *dev, unsigned long *min_freq,
+		 unsigned long *min_volt, unsigned long *max_freq,
+		 struct pvr_opp_freq_table *pvr_freq_table)
 {
 	struct dev_pm_opp *opp;
 	int count, i, err = 0;
@@ -113,8 +110,7 @@ int GetOPPValues(struct device *dev,
 	unsigned long *freq_table;
 
 	count = dev_pm_opp_get_opp_count(dev);
-	if (count <= 0)
-	{
+	if (count <= 0) {
 		dev_err(dev, "Could not fetch OPP count, %d\n", count);
 		return -EINVAL;
 	}
@@ -122,17 +118,14 @@ int GetOPPValues(struct device *dev,
 	dev_info(dev, "Found %d OPP points.\n", count);
 
 	freq_table = devm_kcalloc(dev, count, sizeof(*freq_table), GFP_ATOMIC);
-	if (! freq_table)
-	{
+	if (!freq_table) {
 		return -ENOMEM;
 	}
-
 
 	/* Iterate over OPP table; Iteration 0 finds "opp w/ freq >= 0 Hz". */
 	freq = 0;
 	opp = dev_pm_opp_find_freq_ceil(dev, &freq);
-	if (IS_ERR(opp))
-	{
+	if (IS_ERR(opp)) {
 		err = PTR_ERR(opp);
 		dev_err(dev, "Couldn't find lowest frequency, %d\n", err);
 		goto exit;
@@ -140,73 +133,62 @@ int GetOPPValues(struct device *dev,
 
 	*min_volt = dev_pm_opp_get_voltage(opp);
 	*max_freq = *min_freq = freq_table[0] = freq;
-	dev_info(dev, "opp[%d/%d]: (%lu Hz, %lu uV)\n", 1, count, freq, *min_volt);
+	dev_info(dev, "opp[%d/%d]: (%lu Hz, %lu uV)\n", 1, count, freq,
+		 *min_volt);
 	dev_pm_opp_put(opp);
 
 	/* Iteration i > 0 finds "opp w/ freq >= (opp[i-1].freq + 1)". */
-	for (i = 1; i < count; i++)
-	{
+	for (i = 1; i < count; i++) {
 		freq++;
 		opp = dev_pm_opp_find_freq_ceil(dev, &freq);
-		if (IS_ERR(opp))
-		{
+		if (IS_ERR(opp)) {
 			err = PTR_ERR(opp);
-			dev_err(dev, "Couldn't find %dth frequency, %d\n", i, err);
+			dev_err(dev, "Couldn't find %dth frequency, %d\n", i,
+				err);
 			goto exit;
 		}
 
 		freq_table[i] = freq;
 		*max_freq = freq;
-		dev_info(dev,
-				 "opp[%d/%d]: (%lu Hz, %lu uV)\n",
-				  i + 1,
-				  count,
-				  freq,
-				  dev_pm_opp_get_voltage(opp));
+		dev_info(dev, "opp[%d/%d]: (%lu Hz, %lu uV)\n", i + 1, count,
+			 freq, dev_pm_opp_get_voltage(opp));
 		dev_pm_opp_put(opp);
 	}
 
 exit:
 
-	if (!err)
-	{
+	if (!err) {
 		pvr_freq_table->freq_table = freq_table;
 		pvr_freq_table->num_levels = count;
-	}
-	else
-	{
+	} else {
 		devm_kfree(dev, freq_table);
 	}
 
 	return err;
 }
 
-int FindOPPFreq(struct device *dev,
-                unsigned long *freq_table,
-                unsigned long freq,
-                unsigned int *level)
+int FindOPPFreq(struct device *dev, unsigned long *freq_table,
+		unsigned long freq, unsigned int *level)
 {
 	struct dev_pm_opp *opp;
 	unsigned int i;
 	int count, err;
 
 	count = dev_pm_opp_get_opp_count(dev);
-	if (count <= 0)
-	{
+	if (count <= 0) {
 		dev_err(dev, "Couldn't fetch OPP count, %d\n", count);
 		return count;
 	}
 
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		if (freq != freq_table[i])
 			continue;
 
 		opp = dev_pm_opp_find_freq_exact(dev, freq, true);
-		if (IS_ERR(opp))
-		{
+		if (IS_ERR(opp)) {
 			err = PTR_ERR(opp);
-			dev_err(dev, "Couldn't find %dth frequency, %d\n", i, err);
+			dev_err(dev, "Couldn't find %dth frequency, %d\n", i,
+				err);
 			return err;
 		}
 
@@ -233,56 +215,57 @@ int FindOPPFreq(struct device *dev,
 @Input          ui32MaxOPPLevels   Maximum number of OPP levels allowed in buffer.
 @Return			PVRSRV_ERROR
 */ /**************************************************************************/
-#if defined(SUPPORT_FW_OPP_TABLE) && defined(CONFIG_OF) && defined(CONFIG_PM_OPP)
+#if defined(SUPPORT_FW_OPP_TABLE) && defined(CONFIG_OF) && \
+	defined(CONFIG_PM_OPP)
 PVRSRV_ERROR DVFSCopyOPPTable(PPVRSRV_DEVICE_NODE psDeviceNode,
-							  RGXFWIF_OPP_INFO   *psOPPInfo,
-							  IMG_UINT32          ui32MaxOPPLevels)
+			      RGXFWIF_OPP_INFO *psOPPInfo,
+			      IMG_UINT32 ui32MaxOPPLevels)
 {
-	PVRSRV_ERROR            eError = PVRSRV_OK;
-	struct device          *psDev = NULL;
-	OPP_LEVEL              *psOPPValue;
-	struct dev_pm_opp      *opp;
-	struct pvr_opp_freq_table pvr_freq_table = {0};
-	unsigned long           min_freq = 0, max_freq = 0, min_volt = 0;
-	unsigned int            i, err;
+	PVRSRV_ERROR eError = PVRSRV_OK;
+	struct device *psDev = NULL;
+	OPP_LEVEL *psOPPValue;
+	struct dev_pm_opp *opp;
+	struct pvr_opp_freq_table pvr_freq_table = { 0 };
+	unsigned long min_freq = 0, max_freq = 0, min_volt = 0;
+	unsigned int i, err;
 	unsigned long *freq_table;
 
-	if (!psDeviceNode || !psOPPInfo)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Invalid device or argument", __func__));
+	if (!psDeviceNode || !psOPPInfo) {
+		PVR_DPF((PVR_DBG_ERROR, "%s: Invalid device or argument",
+			 __func__));
 		return PVRSRV_ERROR_INVALID_DEVICE;
 	}
 
 	psDev = psDeviceNode->psDevConfig->pvOSDevice;
 
-	err = GetOPPValues(psDev, &min_freq, &min_volt, &max_freq, &pvr_freq_table);
-	if (err)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: DVFS OPP table not initialised.", __func__));
+	err = GetOPPValues(psDev, &min_freq, &min_volt, &max_freq,
+			   &pvr_freq_table);
+	if (err) {
+		PVR_DPF((PVR_DBG_ERROR, "%s: DVFS OPP table not initialised.",
+			 __func__));
 		return PVRSRV_ERROR_NOT_INITIALISED;
 	}
 
 	freq_table = pvr_freq_table.freq_table;
 
-	if (pvr_freq_table.num_levels > ui32MaxOPPLevels)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Too many OPP levels (%u), max (%u).", __func__,
-		         pvr_freq_table.num_levels, ui32MaxOPPLevels));
+	if (pvr_freq_table.num_levels > ui32MaxOPPLevels) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "%s: Too many OPP levels (%u), max (%u).", __func__,
+			 pvr_freq_table.num_levels, ui32MaxOPPLevels));
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto exit;
 	}
 
-
 	/* Loop over the OPP/frequency levels */
 	psOPPValue = &psOPPInfo->asOPPValues[0];
-	for (i=0; i<pvr_freq_table.num_levels; i++)
-	{
+	for (i = 0; i < pvr_freq_table.num_levels; i++) {
 		psOPPValue->ui32Freq = freq_table[i];
-		opp = dev_pm_opp_find_freq_exact(psDev, freq_table[i], IMG_TRUE);
-		if (IS_ERR(opp))
-		{
+		opp = dev_pm_opp_find_freq_exact(psDev, freq_table[i],
+						 IMG_TRUE);
+		if (IS_ERR(opp)) {
 			err = PTR_ERR(opp);
-			dev_err(psDev, "Couldn't find %dth frequency, %d\n", i, err);
+			dev_err(psDev, "Couldn't find %dth frequency, %d\n", i,
+				err);
 			eError = PVRSRV_ERROR_RESOURCE_UNAVAILABLE;
 			goto exit;
 		}
@@ -291,8 +274,9 @@ PVRSRV_ERROR DVFSCopyOPPTable(PPVRSRV_DEVICE_NODE psDeviceNode,
 		psOPPValue++;
 	}
 
-	PVR_DPF((PVR_DBG_WARNING, "%s: Copied %u OPP points to the FW processor table.", __func__,
-	         pvr_freq_table.num_levels));
+	PVR_DPF((PVR_DBG_WARNING,
+		 "%s: Copied %u OPP points to the FW processor table.",
+		 __func__, pvr_freq_table.num_levels));
 	psOPPInfo->ui32MaxOPPPoint = pvr_freq_table.num_levels - 1;
 exit:
 

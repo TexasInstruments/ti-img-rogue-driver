@@ -158,12 +158,12 @@ static const struct pci_device_id pvr_pci_ids[] = {
 MODULE_DEVICE_TABLE(pci, pvr_pci_ids);
 
 static struct pci_driver pvr_pci_driver = {
-	.name		= DRVNAME,
-	.driver.pm	= &pvr_pm_ops,
-	.id_table	= pvr_pci_ids,
-	.probe		= pvr_probe,
-	.remove		= pvr_remove,
-	.shutdown	= pvr_shutdown,
+	.name = DRVNAME,
+	.driver.pm = &pvr_pm_ops,
+	.id_table = pvr_pci_ids,
+	.probe = pvr_probe,
+	.remove = pvr_remove,
+	.shutdown = pvr_shutdown,
 };
 
 static int __init pvr_init(void)

@@ -51,25 +51,25 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sys_fpf_kickreg.h"
 
 /* Circular buffer control structure. */
-typedef struct _RGX_FPF_FPTCB_CTRL_
-{
-	volatile IMG_UINT32 ui32WriteOffset; /*!< write offset into array of Tokens */
-	volatile IMG_UINT32 ui32ReadOffset;  /*!< read offset into array of Tokens */
-	IMG_UINT32 ui32WrapMask;             /*!< Offset wrapping mask (Total capacity of the CB - 1), total capacity should be pow2 */
+typedef struct _RGX_FPF_FPTCB_CTRL_ {
+	volatile IMG_UINT32
+		ui32WriteOffset; /*!< write offset into array of Tokens */
+	volatile IMG_UINT32
+		ui32ReadOffset; /*!< read offset into array of Tokens */
+	IMG_UINT32
+		ui32WrapMask; /*!< Offset wrapping mask (Total capacity of the CB - 1), total capacity should be pow2 */
 } RGX_FPF_FPTCB_CTRL;
 
 typedef enum fpf_kickreg_write_size RGX_FPF_APU_KICK_REG_SIZE;
 typedef struct fpf_kickreg_details RGX_FPF_KICK_REG_DETAILS;
 
-typedef struct _RGX_FPF_FW_APU_KICKREG_DETAILS_
-{
+typedef struct _RGX_FPF_FW_APU_KICKREG_DETAILS_ {
 	RGXFWIF_DEV_VIRTADDR sFPFApuKickRegBankMapping;
 	RGX_FPF_KICK_REG_DETAILS sKickRegDetails;
 } RGX_FPF_FW_APU_KICKREG_DETAILS;
 
 // Populated in the "RGX_FPF_KICK_COMMS_FWCTX *ppsContext"
-struct _RGX_FPF_KICK_COMMS_FWCTX_
-{
+struct _RGX_FPF_KICK_COMMS_FWCTX_ {
 	RGX_FPF_FW_APU_KICKREG_DETAILS sFWAPUKickRegDetails;
 	RGXFWIF_DEV_VIRTADDR sFPTCBAPU2GPUCTRLFWAddr;
 	RGXFWIF_DEV_VIRTADDR sFPTCBAPU2GPUFWAddr;

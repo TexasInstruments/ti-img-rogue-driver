@@ -50,8 +50,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 /*! Kick register size.
  */
-enum fpf_kickreg_write_size
-{
+enum fpf_kickreg_write_size {
 	FPF_KICKREG_WRITE_SIZE_32B, /*!< Register is a 32-bit register. */
 	FPF_KICKREG_WRITE_SIZE_64B, /*!< Register is a 64-bit register. */
 };
@@ -69,8 +68,7 @@ enum fpf_kickreg_write_size
  * APU driver shall also provide APU kick register (if any) to the
  * GPU driver via this struct.
  */
-struct fpf_kickreg_regbank
-{
+struct fpf_kickreg_regbank {
 	IMG_CPU_PHYADDR regbank_paddr;
 	IMG_UINT32 regbank_size;
 };
@@ -95,13 +93,12 @@ struct fpf_kickreg_regbank
  * APU will also provide details for kicking APU from GPU via this
  * struct.
  */
-struct fpf_kickreg_details
-{
-	enum fpf_kickreg_write_size reg_size;         /*! Kick register size
+struct fpf_kickreg_details {
+	enum fpf_kickreg_write_size reg_size; /*! Kick register size
 	                                                  (32-bit or 64-bit). */
-	IMG_UINT32 reg_offset;                        /*! Register byte offset in the
+	IMG_UINT32 reg_offset; /*! Register byte offset in the
 	                                                  register bank. */
-	IMG_UINT64 write_value;                       /*! Value to write. */
+	IMG_UINT64 write_value; /*! Value to write. */
 };
 
 /*! Kick register configuration.
@@ -111,8 +108,7 @@ struct fpf_kickreg_details
  * APU driver shall also provide kick register details (if any) to the GPU
  * for outbound signalling via this struct.
  */
-struct fpf_kickreg_config
-{
+struct fpf_kickreg_config {
 	struct fpf_kickreg_regbank kickreg_regbank;
 	struct fpf_kickreg_details kickreg_details;
 };

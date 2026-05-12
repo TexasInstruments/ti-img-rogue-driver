@@ -53,28 +53,27 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /*
  * Container for all the apphints used by this module
  */
-typedef struct _RGX_INIT_APPHINTS_
-{
-	IMG_BOOL   bEnableSignatureChecks;
+typedef struct _RGX_INIT_APPHINTS_ {
+	IMG_BOOL bEnableSignatureChecks;
 	IMG_UINT32 ui32SignatureChecksBufSize;
 
-	IMG_BOOL   bAssertOnOutOfMem;
-	IMG_BOOL   bAssertOnHWRTrigger;
+	IMG_BOOL bAssertOnOutOfMem;
+	IMG_BOOL bAssertOnHWRTrigger;
 #if defined(RGX_FEATURE_TFBC_VERSION_MAX_VALUE_IDX)
 	IMG_UINT32 ui32TFBCVersion;
 	IMG_UINT32 ui32TFBCCompressionControlGroup;
 	IMG_UINT32 ui32TFBCCompressionControlScheme;
-	IMG_BOOL   bTFBCCompressionControlYUVFormat;
-	IMG_BOOL   bTFBCCompressionControlLossyMinChannel;
+	IMG_BOOL bTFBCCompressionControlYUVFormat;
+	IMG_BOOL bTFBCCompressionControlLossyMinChannel;
 #endif
-	IMG_BOOL   bCheckMlist;
-	IMG_BOOL   bDisableClockGating;
-	IMG_BOOL   bDisableDMOverlap;
-	IMG_BOOL   bDisablePDP;
-	IMG_BOOL   bEnableDMKillRand;
-	IMG_BOOL   bEnableRandomCsw;
-	IMG_BOOL   bEnableSoftResetCsw;
-	IMG_BOOL   bHWPerfDisableCounterFilter;
+	IMG_BOOL bCheckMlist;
+	IMG_BOOL bDisableClockGating;
+	IMG_BOOL bDisableDMOverlap;
+	IMG_BOOL bDisablePDP;
+	IMG_BOOL bEnableDMKillRand;
+	IMG_BOOL bEnableRandomCsw;
+	IMG_BOOL bEnableSoftResetCsw;
+	IMG_BOOL bHWPerfDisableCounterFilter;
 	IMG_UINT32 ui32DeviceFlags;
 	IMG_UINT32 ui32FilterFlags;
 	IMG_UINT32 ui32EnableFWContextSwitch;
@@ -96,9 +95,10 @@ typedef struct _RGX_INIT_APPHINTS_
 	IMG_UINT32 ui32AvailableRACMask;
 	IMG_BOOL bSPUClockGating;
 #endif
-	IMG_BOOL   bEnableTrustedDeviceAceConfig;
+	IMG_BOOL bEnableTrustedDeviceAceConfig;
 	IMG_UINT32 ui32FWContextSwitchCrossDM;
-#if defined(SUPPORT_PHYSMEM_TEST) && !defined(INTEGRITY_OS) && !defined(__QNXNTO__)
+#if defined(SUPPORT_PHYSMEM_TEST) && !defined(INTEGRITY_OS) && \
+	!defined(__QNXNTO__)
 	IMG_UINT32 ui32PhysMemTestPasses;
 #endif
 	RGX_FWT_LOGTYPE eDebugDumpFWTLogType;
@@ -106,10 +106,10 @@ typedef struct _RGX_INIT_APPHINTS_
 	IMG_UINT32 ui32EnableIdleCycleStealing;
 	IMG_UINT32 ui32FDTI;
 	IMG_UINT32 ui32ICSThreshold;
-	IMG_BOOL   bTestModeOn;
+	IMG_BOOL bTestModeOn;
 #endif
 #if defined(RGX_FEATURE_PIPELINED_DATAMASTERS_VERSION_MAX_VALUE_IDX)
-	IMG_BOOL   bEnableCrossDMPause;
+	IMG_BOOL bEnableCrossDMPause;
 #endif
 } RGX_INIT_APPHINTS;
 

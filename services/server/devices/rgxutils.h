@@ -66,8 +66,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ******************************************************************************/
 PVRSRV_ERROR RGXQueryAPMState(const PVRSRV_DEVICE_NODE *psDeviceNode,
-	const void *pvPrivateData,
-	IMG_UINT32 *pui32State);
+			      const void *pvPrivateData,
+			      IMG_UINT32 *pui32State);
 
 /*!
 ******************************************************************************
@@ -87,8 +87,7 @@ PVRSRV_ERROR RGXQueryAPMState(const PVRSRV_DEVICE_NODE *psDeviceNode,
 
 ******************************************************************************/
 PVRSRV_ERROR RGXSetAPMState(const PVRSRV_DEVICE_NODE *psDeviceNode,
-	const void *pvPrivateData,
-	IMG_UINT32 ui32State);
+			    const void *pvPrivateData, IMG_UINT32 ui32State);
 
 /*!
 ******************************************************************************
@@ -107,8 +106,8 @@ PVRSRV_ERROR RGXSetAPMState(const PVRSRV_DEVICE_NODE *psDeviceNode,
 
 ******************************************************************************/
 PVRSRV_ERROR RGXQueryPdumpPanicDisable(const PVRSRV_DEVICE_NODE *psDeviceNode,
-	const void *pvPrivateData,
-	IMG_BOOL *pbDisabled);
+				       const void *pvPrivateData,
+				       IMG_BOOL *pbDisabled);
 
 /*!
 ******************************************************************************
@@ -127,8 +126,8 @@ PVRSRV_ERROR RGXQueryPdumpPanicDisable(const PVRSRV_DEVICE_NODE *psDeviceNode,
 
 ******************************************************************************/
 PVRSRV_ERROR RGXSetPdumpPanicDisable(const PVRSRV_DEVICE_NODE *psDeviceNode,
-	const void *pvPrivateData,
-	IMG_BOOL bDisable);
+				     const void *pvPrivateData,
+				     IMG_BOOL bDisable);
 
 /*!
 ******************************************************************************
@@ -145,7 +144,7 @@ PVRSRV_ERROR RGXSetPdumpPanicDisable(const PVRSRV_DEVICE_NODE *psDeviceNode,
 
 ******************************************************************************/
 PVRSRV_ERROR RGXGetDeviceFlags(PVRSRV_RGXDEV_INFO *psDevInfo,
-				IMG_UINT32 *pui32DeviceFlags);
+			       IMG_UINT32 *pui32DeviceFlags);
 
 /*!
 ******************************************************************************
@@ -164,8 +163,7 @@ PVRSRV_ERROR RGXGetDeviceFlags(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 ******************************************************************************/
 PVRSRV_ERROR RGXSetDeviceFlags(PVRSRV_RGXDEV_INFO *psDevInfo,
-				IMG_UINT32 ui32Config,
-				IMG_BOOL bSetNotClear);
+			       IMG_UINT32 ui32Config, IMG_BOOL bSetNotClear);
 
 /*!
 ******************************************************************************
@@ -179,7 +177,7 @@ PVRSRV_ERROR RGXSetDeviceFlags(PVRSRV_RGXDEV_INFO *psDevInfo,
  @Return      Array containing the kick type DM name
 
 ******************************************************************************/
-const char* RGXStringifyKickTypeDM(RGX_KICK_TYPE_DM eKickTypeDM);
+const char *RGXStringifyKickTypeDM(RGX_KICK_TYPE_DM eKickTypeDM);
 
 /*************************************************************************/ /*!
 
@@ -194,9 +192,11 @@ const char* RGXStringifyKickTypeDM(RGX_KICK_TYPE_DM eKickTypeDM);
 @Return         PHYS_HEAP_POLICY The recommended LMA policy
 
 */ /**************************************************************************/
-PHYS_HEAP_POLICY RGXPhysHeapGetLMAPolicy(PHYS_HEAP_USAGE_FLAGS ui32UsageFlags, PVRSRV_DEVICE_NODE *psDeviceNode);
+PHYS_HEAP_POLICY RGXPhysHeapGetLMAPolicy(PHYS_HEAP_USAGE_FLAGS ui32UsageFlags,
+					 PVRSRV_DEVICE_NODE *psDeviceNode);
 
-#define RGX_STRINGIFY_KICK_TYPE_DM_IF_SET(bitmask, eKickTypeDM) bitmask & eKickTypeDM ? RGXStringifyKickTypeDM(eKickTypeDM) : ""
+#define RGX_STRINGIFY_KICK_TYPE_DM_IF_SET(bitmask, eKickTypeDM) \
+	bitmask &eKickTypeDM ? RGXStringifyKickTypeDM(eKickTypeDM) : ""
 
 /*************************************************************************/ /*!
 @Function       RGXIsErrorAndDeviceRecoverable
@@ -207,30 +207,28 @@ PHYS_HEAP_POLICY RGXPhysHeapGetLMAPolicy(PHYS_HEAP_USAGE_FLAGS ui32UsageFlags, P
 @Input          peError      Pointer to error. Can be changed to retry type.
 @Return         IMG_BOOL   Return true if device is recoverable.
 */ /**************************************************************************/
-IMG_BOOL RGXIsErrorAndDeviceRecoverable(PVRSRV_DEVICE_NODE *psDeviceNode, PVRSRV_ERROR *peError);
+IMG_BOOL RGXIsErrorAndDeviceRecoverable(PVRSRV_DEVICE_NODE *psDeviceNode,
+					PVRSRV_ERROR *peError);
 
 /*
  * To avoid repeated calls and avoid double frees, the error value is set to PVRSRV_OK
  * if RGXIsErrorAndDeviceRecoverable is false.
  */
-#define RGX_RETURN_IF_ERROR_AND_DEVICE_RECOVERABLE(psDeviceNode, eError, cleanupFunc) \
-	do \
-	{ \
-		if (RGXIsErrorAndDeviceRecoverable(psDeviceNode, &eError)) \
-		{ \
-			return eError; \
-		} \
-		else if (eError != PVRSRV_OK) \
-		{ \
-			PVR_LOG(("%s: Unexpected error from " #cleanupFunc "(%s)", \
-					__func__, \
-					PVRSRVGetErrorString(eError))); \
+#define RGX_RETURN_IF_ERROR_AND_DEVICE_RECOVERABLE(psDeviceNode, eError,     \
+						   cleanupFunc)              \
+	do {                                                                 \
+		if (RGXIsErrorAndDeviceRecoverable(psDeviceNode, &eError)) { \
+			return eError;                                       \
+		} else if (eError != PVRSRV_OK) {                            \
+			PVR_LOG(("%s: Unexpected error from " #cleanupFunc   \
+				 "(%s)",                                     \
+				 __func__, PVRSRVGetErrorString(eError)));   \
 			/* Device is dead. \
 			 * Change error type to make callers destroy the resource handle. \
 			 * This is to prevent repeated calls to this function. \
-			 */ \
-			eError = PVRSRV_OK; \
-		} \
+			 */                                 \
+			eError = PVRSRV_OK;                                  \
+		}                                                            \
 	} while (false)
 
 /*************************************************************************/ /*!
@@ -245,8 +243,8 @@ IMG_BOOL RGXIsErrorAndDeviceRecoverable(PVRSRV_DEVICE_NODE *psDeviceNode, PVRSRV
                 RGX_BIF_PM_PHYSICAL_PAGE_SIZE.
 */ /**************************************************************************/
 IMG_UINT32 RGXCalcMListSize(PVRSRV_DEVICE_NODE *psDeviceNode,
-                            IMG_UINT64 ui64MaxLocalPBSize,
-                            IMG_UINT64 ui64MaxGlobalPBSize);
+			    IMG_UINT64 ui64MaxLocalPBSize,
+			    IMG_UINT64 ui64MaxGlobalPBSize);
 
 /*************************************************************************/ /*!
 @Function       ValidateFreeListSizes
@@ -261,9 +259,10 @@ IMG_UINT32 RGXCalcMListSize(PVRSRV_DEVICE_NODE *psDeviceNode,
 @Return         PVRSRV_ERROR PVRSRV_OK if validation successful.
                 Appropriate error otherwise.
 */ /**************************************************************************/
-PVRSRV_ERROR ValidateFreeListSizes(RGX_FREELIST* apsFreeLists[RGXMKIF_NUM_RTDATA_FREELISTS],
-                                   IMG_UINT32*   pui32LocalFLMaxPages,
-                                   IMG_UINT32*   pui32GlobalFLMaxPages);
+PVRSRV_ERROR
+ValidateFreeListSizes(RGX_FREELIST *apsFreeLists[RGXMKIF_NUM_RTDATA_FREELISTS],
+		      IMG_UINT32 *pui32LocalFLMaxPages,
+		      IMG_UINT32 *pui32GlobalFLMaxPages);
 
 /*************************************************************************/ /*!
 @Function       AcquireValidateRefCriticalBuffer
@@ -279,12 +278,11 @@ PVRSRV_ERROR ValidateFreeListSizes(RGX_FREELIST* apsFreeLists[RGXMKIF_NUM_RTDATA
 @Return         PVRSRV_ERROR PVRSRV_OK if validation successful.
                 Appropriate error otherwise.
 */ /**************************************************************************/
-PVRSRV_ERROR AcquireValidateRefCriticalBuffer(PVRSRV_DEVICE_NODE*     psDevNode,
-                                              DEVMEMINT_RESERVATION*  psReservation,
-                                              IMG_DEVMEM_SIZE_T       ui64MinSize,
-                                              PMR**                   ppsPMR,
-                                              IMG_DEV_VIRTADDR*       psDevVAddr);
-
+PVRSRV_ERROR
+AcquireValidateRefCriticalBuffer(PVRSRV_DEVICE_NODE *psDevNode,
+				 DEVMEMINT_RESERVATION *psReservation,
+				 IMG_DEVMEM_SIZE_T ui64MinSize, PMR **ppsPMR,
+				 IMG_DEV_VIRTADDR *psDevVAddr);
 
 /*************************************************************************/ /*!
 @Function       UnrefAndReleaseCriticalBuffer
@@ -293,7 +291,7 @@ PVRSRV_ERROR AcquireValidateRefCriticalBuffer(PVRSRV_DEVICE_NODE*     psDevNode,
 @Input          psReservation The reservation describing the critical buffer
 
 */ /**************************************************************************/
-void UnrefAndReleaseCriticalBuffer(DEVMEMINT_RESERVATION* psReservation);
+void UnrefAndReleaseCriticalBuffer(DEVMEMINT_RESERVATION *psReservation);
 
 /*************************************************************************/ /*!
 @Function       ValidatePMAddrs
@@ -307,7 +305,8 @@ void UnrefAndReleaseCriticalBuffer(DEVMEMINT_RESERVATION* psReservation);
                 PVRSRV_ERROR_INVALID_PARAMS if any address within
                 PMMETA_PROTECT or PM_ONLY heap.
 */ /**************************************************************************/
-PVRSRV_ERROR ValidatePMAddrs(IMG_DEV_VIRTADDR* psDevVAddr, IMG_UINT32 ui32NumAddr);
+PVRSRV_ERROR ValidatePMAddrs(IMG_DEV_VIRTADDR *psDevVAddr,
+			     IMG_UINT32 ui32NumAddr);
 
 /*************************************************************************/ /*!
 @Function       FWVARemapShow
@@ -321,7 +320,8 @@ PVRSRV_ERROR ValidatePMAddrs(IMG_DEV_VIRTADDR* psDevVAddr, IMG_UINT32 ui32NumAdd
                 to be checked and displayed, if exists
 @Input          psEntry Pointer to OSDI_IMPL_ENTRY object
 */ /**************************************************************************/
-void FWVARemapShow(PVRSRV_RGXDEV_INFO *psDevInfo, RGXFWIF_REMAP *psRemap, IMG_UINT32 ui32FWVA, OSDI_IMPL_ENTRY *psEntry);
+void FWVARemapShow(PVRSRV_RGXDEV_INFO *psDevInfo, RGXFWIF_REMAP *psRemap,
+		   IMG_UINT32 ui32FWVA, OSDI_IMPL_ENTRY *psEntry);
 
 /*************************************************************************/ /*!
 @Function       FWVAUncachedDataRemapShow
@@ -333,7 +333,8 @@ void FWVARemapShow(PVRSRV_RGXDEV_INFO *psDevInfo, RGXFWIF_REMAP *psRemap, IMG_UI
                 to be checked and displayed, if exists
 @Input          psEntry Pointer to OSDI_IMPL_ENTRY object
 */ /**************************************************************************/
-void FWVAUncachedDataRemapShow(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32FWVA, OSDI_IMPL_ENTRY *psEntry);
+void FWVAUncachedDataRemapShow(PVRSRV_RGXDEV_INFO *psDevInfo,
+			       IMG_UINT32 ui32FWVA, OSDI_IMPL_ENTRY *psEntry);
 
 /*************************************************************************/ /*!
 @Function       FWVACachedDataRemapShow
@@ -345,7 +346,8 @@ void FWVAUncachedDataRemapShow(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32FWV
                 to be checked and displayed, if exists
 @Input          psEntry Pointer to OSDI_IMPL_ENTRY object
 */ /**************************************************************************/
-void FWVACachedDataRemapShow(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32FWVA, OSDI_IMPL_ENTRY *psEntry);
+void FWVACachedDataRemapShow(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32FWVA,
+			     OSDI_IMPL_ENTRY *psEntry);
 
 /******************************************************************************
  End of file (rgxutils.h)

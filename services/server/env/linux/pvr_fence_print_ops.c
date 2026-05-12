@@ -56,9 +56,11 @@ static const struct pvr_fence_print_ops foreign_ops = {
 	.timeline_value_str = foreign_unknown,
 };
 
-const struct pvr_fence_print_ops *pvr_fence_get_print_ops(const struct dma_fence *fence)
+const struct pvr_fence_print_ops *
+pvr_fence_get_print_ops(const struct dma_fence *fence)
 {
-	const struct pvr_fence_print_ops *ops = get_pvr_exp_fence_print_ops(fence);
+	const struct pvr_fence_print_ops *ops =
+		get_pvr_exp_fence_print_ops(fence);
 	if (ops)
 		return ops;
 

@@ -45,14 +45,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "opaque_types.h"
 #include "pvrsrv_error.h"
-#if defined(SUPPORT_FW_OPP_TABLE) && defined(CONFIG_OF) && defined(CONFIG_PM_OPP)
+#if defined(SUPPORT_FW_OPP_TABLE) && defined(CONFIG_OF) && \
+	defined(CONFIG_PM_OPP)
 #include "rgx_fwif_km.h"
 #endif
 
-#define TO_IMG_ERR(err) ((err == -EPROBE_DEFER) ? PVRSRV_ERROR_PROBE_DEFER : PVRSRV_ERROR_INIT_FAILURE)
+#define TO_IMG_ERR(err)                                      \
+	((err == -EPROBE_DEFER) ? PVRSRV_ERROR_PROBE_DEFER : \
+				  PVRSRV_ERROR_INIT_FAILURE)
 
-struct pvr_opp_freq_table
-{
+struct pvr_opp_freq_table {
 	unsigned long *freq_table;
 	int num_levels;
 };
@@ -72,11 +74,9 @@ struct pvr_opp_freq_table
 @Return			0 on success
 */ /**************************************************************************/
 #if defined(CONFIG_PM_OPP)
-int GetOPPValues(struct device *dev,
-                 unsigned long *min_freq,
-                 unsigned long *min_volt,
-                 unsigned long *max_freq,
-                 struct pvr_opp_freq_table *pvr_freq_table);
+int GetOPPValues(struct device *dev, unsigned long *min_freq,
+		 unsigned long *min_volt, unsigned long *max_freq,
+		 struct pvr_opp_freq_table *pvr_freq_table);
 
 /*************************************************************************/ /*!
 @Function       FindOPPFreq
@@ -92,10 +92,8 @@ int GetOPPValues(struct device *dev,
 @Output         level      OPP table index
 @Return			0 on success
 */ /**************************************************************************/
-int FindOPPFreq(struct device *dev,
-                unsigned long *freq_table,
-                unsigned long freq,
-                unsigned int *level);
+int FindOPPFreq(struct device *dev, unsigned long *freq_table,
+		unsigned long freq, unsigned int *level);
 #endif
 
 /*************************************************************************/ /*!
@@ -112,10 +110,11 @@ int FindOPPFreq(struct device *dev,
 @Input          ui32MaxOPPLevels   Maximum number of OPP levels allowed in buffer.
 @Return			PVRSRV_ERROR
 */ /**************************************************************************/
-#if defined(SUPPORT_FW_OPP_TABLE) && defined(CONFIG_OF) && defined(CONFIG_PM_OPP)
+#if defined(SUPPORT_FW_OPP_TABLE) && defined(CONFIG_OF) && \
+	defined(CONFIG_PM_OPP)
 PVRSRV_ERROR DVFSCopyOPPTable(PPVRSRV_DEVICE_NODE psDeviceNode,
-							  RGXFWIF_OPP_INFO   *psOPPInfo,
-							  IMG_UINT32          ui32MaxOPPLevels);
+			      RGXFWIF_OPP_INFO *psOPPInfo,
+			      IMG_UINT32 ui32MaxOPPLevels);
 #endif
 
 /*************************************************************************/ /*!

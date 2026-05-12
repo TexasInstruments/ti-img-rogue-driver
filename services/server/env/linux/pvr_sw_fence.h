@@ -49,11 +49,11 @@
 
 struct pvr_sw_fence_context;
 
-struct pvr_sw_fence_context *pvr_sw_fence_context_create(const char *name,
-				const char *driver_name);
+struct pvr_sw_fence_context *
+pvr_sw_fence_context_create(const char *name, const char *driver_name);
 void pvr_sw_fence_context_destroy(struct pvr_sw_fence_context *fence_context);
-struct dma_fence *pvr_sw_fence_create(struct pvr_sw_fence_context *
-				      fence_context);
+struct dma_fence *
+pvr_sw_fence_create(struct pvr_sw_fence_context *fence_context);
 
 const char *pvr_sw_fence_context_name(struct pvr_sw_fence_context *fctx);
 void pvr_sw_fence_context_value_str(struct pvr_sw_fence_context *fctx,
@@ -61,6 +61,7 @@ void pvr_sw_fence_context_value_str(struct pvr_sw_fence_context *fctx,
 
 bool is_pvr_sw_fence(const struct dma_fence *fence);
 
-const struct pvr_fence_print_ops *get_pvr_sw_fence_print_ops(const struct dma_fence *fence);
+const struct pvr_fence_print_ops *
+get_pvr_sw_fence_print_ops(const struct dma_fence *fence);
 
 #endif /* !defined(__PVR_SW_FENCES_H__) */

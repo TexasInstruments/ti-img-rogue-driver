@@ -63,7 +63,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 PVRSRV_ERROR SysFpfCustomDeviceInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
 {
-    return PVRSRV_OK;
+	return PVRSRV_OK;
 }
 
 /*
@@ -71,14 +71,13 @@ PVRSRV_ERROR SysFpfCustomDeviceInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
  */
 void SysFpfCustomDeviceDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
 {
-
 }
 
 /*
  * Custom implementation code goes here....
  */
 PVRSRV_ERROR SysFpfCustomCommunicationInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
-                                            RGX_FPF_KICK_COMMS_FWCTX *psContext)
+					   RGX_FPF_KICK_COMMS_FWCTX *psContext)
 {
 	return PVRSRV_OK;
 }
@@ -88,5 +87,4 @@ PVRSRV_ERROR SysFpfCustomCommunicationInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
  */
 void SysFpfCustomCommunicationDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig)
 {
-
 }

@@ -74,34 +74,46 @@ typedef struct OSWR_LOCK_TAG *POSWR_LOCK;
 #else /* defined(__linux__) || defined(__QNXNTO__) || defined(INTEGRITY_OS) */
 typedef struct OSWR_LOCK_TAG {
 	IMG_UINT32 ui32Unused;
-} *POSWR_LOCK;
+} * POSWR_LOCK;
 #endif /* defined(__linux__) || defined(__QNXNTO__) || defined(INTEGRITY_OS) */
 
 #if defined(__linux__) || defined(__APPLE__)
-	typedef struct OS_ATOMIC_TAG {ATOMIC_COUNTER_T counter;} ATOMIC_T;
+typedef struct OS_ATOMIC_TAG {
+	ATOMIC_COUNTER_T counter;
+} ATOMIC_T;
 #elif defined(__QNXNTO__)
-	typedef struct OS_ATOMIC_TAG {IMG_INT32 counter;} ATOMIC_T;
+typedef struct OS_ATOMIC_TAG {
+	IMG_INT32 counter;
+} ATOMIC_T;
 #elif defined(_WIN32)
-	/*
+/*
 	 * Placeholder definition. WDDM doesn't use Services, but some headers
 	 * still have to be shared. This is one such case.
 	 */
-	typedef struct OS_ATOMIC_TAG {IMG_INT32 counter;} ATOMIC_T;
+typedef struct OS_ATOMIC_TAG {
+	IMG_INT32 counter;
+} ATOMIC_T;
 #elif defined(INTEGRITY_OS)
-	/* Only lower 32bits are used in OS ATOMIC APIs to have consistent behaviour across all OS */
-	typedef struct OS_ATOMIC_TAG {IMG_INT64 counter;} ATOMIC_T;
+/* Only lower 32bits are used in OS ATOMIC APIs to have consistent behaviour across all OS */
+typedef struct OS_ATOMIC_TAG {
+	IMG_INT64 counter;
+} ATOMIC_T;
 #else
-	#error "Please type-define an atomic lock for this environment"
+#error "Please type-define an atomic lock for this environment"
 #endif
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__QNXNTO__)
-	typedef struct OS_ATOMIC_U64_TAG { __attribute__((aligned(8))) ATOMIC_U64_COUNTER_T counter; } ATOMIC_U64_T;
+typedef struct OS_ATOMIC_U64_TAG {
+	__attribute__((aligned(8))) ATOMIC_U64_COUNTER_T counter;
+} ATOMIC_U64_T;
 #elif defined(INTEGRITY_OS) || defined(_WIN32)
-	/* For _WIN32 this is only a placeholder definition. WDDM doesn't use Services,
+/* For _WIN32 this is only a placeholder definition. WDDM doesn't use Services,
 	 * but some headers still have to be shared. This is one such case. */
-	typedef struct OS_ATOMIC_U64_TAG {IMG_UINT64 counter;} ATOMIC_U64_T;
+typedef struct OS_ATOMIC_U64_TAG {
+	IMG_UINT64 counter;
+} ATOMIC_U64_T;
 #else
-	#error "Please type-define an atomic lock for this environment"
+#error "Please type-define an atomic lock for this environment"
 #endif
 
 #endif /* defined(__linux__) && defined(__KERNEL__) */

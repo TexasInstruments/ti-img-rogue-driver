@@ -75,87 +75,51 @@
 #include "kernel_compatibility.h"
 
 /* Macros to set and get register fields */
-#define REG_FIELD_GET(v, str) \
-	(u32)(((v) & (str##_MASK)) >> (str##_SHIFT))
-#define REG_FIELD_SET(v, f, str) \
-	(v = (u32)(((v) & (u32)~(str##_MASK)) |		\
+#define REG_FIELD_GET(v, str) (u32)(((v) & (str##_MASK)) >> (str##_SHIFT))
+#define REG_FIELD_SET(v, f, str)                 \
+	(v = (u32)(((v) & (u32) ~(str##_MASK)) | \
 		   (u32)(((f) << (str##_SHIFT)) & (str##_MASK))))
 
 #define SAI_STATUS_UNALIGNED 0
-#define SAI_STATUS_ALIGNED   1
-#define SAI_STATUS_ERROR     2
+#define SAI_STATUS_ALIGNED 1
+#define SAI_STATUS_ERROR 2
 
 /* Odin/Orion shared masks */
-static const u32 CHANGE_SET_SET_MASK[] = {
-	ODN_CHANGE_SET_SET_MASK,
-	SRS_CHANGE_SET_SET_MASK
-};
-static const u32 CHANGE_SET_SET_SHIFT[] = {
-	ODN_CHANGE_SET_SET_SHIFT,
-	SRS_CHANGE_SET_SET_SHIFT
-};
-static const u32 USER_ID_ID_MASK[] = {
-	ODN_USER_ID_ID_MASK,
-	SRS_USER_ID_ID_MASK
-};
-static const u32 USER_ID_ID_SHIFT[] = {
-	ODN_USER_ID_ID_SHIFT,
-	SRS_USER_ID_ID_SHIFT
-};
-static const u32 USER_BUILD_BUILD_MASK[] = {
-	ODN_USER_BUILD_BUILD_MASK,
-	SRS_USER_BUILD_BUILD_MASK
-};
-static const u32 USER_BUILD_BUILD_SHIFT[] = {
-	ODN_USER_BUILD_BUILD_SHIFT,
-	SRS_USER_BUILD_BUILD_SHIFT
-};
-static const u32 INPUT_CLOCK_SPEED_MIN[] = {
-	ODN_INPUT_CLOCK_SPEED_MIN,
-	SRS_INPUT_CLOCK_SPEED_MIN
-};
-static const u32 INPUT_CLOCK_SPEED_MAX[] = {
-	ODN_INPUT_CLOCK_SPEED_MAX,
-	SRS_INPUT_CLOCK_SPEED_MAX
-};
-static const u32 OUTPUT_CLOCK_SPEED_MIN[] = {
-	ODN_OUTPUT_CLOCK_SPEED_MIN,
-	SRS_OUTPUT_CLOCK_SPEED_MIN
-};
-static const u32 OUTPUT_CLOCK_SPEED_MAX[] = {
-	ODN_OUTPUT_CLOCK_SPEED_MAX,
-	SRS_OUTPUT_CLOCK_SPEED_MAX
-};
-static const u32 VCO_MIN[] = {
-	ODN_VCO_MIN,
-	SRS_VCO_MIN
-};
-static const u32 VCO_MAX[] = {
-	ODN_VCO_MAX,
-	SRS_VCO_MAX
-};
-static const u32 PFD_MIN[] = {
-	ODN_PFD_MIN,
-	SRS_PFD_MIN
-};
-static const u32 PFD_MAX[] = {
-	ODN_PFD_MAX,
-	SRS_PFD_MAX
-};
+static const u32 CHANGE_SET_SET_MASK[] = { ODN_CHANGE_SET_SET_MASK,
+					   SRS_CHANGE_SET_SET_MASK };
+static const u32 CHANGE_SET_SET_SHIFT[] = { ODN_CHANGE_SET_SET_SHIFT,
+					    SRS_CHANGE_SET_SET_SHIFT };
+static const u32 USER_ID_ID_MASK[] = { ODN_USER_ID_ID_MASK,
+				       SRS_USER_ID_ID_MASK };
+static const u32 USER_ID_ID_SHIFT[] = { ODN_USER_ID_ID_SHIFT,
+					SRS_USER_ID_ID_SHIFT };
+static const u32 USER_BUILD_BUILD_MASK[] = { ODN_USER_BUILD_BUILD_MASK,
+					     SRS_USER_BUILD_BUILD_MASK };
+static const u32 USER_BUILD_BUILD_SHIFT[] = { ODN_USER_BUILD_BUILD_SHIFT,
+					      SRS_USER_BUILD_BUILD_SHIFT };
+static const u32 INPUT_CLOCK_SPEED_MIN[] = { ODN_INPUT_CLOCK_SPEED_MIN,
+					     SRS_INPUT_CLOCK_SPEED_MIN };
+static const u32 INPUT_CLOCK_SPEED_MAX[] = { ODN_INPUT_CLOCK_SPEED_MAX,
+					     SRS_INPUT_CLOCK_SPEED_MAX };
+static const u32 OUTPUT_CLOCK_SPEED_MIN[] = { ODN_OUTPUT_CLOCK_SPEED_MIN,
+					      SRS_OUTPUT_CLOCK_SPEED_MIN };
+static const u32 OUTPUT_CLOCK_SPEED_MAX[] = { ODN_OUTPUT_CLOCK_SPEED_MAX,
+					      SRS_OUTPUT_CLOCK_SPEED_MAX };
+static const u32 VCO_MIN[] = { ODN_VCO_MIN, SRS_VCO_MIN };
+static const u32 VCO_MAX[] = { ODN_VCO_MAX, SRS_VCO_MAX };
+static const u32 PFD_MIN[] = { ODN_PFD_MIN, SRS_PFD_MIN };
+static const u32 PFD_MAX[] = { ODN_PFD_MAX, SRS_PFD_MAX };
 
 #if defined(SUPPORT_RGX)
 
 static void spi_write(struct tc_device *tc, u32 off, u32 val)
 {
-	iowrite32(off, tc->tcf.registers
-		  + ODN_REG_BANK_TCF_SPI_MASTER
-		  + ODN_SPI_MST_ADDR_RDNWR);
-	iowrite32(val, tc->tcf.registers
-		  + ODN_REG_BANK_TCF_SPI_MASTER
-		  + ODN_SPI_MST_WDATA);
-	iowrite32(0x1, tc->tcf.registers
-		  + ODN_REG_BANK_TCF_SPI_MASTER
-		  + ODN_SPI_MST_GO);
+	iowrite32(off, tc->tcf.registers + ODN_REG_BANK_TCF_SPI_MASTER +
+			       ODN_SPI_MST_ADDR_RDNWR);
+	iowrite32(val, tc->tcf.registers + ODN_REG_BANK_TCF_SPI_MASTER +
+			       ODN_SPI_MST_WDATA);
+	iowrite32(0x1, tc->tcf.registers + ODN_REG_BANK_TCF_SPI_MASTER +
+			       ODN_SPI_MST_GO);
 	udelay(1000);
 }
 
@@ -164,18 +128,17 @@ static int spi_read(struct tc_device *tc, u32 off, u32 *val)
 	int cnt = 0;
 	u32 spi_mst_status;
 
-	iowrite32(0x40000 | off, tc->tcf.registers
-		  + ODN_REG_BANK_TCF_SPI_MASTER
-		  + ODN_SPI_MST_ADDR_RDNWR);
-	iowrite32(0x1, tc->tcf.registers
-		  + ODN_REG_BANK_TCF_SPI_MASTER
-		  + ODN_SPI_MST_GO);
+	iowrite32(0x40000 | off, tc->tcf.registers +
+					 ODN_REG_BANK_TCF_SPI_MASTER +
+					 ODN_SPI_MST_ADDR_RDNWR);
+	iowrite32(0x1, tc->tcf.registers + ODN_REG_BANK_TCF_SPI_MASTER +
+			       ODN_SPI_MST_GO);
 	udelay(100);
 
 	do {
-		spi_mst_status = ioread32(tc->tcf.registers
-					  + ODN_REG_BANK_TCF_SPI_MASTER
-					  + ODN_SPI_MST_STATUS);
+		spi_mst_status = ioread32(tc->tcf.registers +
+					  ODN_REG_BANK_TCF_SPI_MASTER +
+					  ODN_SPI_MST_STATUS);
 
 		if (cnt++ > 10000) {
 			dev_err(&tc->pdev->dev,
@@ -186,9 +149,8 @@ static int spi_read(struct tc_device *tc, u32 off, u32 *val)
 
 	} while (spi_mst_status != 0x08);
 
-	*val = ioread32(tc->tcf.registers
-			+ ODN_REG_BANK_TCF_SPI_MASTER
-			+ ODN_SPI_MST_RDATA);
+	*val = ioread32(tc->tcf.registers + ODN_REG_BANK_TCF_SPI_MASTER +
+			ODN_SPI_MST_RDATA);
 
 	return 0;
 }
@@ -196,8 +158,8 @@ static int spi_read(struct tc_device *tc, u32 off, u32 *val)
 /* Returns 1 for aligned, 0 for unaligned */
 static int get_odin_sai_status(struct tc_device *tc, int bank)
 {
-	void __iomem *bank_addr = tc->tcf.registers
-					+ ODN_REG_BANK_SAI_RX_DDR(bank);
+	void __iomem *bank_addr =
+		tc->tcf.registers + ODN_REG_BANK_SAI_RX_DDR(bank);
 	void __iomem *reg_addr;
 	u32 eyes;
 	u32 clk_taps;
@@ -230,8 +192,8 @@ static int get_odin_sai_status(struct tc_device *tc, int bank)
  */
 static int read_odin_mca_status(struct tc_device *tc)
 {
-	void __iomem *bank_addr = tc->tcf.registers
-					+ ODN_REG_BANK_MULTI_CLK_ALIGN;
+	void __iomem *bank_addr =
+		tc->tcf.registers + ODN_REG_BANK_MULTI_CLK_ALIGN;
 	void __iomem *reg_addr = bank_addr + ODN_MCA_DEBUG_MCA_STATUS;
 	u32 mca_status;
 
@@ -253,8 +215,8 @@ static int read_dut_mca_status(struct tc_device *tc)
 	const int mca_status_register_offset = 1; /* not in bonnie_tcf.h */
 	int spi_address = DWORD_OFFSET(BONNIE_TCF_OFFSET_MULTI_CLK_ALIGN);
 
-	spi_address = DWORD_OFFSET(BONNIE_TCF_OFFSET_MULTI_CLK_ALIGN)
-			+ mca_status_register_offset;
+	spi_address = DWORD_OFFSET(BONNIE_TCF_OFFSET_MULTI_CLK_ALIGN) +
+		      mca_status_register_offset;
 
 	spi_read(tc, spi_address, &mca_status);
 
@@ -271,19 +233,21 @@ static int get_dut_sai_status(struct tc_device *tc, int bank)
 	u32 eyes;
 	u32 clk_taps;
 	u32 train_ack;
-	const u32 bank_base = DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_RX_1
-				+ (BONNIE_TCF_OFFSET_SAI_RX_DELTA * bank));
+	const u32 bank_base =
+		DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_RX_1 +
+			     (BONNIE_TCF_OFFSET_SAI_RX_DELTA * bank));
 	int spi_timeout;
 
-	spi_timeout = spi_read(tc, bank_base
-		+ DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_EYES), &eyes);
+	spi_timeout = spi_read(
+		tc, bank_base + DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_EYES),
+		&eyes);
 	if (spi_timeout)
 		return SAI_STATUS_ERROR;
 
-	spi_read(tc, bank_base
-		+ DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_CLK_TAPS), &clk_taps);
-	spi_read(tc, bank_base
-		+ DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_TRAIN_ACK), &train_ack);
+	spi_read(tc, bank_base + DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_CLK_TAPS),
+		 &clk_taps);
+	spi_read(tc, bank_base + DWORD_OFFSET(BONNIE_TCF_OFFSET_SAI_TRAIN_ACK),
+		 &train_ack);
 
 #if 0 /* enable this to get debug info if the board is not aligning */
 	dev_info(&tc->pdev->dev,
@@ -302,8 +266,8 @@ static int get_dut_sai_status(struct tc_device *tc, int bank)
  * Returns the divider group register fields for the specified counter value.
  * See Xilinx Application Note xapp888.
  */
-static void odin_mmcm_reg_param_calc(u32 value, u32 *low, u32 *high,
-				     u32 *edge, u32 *no_count)
+static void odin_mmcm_reg_param_calc(u32 value, u32 *low, u32 *high, u32 *edge,
+				     u32 *no_count)
 {
 	if (value == 1U) {
 		*no_count = 1U;
@@ -326,9 +290,8 @@ static void odin_mmcm_reg_param_calc(u32 value, u32 *low, u32 *high,
  * VCO and smallest D and M.
  * Configured for Xilinx Virtex7 speed grade 2.
  */
-static int odin_mmcm_counter_calc(struct device *dev,
-				  u32 freq_input, u32 freq_output,
-				  u32 *d, u32 *m, u32 *o)
+static int odin_mmcm_counter_calc(struct device *dev, u32 freq_input,
+				  u32 freq_output, u32 *d, u32 *m, u32 *o)
 {
 	u32 tcver = tc_odin_subvers(dev);
 	u32 best_diff, d_best, m_best, o_best;
@@ -340,12 +303,14 @@ static int odin_mmcm_counter_calc(struct device *dev,
 	 * Check specified input frequency is within range
 	 */
 	if (freq_input < INPUT_CLOCK_SPEED_MIN[tcver]) {
-		dev_err(dev, "Input frequency (%u hz) below minimum supported value (%u hz)\n",
+		dev_err(dev,
+			"Input frequency (%u hz) below minimum supported value (%u hz)\n",
 			freq_input, INPUT_CLOCK_SPEED_MIN[tcver]);
 		return -EINVAL;
 	}
 	if (freq_input > INPUT_CLOCK_SPEED_MAX[tcver]) {
-		dev_err(dev, "Input frequency (%u hz) above maximum supported value (%u hz)\n",
+		dev_err(dev,
+			"Input frequency (%u hz) above maximum supported value (%u hz)\n",
 			freq_input, INPUT_CLOCK_SPEED_MAX[tcver]);
 		return -EINVAL;
 	}
@@ -354,12 +319,14 @@ static int odin_mmcm_counter_calc(struct device *dev,
 	 * Check specified target frequency is within range
 	 */
 	if (freq_output < OUTPUT_CLOCK_SPEED_MIN[tcver]) {
-		dev_err(dev, "Output frequency (%u hz) below minimum supported value (%u hz)\n",
+		dev_err(dev,
+			"Output frequency (%u hz) below minimum supported value (%u hz)\n",
 			freq_input, OUTPUT_CLOCK_SPEED_MIN[tcver]);
 		return -EINVAL;
 	}
 	if (freq_output > OUTPUT_CLOCK_SPEED_MAX[tcver]) {
-		dev_err(dev, "Output frequency (%u hz) above maximum supported value (%u hz)\n",
+		dev_err(dev,
+			"Output frequency (%u hz) above maximum supported value (%u hz)\n",
 			freq_output, OUTPUT_CLOCK_SPEED_MAX[tcver]);
 		return -EINVAL;
 	}
@@ -370,7 +337,7 @@ static int odin_mmcm_counter_calc(struct device *dev,
 	 * equation 3-6 and 3-7
 	 */
 	d_min = DIV_ROUND_UP(freq_input, PFD_MAX[tcver]);
-	d_max = min(freq_input/PFD_MIN[tcver], (u32)ODN_DREG_VALUE_MAX);
+	d_max = min(freq_input / PFD_MIN[tcver], (u32)ODN_DREG_VALUE_MAX);
 
 	/*
 	 * Calculate min and max for Input Divider.
@@ -386,7 +353,7 @@ static int odin_mmcm_counter_calc(struct device *dev,
 		 * Refer Xilinx 7 series FPGAs clocking resources user guide.
 		 * equation 3-10
 		 */
-		m_ideal = min(((d_cur * VCO_MAX[tcver])/freq_input), m_max);
+		m_ideal = min(((d_cur * VCO_MAX[tcver]) / freq_input), m_max);
 
 		for (m_cur = m_ideal; m_cur >= m_min; m_cur -= 1) {
 			/**
@@ -407,7 +374,7 @@ static int odin_mmcm_counter_calc(struct device *dev,
 			/**
 			 * Calculate output divider value.
 			 */
-			o_cur = (freq_input * m_cur)/(d_cur * freq_output);
+			o_cur = (freq_input * m_cur) / (d_cur * freq_output);
 
 			*d = d_cur;
 			*m = m_cur;
@@ -420,8 +387,10 @@ static int odin_mmcm_counter_calc(struct device *dev,
 	 * Failed to find exact optimal solution with high VCO. Brute-force find
 	 * a suitable config, again prioritising high VCO, to get lowest jitter
 	 */
-	d_min = 1; d_max = (u32)ODN_DREG_VALUE_MAX;
-	m_min = 1; m_max = (u32)ODN_MREG_VALUE_MAX;
+	d_min = 1;
+	d_max = (u32)ODN_DREG_VALUE_MAX;
+	m_min = 1;
+	m_max = (u32)ODN_MREG_VALUE_MAX;
 	best_diff = 0xFFFFFFFF;
 
 	for (d_cur = d_min; d_cur <= d_max; d_cur++) {
@@ -482,21 +451,23 @@ static int odin_mmcm_counter_calc(struct device *dev,
 	}
 
 	if (best_diff != 0xFFFFFFFF) {
-		dev_warn(dev, "Odin: Found similar freq of %u Hz\n", freq_output - best_diff);
+		dev_warn(dev, "Odin: Found similar freq of %u Hz\n",
+			 freq_output - best_diff);
 		*d = d_best;
 		*m = m_best;
 		*o = o_best;
 		return 0;
 	}
 
-	dev_err(dev, "Odin: Unable to find integer values for d, m and o for requested frequency (%u)\n",
+	dev_err(dev,
+		"Odin: Unable to find integer values for d, m and o for requested frequency (%u)\n",
 		freq_output);
 
 	return -ERANGE;
 }
 
-static int odin_fpga_set_dut_core_clk(struct tc_device *tc,
-				      u32 input_clk, u32 output_clk)
+static int odin_fpga_set_dut_core_clk(struct tc_device *tc, u32 input_clk,
+				      u32 output_clk)
 {
 	int err = 0;
 	u32 in_div, mul, out_div;
@@ -506,8 +477,8 @@ static int odin_fpga_set_dut_core_clk(struct tc_device *tc,
 	void __iomem *clk_blk_base = base + ODN_REG_BANK_ODN_CLK_BLK;
 	struct device *dev = &tc->pdev->dev;
 
-	err = odin_mmcm_counter_calc(dev, input_clk, output_clk, &in_div,
-				     &mul, &out_div);
+	err = odin_mmcm_counter_calc(dev, input_clk, output_clk, &in_div, &mul,
+				     &out_div);
 	if (err != 0)
 		return err;
 
@@ -522,59 +493,46 @@ static int odin_fpga_set_dut_core_clk(struct tc_device *tc,
 	msleep(20);
 
 	/* Calculate the register fields for output divider */
-	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/* Read-modify-write the required fields to output divider register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_OUT_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			ODN_DUT_CORE_CLK_OUT_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			ODN_DUT_CORE_CLK_OUT_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, ODN_DUT_CORE_CLK_OUT_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_CORE_CLK_OUT_DIVIDER1_LO_TIME);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_OUT_DIVIDER1);
 
 	/* Read-modify-write the required fields to output divider register 2 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_OUT_DIVIDER2);
-	REG_FIELD_SET(value, edge,
-			ODN_DUT_CORE_CLK_OUT_DIVIDER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			ODN_DUT_CORE_CLK_OUT_DIVIDER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, ODN_DUT_CORE_CLK_OUT_DIVIDER2_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_CORE_CLK_OUT_DIVIDER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_OUT_DIVIDER2);
 
 	/* Calculate the register fields for multiplier */
-	odin_mmcm_reg_param_calc(mul, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(mul, &high_time, &low_time, &edge, &no_count);
 
 	/* Read-modify-write the required fields to multiplier register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER1);
-	REG_FIELD_SET(value, high_time,
-			ODN_DUT_CORE_CLK_MULTIPLIER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			ODN_DUT_CORE_CLK_MULTIPLIER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, ODN_DUT_CORE_CLK_MULTIPLIER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_CORE_CLK_MULTIPLIER1_LO_TIME);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER1);
 
 	/* Read-modify-write the required fields to multiplier register 2 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER2);
-	REG_FIELD_SET(value, edge,
-			ODN_DUT_CORE_CLK_MULTIPLIER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			ODN_DUT_CORE_CLK_MULTIPLIER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, ODN_DUT_CORE_CLK_MULTIPLIER2_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_CORE_CLK_MULTIPLIER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER2);
 
 	/* Calculate the register fields for input divider */
-	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/* Read-modify-write the required fields to input divider register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_IN_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_LO_TIME);
-	REG_FIELD_SET(value, edge,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_EDGE);
-	REG_FIELD_SET(value, no_count,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_NOCOUNT);
+	REG_FIELD_SET(value, high_time, ODN_DUT_CORE_CLK_IN_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_CORE_CLK_IN_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, edge, ODN_DUT_CORE_CLK_IN_DIVIDER1_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_CORE_CLK_IN_DIVIDER1_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_IN_DIVIDER1);
 
 	/* Bring DUT clock MMCM out of reset */
@@ -589,7 +547,7 @@ static int odin_fpga_set_dut_core_clk(struct tc_device *tc,
 
 	/* Bring DUT out of reset */
 	iowrite32(ODN_EXTERNAL_RESETN_DUT_SPI_MASK |
-		  ODN_EXTERNAL_RESETN_DUT_MASK,
+			  ODN_EXTERNAL_RESETN_DUT_MASK,
 		  tc->tcf.registers + ODN_CORE_EXTERNAL_RESETN);
 	msleep(20);
 
@@ -598,8 +556,8 @@ static int odin_fpga_set_dut_core_clk(struct tc_device *tc,
 	return err;
 }
 
-static int odin_fpga_set_dut_if_clk(struct tc_device *tc,
-				    u32 input_clk, u32 output_clk)
+static int odin_fpga_set_dut_if_clk(struct tc_device *tc, u32 input_clk,
+				    u32 output_clk)
 {
 	int err = 0;
 	u32 in_div, mul, out_div;
@@ -609,8 +567,8 @@ static int odin_fpga_set_dut_if_clk(struct tc_device *tc,
 	void __iomem *clk_blk_base = base + ODN_REG_BANK_ODN_CLK_BLK;
 	struct device *dev = &tc->pdev->dev;
 
-	err = odin_mmcm_counter_calc(dev, input_clk, output_clk,
-				     &in_div, &mul, &out_div);
+	err = odin_mmcm_counter_calc(dev, input_clk, output_clk, &in_div, &mul,
+				     &out_div);
 	if (err != 0)
 		return err;
 
@@ -625,23 +583,19 @@ static int odin_fpga_set_dut_if_clk(struct tc_device *tc,
 	msleep(20);
 
 	/* Calculate the register fields for output divider */
-	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/* Read-modify-write the required fields to output divider register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, ODN_DUT_IFACE_CLK_OUT_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_IFACE_CLK_OUT_DIVIDER1_LO_TIME);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER1);
 
 	/* Read-modify-write the required fields to output divider register 2 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER2);
-	REG_FIELD_SET(value, edge,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, ODN_DUT_IFACE_CLK_OUT_DIVIDER2_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_IFACE_CLK_OUT_DIVIDER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER2);
 
 	/* Calculate the register fields for multiplier */
@@ -649,34 +603,26 @@ static int odin_fpga_set_dut_if_clk(struct tc_device *tc,
 
 	/* Read-modify-write the required fields to multiplier register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER1);
-	REG_FIELD_SET(value, high_time,
-			ODN_DUT_IFACE_CLK_MULTIPLIER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			ODN_DUT_IFACE_CLK_MULTIPLIER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, ODN_DUT_IFACE_CLK_MULTIPLIER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_IFACE_CLK_MULTIPLIER1_LO_TIME);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER1);
 
 	/* Read-modify-write the required fields to multiplier register 2 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER2);
-	REG_FIELD_SET(value, edge,
-			ODN_DUT_IFACE_CLK_MULTIPLIER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			ODN_DUT_IFACE_CLK_MULTIPLIER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, ODN_DUT_IFACE_CLK_MULTIPLIER2_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_IFACE_CLK_MULTIPLIER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER2);
 
 	/* Calculate the register fields for input divider */
-	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/* Read-modify-write the required fields to input divider register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_IN_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_LO_TIME);
-	REG_FIELD_SET(value, edge,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_EDGE);
-	REG_FIELD_SET(value, no_count,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_NOCOUNT);
+	REG_FIELD_SET(value, high_time, ODN_DUT_IFACE_CLK_IN_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_IFACE_CLK_IN_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, edge, ODN_DUT_IFACE_CLK_IN_DIVIDER1_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_IFACE_CLK_IN_DIVIDER1_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_IN_DIVIDER1);
 
 	/* Bring DUT interface clock MMCM out of reset */
@@ -691,7 +637,7 @@ static int odin_fpga_set_dut_if_clk(struct tc_device *tc,
 
 	/* Bring DUT out of reset */
 	iowrite32(ODN_EXTERNAL_RESETN_DUT_SPI_MASK |
-		  ODN_EXTERNAL_RESETN_DUT_MASK,
+			  ODN_EXTERNAL_RESETN_DUT_MASK,
 		  tc->tcf.registers + ODN_CORE_EXTERNAL_RESETN);
 	msleep(20);
 
@@ -700,8 +646,8 @@ static int odin_fpga_set_dut_if_clk(struct tc_device *tc,
 	return err;
 }
 
-static void odin_fpga_update_dut_clk_freq(struct tc_device *tc,
-					  int *core_clock, int *mem_clock, int *clock_multiplex)
+static void odin_fpga_update_dut_clk_freq(struct tc_device *tc, int *core_clock,
+					  int *mem_clock, int *clock_multiplex)
 {
 	struct device *dev = &tc->pdev->dev;
 	int dut_clk_info = 0;
@@ -711,85 +657,106 @@ static void odin_fpga_update_dut_clk_freq(struct tc_device *tc,
 	dut_clk_info = ioread32(tc->tcf.registers + ODN_CORE_DUT_CLK_INFO);
 #endif
 
-	if ((dut_clk_info != 0) && (dut_clk_info != 0xbaadface)
-				&& (dut_clk_info != 0xffffffff)) {
+	if ((dut_clk_info != 0) && (dut_clk_info != 0xbaadface) &&
+	    (dut_clk_info != 0xffffffff)) {
 		dev_info(dev, "ODN_DUT_CLK_INFO = %08x\n", dut_clk_info);
 
 		if (*core_clock == 0) {
-			*core_clock = ((dut_clk_info & ODN_DUT_CLK_INFO_CORE_MASK)
-					   >> ODN_DUT_CLK_INFO_CORE_SHIFT) * 1000000;
-			dev_info(dev, "Using register DUT core clock value: %i\n",
-						*core_clock);
+			*core_clock =
+				((dut_clk_info & ODN_DUT_CLK_INFO_CORE_MASK) >>
+				 ODN_DUT_CLK_INFO_CORE_SHIFT) *
+				1000000;
+			dev_info(dev,
+				 "Using register DUT core clock value: %i\n",
+				 *core_clock);
 		} else {
-			dev_info(dev, "Using module param DUT core clock value: %i\n",
-						*core_clock);
+			dev_info(
+				dev,
+				"Using module param DUT core clock value: %i\n",
+				*core_clock);
 		}
 
 		if (*mem_clock == 0) {
-			*mem_clock = ((dut_clk_info & ODN_DUT_CLK_INFO_MEM_MASK)
-				   >> ODN_DUT_CLK_INFO_MEM_SHIFT) * 1000000;
-			dev_info(dev, "Using register DUT mem clock value: %i\n",
-			 *mem_clock);
+			*mem_clock =
+				((dut_clk_info & ODN_DUT_CLK_INFO_MEM_MASK) >>
+				 ODN_DUT_CLK_INFO_MEM_SHIFT) *
+				1000000;
+			dev_info(dev,
+				 "Using register DUT mem clock value: %i\n",
+				 *mem_clock);
 		} else {
-			dev_info(dev, "Using module param DUT mem clock value: %i\n",
-						*mem_clock);
+			dev_info(dev,
+				 "Using module param DUT mem clock value: %i\n",
+				 *mem_clock);
 		}
 	} else {
 		if (*core_clock == 0) {
 			*core_clock = RGX_TC_CORE_CLOCK_SPEED;
-			dev_info(dev, "Using default DUT core clock value: %i\n",
-					 *core_clock);
+			dev_info(dev,
+				 "Using default DUT core clock value: %i\n",
+				 *core_clock);
 		} else {
-			dev_info(dev, "Using module param DUT core clock value: %i\n",
-						*core_clock);
+			dev_info(
+				dev,
+				"Using module param DUT core clock value: %i\n",
+				*core_clock);
 		}
 
 		if (*mem_clock == 0) {
 			*mem_clock = RGX_TC_MEM_CLOCK_SPEED;
 			dev_info(dev, "Using default DUT mem clock value: %i\n",
-					 *mem_clock);
+				 *mem_clock);
 		} else {
-			dev_info(dev, "Using module param DUT mem clock value: %i\n",
-						*mem_clock);
+			dev_info(dev,
+				 "Using module param DUT mem clock value: %i\n",
+				 *mem_clock);
 		}
 	}
 
 #if defined(SUPPORT_FPGA_DUT_MULTIPLEX_INFO)
-	dut_clk_multiplex = ioread32(tc->tcf.registers + ODN_CORE_DUT_MULTIPLX_INFO);
+	dut_clk_multiplex =
+		ioread32(tc->tcf.registers + ODN_CORE_DUT_MULTIPLX_INFO);
 #endif
 
-	if ((dut_clk_multiplex != 0) && (dut_clk_multiplex != 0xbaadface)
-					&& (dut_clk_multiplex != 0xffffffff)) {
-		dev_info(dev, "ODN_DUT_MULTIPLX_INFO = %08x\n", dut_clk_multiplex);
+	if ((dut_clk_multiplex != 0) && (dut_clk_multiplex != 0xbaadface) &&
+	    (dut_clk_multiplex != 0xffffffff)) {
+		dev_info(dev, "ODN_DUT_MULTIPLX_INFO = %08x\n",
+			 dut_clk_multiplex);
 		if (*clock_multiplex == 0) {
-			*clock_multiplex = ((dut_clk_multiplex & ODN_DUT_MULTIPLX_INFO_MEM_MASK)
-					   >> ODN_DUT_MULTIPLX_INFO_MEM_SHIFT);
-			dev_info(dev, "Using register DUT clock multiplex: %i\n",
-						*clock_multiplex);
+			*clock_multiplex = ((dut_clk_multiplex &
+					     ODN_DUT_MULTIPLX_INFO_MEM_MASK) >>
+					    ODN_DUT_MULTIPLX_INFO_MEM_SHIFT);
+			dev_info(dev,
+				 "Using register DUT clock multiplex: %i\n",
+				 *clock_multiplex);
 		} else {
-			dev_info(dev, "Using module param DUT clock multiplex: %i\n",
-						*clock_multiplex);
+			dev_info(dev,
+				 "Using module param DUT clock multiplex: %i\n",
+				 *clock_multiplex);
 		}
 	} else {
 		if (*clock_multiplex == 0) {
 			*clock_multiplex = RGX_TC_CLOCK_MULTIPLEX;
 			dev_info(dev, "Using default DUT clock multiplex: %i\n",
-					 *clock_multiplex);
+				 *clock_multiplex);
 		} else {
-			dev_info(dev, "Using module param DUT clock multiplex: %i\n",
-						*clock_multiplex);
+			dev_info(dev,
+				 "Using module param DUT clock multiplex: %i\n",
+				 *clock_multiplex);
 		}
 	}
 }
 
-static int odin_hard_reset_fpga(struct tc_device *tc,
-				int *core_clock, int *mem_clock, int *clock_multiplex)
+static int odin_hard_reset_fpga(struct tc_device *tc, int *core_clock,
+				int *mem_clock, int *clock_multiplex)
 {
 	int err = 0;
 
-	odin_fpga_update_dut_clk_freq(tc, core_clock, mem_clock, clock_multiplex);
+	odin_fpga_update_dut_clk_freq(tc, core_clock, mem_clock,
+				      clock_multiplex);
 
-	err = odin_fpga_set_dut_core_clk(tc, ODN_INPUT_CLOCK_SPEED, *core_clock);
+	err = odin_fpga_set_dut_core_clk(tc, ODN_INPUT_CLOCK_SPEED,
+					 *core_clock);
 	if (err != 0)
 		goto err_out;
 
@@ -810,30 +777,27 @@ static int odin_hard_reset_bonnie(struct tc_device *tc)
 	/* It is essential to do an SPI reset once on power-up before
 	 * doing any DUT reads via the SPI interface.
 	 */
-	iowrite32(1, tc->tcf.registers		/* set bit 1 low */
-			+ ODN_CORE_EXTERNAL_RESETN);
+	iowrite32(1, tc->tcf.registers /* set bit 1 low */
+			     + ODN_CORE_EXTERNAL_RESETN);
 	msleep(20);
 
-	iowrite32(3, tc->tcf.registers		/* set bit 1 high */
-			+ ODN_CORE_EXTERNAL_RESETN);
+	iowrite32(3, tc->tcf.registers /* set bit 1 high */
+			     + ODN_CORE_EXTERNAL_RESETN);
 	msleep(20);
 
 	while (!aligned && (reset_cnt < 20)) {
-
 		int bank;
 
 		/* Reset the DUT to allow the SAI to retrain */
 		iowrite32(2, /* set bit 0 low */
-			tc->tcf.registers
-			+ ODN_CORE_EXTERNAL_RESETN);
+			  tc->tcf.registers + ODN_CORE_EXTERNAL_RESETN);
 
 		/* Hold the DUT in reset for 50ms */
 		msleep(50);
 
 		/* Take the DUT out of reset */
 		iowrite32(3, /* set bit 0 hi */
-			tc->tcf.registers
-			+ ODN_CORE_EXTERNAL_RESETN);
+			  tc->tcf.registers + ODN_CORE_EXTERNAL_RESETN);
 		reset_cnt++;
 
 		/* Wait 200ms for the DUT to stabilise */
@@ -841,19 +805,16 @@ static int odin_hard_reset_bonnie(struct tc_device *tc)
 
 		/* Check the odin Multi Clocked bank Align status */
 		alignment_found = read_odin_mca_status(tc);
-		dev_info(&tc->pdev->dev,
-				"Odin mca_status indicates %s\n",
-				(alignment_found)?"aligned":"UNALIGNED");
+		dev_info(&tc->pdev->dev, "Odin mca_status indicates %s\n",
+			 (alignment_found) ? "aligned" : "UNALIGNED");
 
 		/* Check the DUT MCA status */
 		alignment_found = read_dut_mca_status(tc);
-		dev_info(&tc->pdev->dev,
-				"DUT mca_status indicates %s\n",
-				(alignment_found)?"aligned":"UNALIGNED");
+		dev_info(&tc->pdev->dev, "DUT mca_status indicates %s\n",
+			 (alignment_found) ? "aligned" : "UNALIGNED");
 
 		/* If all banks have aligned then the reset was successful */
 		for (bank = 0; bank < 10; bank++) {
-
 			int dut_aligned = 0;
 			int odin_aligned = 0;
 
@@ -871,12 +832,12 @@ static int odin_hard_reset_bonnie(struct tc_device *tc)
 		}
 
 		if (aligned) {
-			dev_info(&tc->pdev->dev,
-				"all banks have aligned\n");
+			dev_info(&tc->pdev->dev, "all banks have aligned\n");
 			break;
 		}
 
-		dev_warn(&tc->pdev->dev,
+		dev_warn(
+			&tc->pdev->dev,
 			"Warning- not all banks have aligned. Trying again.\n");
 	}
 
@@ -886,8 +847,8 @@ static int odin_hard_reset_bonnie(struct tc_device *tc)
 	return (aligned) ? 0 : 1; /* return 0 for success */
 }
 
-static void odin_set_mem_latency(struct tc_device *tc,
-				 int mem_latency, int mem_wresp_latency)
+static void odin_set_mem_latency(struct tc_device *tc, int mem_latency,
+				 int mem_wresp_latency)
 {
 	u32 regval = 0;
 
@@ -936,8 +897,7 @@ static void odin_set_mem_latency(struct tc_device *tc,
 	}
 }
 
-static int orion_set_dut_core_clk(struct tc_device *tc,
-				  u32 input_clk,
+static int orion_set_dut_core_clk(struct tc_device *tc, u32 input_clk,
 				  u32 output_clk)
 {
 	void __iomem *base = tc->tcf.registers;
@@ -948,8 +908,8 @@ static int orion_set_dut_core_clk(struct tc_device *tc,
 	u32 value;
 	int err;
 
-	err = odin_mmcm_counter_calc(dev, input_clk, output_clk, &in_div,
-				     &mul, &out_div);
+	err = odin_mmcm_counter_calc(dev, input_clk, output_clk, &in_div, &mul,
+				     &out_div);
 	if (err != 0)
 		return err;
 
@@ -963,54 +923,43 @@ static int orion_set_dut_core_clk(struct tc_device *tc,
 	msleep(20);
 
 	/* Calculate the register fields for input divider */
-	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/* Read-modify-write the required fields to input divider register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_IN_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_LO_TIME);
-	REG_FIELD_SET(value, edge,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_EDGE);
-	REG_FIELD_SET(value, no_count,
-			 ODN_DUT_CORE_CLK_IN_DIVIDER1_NOCOUNT);
+	REG_FIELD_SET(value, high_time, ODN_DUT_CORE_CLK_IN_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_CORE_CLK_IN_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, edge, ODN_DUT_CORE_CLK_IN_DIVIDER1_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_CORE_CLK_IN_DIVIDER1_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_IN_DIVIDER1);
 
 	/* Calculate the register fields for multiplier */
-	odin_mmcm_reg_param_calc(mul, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(mul, &high_time, &low_time, &edge, &no_count);
 
 	/* Read-modify-write the required fields to multiplier register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER1);
-	REG_FIELD_SET(value, high_time,
-			ODN_DUT_CORE_CLK_MULTIPLIER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			ODN_DUT_CORE_CLK_MULTIPLIER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, ODN_DUT_CORE_CLK_MULTIPLIER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_CORE_CLK_MULTIPLIER1_LO_TIME);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER1);
 
 	/* Read-modify-write the required fields to multiplier register 2 */
 	value = ioread32(clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER2);
-	REG_FIELD_SET(value, edge,
-			ODN_DUT_CORE_CLK_MULTIPLIER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			ODN_DUT_CORE_CLK_MULTIPLIER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, ODN_DUT_CORE_CLK_MULTIPLIER2_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_CORE_CLK_MULTIPLIER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_CORE_CLK_MULTIPLIER2);
 
 	/* Calculate the register fields for output divider */
-	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/*
 	 * Read-modify-write the required fields to
 	 * core output divider register 1
 	 */
 	value = ioread32(clk_blk_base + SRS_DUT_CORE_CLK_OUT_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			SRS_DUT_CORE_CLK_OUT_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			SRS_DUT_CORE_CLK_OUT_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, SRS_DUT_CORE_CLK_OUT_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, SRS_DUT_CORE_CLK_OUT_DIVIDER1_LO_TIME);
 	iowrite32(value, clk_blk_base + SRS_DUT_CORE_CLK_OUT_DIVIDER1);
 
 	/*
@@ -1018,10 +967,8 @@ static int orion_set_dut_core_clk(struct tc_device *tc,
 	 * divider register 2
 	 */
 	value = ioread32(clk_blk_base + SRS_DUT_CORE_CLK_OUT_DIVIDER2);
-	REG_FIELD_SET(value, edge,
-			SRS_DUT_CORE_CLK_OUT_DIVIDER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			SRS_DUT_CORE_CLK_OUT_DIVIDER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, SRS_DUT_CORE_CLK_OUT_DIVIDER2_EDGE);
+	REG_FIELD_SET(value, no_count, SRS_DUT_CORE_CLK_OUT_DIVIDER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + SRS_DUT_CORE_CLK_OUT_DIVIDER2);
 
 	/*
@@ -1029,10 +976,8 @@ static int orion_set_dut_core_clk(struct tc_device *tc,
 	 * reference output divider register 1
 	 */
 	value = ioread32(clk_blk_base + SRS_DUT_REF_CLK_OUT_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			SRS_DUT_CORE_CLK_OUT_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			SRS_DUT_CORE_CLK_OUT_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, SRS_DUT_CORE_CLK_OUT_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, SRS_DUT_CORE_CLK_OUT_DIVIDER1_LO_TIME);
 	iowrite32(value, clk_blk_base + SRS_DUT_REF_CLK_OUT_DIVIDER1);
 
 	/*
@@ -1040,10 +985,8 @@ static int orion_set_dut_core_clk(struct tc_device *tc,
 	 * reference output divider register 2
 	 */
 	value = ioread32(clk_blk_base + SRS_DUT_REF_CLK_OUT_DIVIDER2);
-	REG_FIELD_SET(value, edge,
-			SRS_DUT_REF_CLK_OUT_DIVIDER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			SRS_DUT_REF_CLK_OUT_DIVIDER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, SRS_DUT_REF_CLK_OUT_DIVIDER2_EDGE);
+	REG_FIELD_SET(value, no_count, SRS_DUT_REF_CLK_OUT_DIVIDER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + SRS_DUT_REF_CLK_OUT_DIVIDER2);
 
 	/* Bring DUT IF clock MMCM out of reset */
@@ -1066,8 +1009,7 @@ static int orion_set_dut_core_clk(struct tc_device *tc,
 	return err;
 }
 
-static int orion_set_dut_sys_mem_clk(struct tc_device *tc,
-				     u32 input_clk,
+static int orion_set_dut_sys_mem_clk(struct tc_device *tc, u32 input_clk,
 				     u32 output_clk)
 {
 	void __iomem *base = tc->tcf.registers;
@@ -1078,8 +1020,8 @@ static int orion_set_dut_sys_mem_clk(struct tc_device *tc,
 	u32 value;
 	int err;
 
-	err = odin_mmcm_counter_calc(dev, input_clk, output_clk, &in_div,
-				     &mul, &out_div);
+	err = odin_mmcm_counter_calc(dev, input_clk, output_clk, &in_div, &mul,
+				     &out_div);
 	if (err != 0)
 		return err;
 
@@ -1093,59 +1035,46 @@ static int orion_set_dut_sys_mem_clk(struct tc_device *tc,
 	msleep(20);
 
 	/* Calculate the register fields for input divider */
-	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(in_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/* Read-modify-write the required fields to input divider register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_IN_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_LO_TIME);
-	REG_FIELD_SET(value, edge,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_EDGE);
-	REG_FIELD_SET(value, no_count,
-			 ODN_DUT_IFACE_CLK_IN_DIVIDER1_NOCOUNT);
+	REG_FIELD_SET(value, high_time, ODN_DUT_IFACE_CLK_IN_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_IFACE_CLK_IN_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, edge, ODN_DUT_IFACE_CLK_IN_DIVIDER1_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_IFACE_CLK_IN_DIVIDER1_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_IN_DIVIDER1);
 
 	/* Calculate the register fields for multiplier */
-	odin_mmcm_reg_param_calc(mul, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(mul, &high_time, &low_time, &edge, &no_count);
 
 	/* Read-modify-write the required fields to multiplier register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER1);
-	REG_FIELD_SET(value, high_time,
-			ODN_DUT_IFACE_CLK_MULTIPLIER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			ODN_DUT_IFACE_CLK_MULTIPLIER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, ODN_DUT_IFACE_CLK_MULTIPLIER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_IFACE_CLK_MULTIPLIER1_LO_TIME);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER1);
 
 	/* Read-modify-write the required fields to multiplier register 2 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER2);
-	REG_FIELD_SET(value, edge,
-			ODN_DUT_IFACE_CLK_MULTIPLIER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			ODN_DUT_IFACE_CLK_MULTIPLIER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, ODN_DUT_IFACE_CLK_MULTIPLIER2_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_IFACE_CLK_MULTIPLIER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_MULTIPLIER2);
 
 	/* Calculate the register fields for output divider */
-	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time,
-				 &edge, &no_count);
+	odin_mmcm_reg_param_calc(out_div, &high_time, &low_time, &edge,
+				 &no_count);
 
 	/* Read-modify-write the required fields to output divider register 1 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, ODN_DUT_IFACE_CLK_OUT_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, ODN_DUT_IFACE_CLK_OUT_DIVIDER1_LO_TIME);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER1);
 
 	/* Read-modify-write the required fields to output divider register 2 */
 	value = ioread32(clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER2);
-	REG_FIELD_SET(value, edge,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			ODN_DUT_IFACE_CLK_OUT_DIVIDER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, ODN_DUT_IFACE_CLK_OUT_DIVIDER2_EDGE);
+	REG_FIELD_SET(value, no_count, ODN_DUT_IFACE_CLK_OUT_DIVIDER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + ODN_DUT_IFACE_CLK_OUT_DIVIDER2);
 
 	/*
@@ -1161,10 +1090,8 @@ static int orion_set_dut_sys_mem_clk(struct tc_device *tc,
 	 * register 1
 	 */
 	value = ioread32(clk_blk_base + SRS_DUT_MEM_CLK_OUT_DIVIDER1);
-	REG_FIELD_SET(value, high_time,
-			SRS_DUT_MEM_CLK_OUT_DIVIDER1_HI_TIME);
-	REG_FIELD_SET(value, low_time,
-			SRS_DUT_MEM_CLK_OUT_DIVIDER1_LO_TIME);
+	REG_FIELD_SET(value, high_time, SRS_DUT_MEM_CLK_OUT_DIVIDER1_HI_TIME);
+	REG_FIELD_SET(value, low_time, SRS_DUT_MEM_CLK_OUT_DIVIDER1_LO_TIME);
 	iowrite32(value, clk_blk_base + SRS_DUT_MEM_CLK_OUT_DIVIDER1);
 
 	/*
@@ -1172,10 +1099,8 @@ static int orion_set_dut_sys_mem_clk(struct tc_device *tc,
 	 * register 1
 	 */
 	value = ioread32(clk_blk_base + SRS_DUT_MEM_CLK_OUT_DIVIDER2);
-	REG_FIELD_SET(value, edge,
-			SRS_DUT_MEM_CLK_OUT_DIVIDER2_EDGE);
-	REG_FIELD_SET(value, no_count,
-			SRS_DUT_MEM_CLK_OUT_DIVIDER2_NOCOUNT);
+	REG_FIELD_SET(value, edge, SRS_DUT_MEM_CLK_OUT_DIVIDER2_EDGE);
+	REG_FIELD_SET(value, no_count, SRS_DUT_MEM_CLK_OUT_DIVIDER2_NOCOUNT);
 	iowrite32(value, clk_blk_base + SRS_DUT_MEM_CLK_OUT_DIVIDER2);
 
 	/* Bring DUT clock MMCM out of reset */
@@ -1198,8 +1123,8 @@ static int orion_set_dut_sys_mem_clk(struct tc_device *tc,
 	return err;
 }
 
-
-static int orion_hard_reset(struct tc_device *tc, int *core_clock, int *mem_clock)
+static int orion_hard_reset(struct tc_device *tc, int *core_clock,
+			    int *mem_clock)
 {
 	int err;
 	struct device *dev = &tc->pdev->dev;
@@ -1207,19 +1132,19 @@ static int orion_hard_reset(struct tc_device *tc, int *core_clock, int *mem_cloc
 	if (*core_clock == 0) {
 		*core_clock = RGX_TC_CORE_CLOCK_SPEED;
 		dev_info(dev, "Using default DUT core clock value: %i\n",
-				 *core_clock);
+			 *core_clock);
 	} else {
 		dev_info(dev, "Using module param DUT core clock value: %i\n",
-					*core_clock);
+			 *core_clock);
 	}
 
 	if (*mem_clock == 0) {
 		*mem_clock = RGX_TC_MEM_CLOCK_SPEED;
 		dev_info(dev, "Using default DUT mem clock value: %i\n",
-				 *mem_clock);
+			 *mem_clock);
 	} else {
 		dev_info(dev, "Using module param DUT mem clock value: %i\n",
-					*mem_clock);
+			 *mem_clock);
 	}
 
 	err = orion_set_dut_core_clk(tc, SRS_INPUT_CLOCK_SPEED, *core_clock);
@@ -1235,14 +1160,15 @@ err_out:
 #endif /* defined(SUPPORT_RGX) */
 
 /* Do a hard reset on the DUT */
-static int odin_hard_reset(struct tc_device *tc, int *core_clock, int *mem_clock,
-							int *clock_multiplex)
+static int odin_hard_reset(struct tc_device *tc, int *core_clock,
+			   int *mem_clock, int *clock_multiplex)
 {
 #if defined(SUPPORT_RGX)
 	if (tc->version == ODIN_VERSION_TCF_BONNIE)
 		return odin_hard_reset_bonnie(tc);
 	if (tc->version == ODIN_VERSION_FPGA)
-		return odin_hard_reset_fpga(tc, core_clock, mem_clock, clock_multiplex);
+		return odin_hard_reset_fpga(tc, core_clock, mem_clock,
+					    clock_multiplex);
 	if (tc->version == ODIN_VERSION_ORION)
 		return orion_hard_reset(tc, core_clock, mem_clock);
 
@@ -1343,17 +1269,15 @@ static void odin_set_fbc_bypass(struct tc_device *tc, bool fbc_bypass)
 
 	/* Register field is present whether TC has PFIM support or not */
 	val = ioread32(tc->tcf.registers + ODN_CORE_DUT_CTRL1);
-	REG_FIELD_SET(val, fbc_bypass ? 0x1 : 0x0,
-		      ODN_DUT_CTRL1_FBDC_BYPASS);
+	REG_FIELD_SET(val, fbc_bypass ? 0x1 : 0x0, ODN_DUT_CTRL1_FBDC_BYPASS);
 	iowrite32(val, tc->tcf.registers + ODN_CORE_DUT_CTRL1);
 
 	tc->fbc_bypass = fbc_bypass;
 }
 
-static int odin_hw_init(struct tc_device *tc, int *core_clock,
-			int *mem_clock, int *clock_multiplex, int mem_latency,
-			int mem_wresp_latency, int mem_mode,
-			bool fbc_bypass)
+static int odin_hw_init(struct tc_device *tc, int *core_clock, int *mem_clock,
+			int *clock_multiplex, int mem_latency,
+			int mem_wresp_latency, int mem_mode, bool fbc_bypass)
 {
 	int err;
 
@@ -1385,30 +1309,27 @@ static int odin_enable_irq(struct tc_device *tc)
 #if defined(TC_FAKE_INTERRUPTS)
 	timer_setup(&tc->timer, tc_irq_fake_wrapper, 0);
 	mod_timer(&tc->timer,
-		jiffies + msecs_to_jiffies(FAKE_INTERRUPT_TIME_MS));
+		  jiffies + msecs_to_jiffies(FAKE_INTERRUPT_TIME_MS));
 #else
 	iowrite32(0, tc->tcf.registers +
-		  common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
-	iowrite32(0xffffffff, tc->tcf.registers +
-		  common_reg_offset(tc, CORE_INTERRUPT_CLR));
+			     common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
+	iowrite32(0xffffffff,
+		  tc->tcf.registers +
+			  common_reg_offset(tc, CORE_INTERRUPT_CLR));
 
-	dev_info(&tc->pdev->dev,
-		"Registering IRQ %d for use by %s\n",
-		 tc->pdev->irq,
-		 odin_tc_name(tc));
+	dev_info(&tc->pdev->dev, "Registering IRQ %d for use by %s\n",
+		 tc->pdev->irq, odin_tc_name(tc));
 
-	err = request_irq(tc->pdev->irq, odin_irq_handler,
-		IRQF_SHARED, DRV_NAME, tc);
+	err = request_irq(tc->pdev->irq, odin_irq_handler, IRQF_SHARED,
+			  DRV_NAME, tc);
 
 	if (err) {
-		dev_err(&tc->pdev->dev,
-			"Error - IRQ %d failed to register\n",
+		dev_err(&tc->pdev->dev, "Error - IRQ %d failed to register\n",
 			tc->pdev->irq);
 	} else {
 		dev_info(&tc->pdev->dev,
-			"IRQ %d was successfully registered for use by %s\n",
-			 tc->pdev->irq,
-			 odin_tc_name(tc));
+			 "IRQ %d was successfully registered for use by %s\n",
+			 tc->pdev->irq, odin_tc_name(tc));
 	}
 #endif
 	return err;
@@ -1420,16 +1341,16 @@ static void odin_disable_irq(struct tc_device *tc)
 	timer_delete_sync(&tc->timer);
 #else
 	iowrite32(0, tc->tcf.registers +
-			common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
-	iowrite32(0xffffffff, tc->tcf.registers +
-			common_reg_offset(tc, CORE_INTERRUPT_CLR));
+			     common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
+	iowrite32(0xffffffff,
+		  tc->tcf.registers +
+			  common_reg_offset(tc, CORE_INTERRUPT_CLR));
 
 	free_irq(tc->pdev->irq, tc);
 #endif
 }
 
-static enum tc_version_t
-odin_detect_daughterboard_version(struct tc_device *tc)
+static enum tc_version_t odin_detect_daughterboard_version(struct tc_device *tc)
 {
 	u32 reg = ioread32(tc->tcf.registers + ODN_REG_BANK_DB_TYPE_ID);
 	u32 val = reg;
@@ -1438,7 +1359,7 @@ odin_detect_daughterboard_version(struct tc_device *tc)
 		return ODIN_VERSION_ORION;
 
 	val = (val & ODN_REG_BANK_DB_TYPE_ID_TYPE_MASK) >>
-		ODN_REG_BANK_DB_TYPE_ID_TYPE_SHIFT;
+	      ODN_REG_BANK_DB_TYPE_ID_TYPE_SHIFT;
 
 	switch (val) {
 	default:
@@ -1456,7 +1377,8 @@ odin_detect_daughterboard_version(struct tc_device *tc)
 	}
 }
 
-#if defined(SUPPORT_BAR_RESIZE) && (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+#if defined(SUPPORT_BAR_RESIZE) && \
+	(LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
 /* Should only be called with all BAR's resources released */
 static int try_resize_mem_bar(struct pci_dev *pdev, int target_bar_num)
 {
@@ -1483,7 +1405,8 @@ static int try_resize_mem_bar(struct pci_dev *pdev, int target_bar_num)
 		}
 		pci_assign_unassigned_bus_resources(pdev->bus);
 	} else {
-		dev_info(&pdev->dev, "PCI resize not supported on this platform\n");
+		dev_info(&pdev->dev,
+			 "PCI resize not supported on this platform\n");
 	}
 
 re_enable:
@@ -1499,7 +1422,6 @@ re_enable:
 	}
 
 	return dev_err;
-
 }
 #endif
 
@@ -1509,18 +1431,18 @@ static int odin_dev_init(struct tc_device *tc, struct pci_dev *pdev,
 	int err;
 	u32 val;
 
-#if defined(SUPPORT_BAR_RESIZE) && (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
+#if defined(SUPPORT_BAR_RESIZE) && \
+	(LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0))
 	err = try_resize_mem_bar(pdev, ODN_DDR_BAR);
 	if (err) {
-		dev_err(&pdev->dev,
-			"Failed to resize BAR %d", ODN_DDR_BAR);
+		dev_err(&pdev->dev, "Failed to resize BAR %d", ODN_DDR_BAR);
 		goto err_out;
 	}
 #endif
 
 	/* Reserve and map the tcf system registers */
-	err = setup_io_region(pdev, &tc->tcf,
-		ODN_SYS_BAR, ODN_SYS_REGS_OFFSET, ODN_SYS_REGS_SIZE);
+	err = setup_io_region(pdev, &tc->tcf, ODN_SYS_BAR, ODN_SYS_REGS_OFFSET,
+			      ODN_SYS_REGS_SIZE);
 	if (err)
 		goto err_out;
 
@@ -1537,8 +1459,7 @@ static int odin_dev_init(struct tc_device *tc, struct pci_dev *pdev,
 	if (tc->tc_mem.size < pdp_mem_size) {
 		dev_err(&pdev->dev,
 			"%s MEM region (bar %d) has size of %lu which is smaller than the requested PDP heap of %lu",
-			odin_tc_name(tc),
-			ODN_DDR_BAR,
+			odin_tc_name(tc), ODN_DDR_BAR,
 			(unsigned long)tc->tc_mem.size,
 			(unsigned long)pdp_mem_size);
 
@@ -1547,13 +1468,11 @@ static int odin_dev_init(struct tc_device *tc, struct pci_dev *pdev,
 	}
 
 #if defined(SUPPORT_FAKE_SECURE_ION_HEAP)
-	if (tc->tc_mem.size <
-	    (pdp_mem_size + secure_mem_size)) {
+	if (tc->tc_mem.size < (pdp_mem_size + secure_mem_size)) {
 		dev_err(&pdev->dev,
 			"Odin MEM region (bar %d) has size of %lu which is smaller than the requested PDP heap of %lu"
 			" plus the requested secure heap size %lu",
-			ODN_DDR_BAR,
-			(unsigned long)tc->tc_mem.size,
+			ODN_DDR_BAR, (unsigned long)tc->tc_mem.size,
 			(unsigned long)pdp_mem_size,
 			(unsigned long)secure_mem_size);
 		err = -EIO;
@@ -1571,31 +1490,29 @@ static int odin_dev_init(struct tc_device *tc, struct pci_dev *pdev,
 	/* We know ext_heap_mem_size won't underflow as we've compared
 	 * tc_mem.size against the pdp_mem_size value earlier
 	 */
-	tc->ext_heap_mem_size =
-		tc->tc_mem.size - tc->pdp_heap_mem_size;
+	tc->ext_heap_mem_size = tc->tc_mem.size - tc->pdp_heap_mem_size;
 
 #if defined(SUPPORT_FAKE_SECURE_ION_HEAP)
 	tc->ext_heap_mem_size -= secure_mem_size;
 #endif
 
 	if (tc->ext_heap_mem_size < TC_EXT_MINIMUM_MEM_SIZE) {
-		dev_warn(&pdev->dev,
-			 "%s MEM region (bar 4) has size of %lu, with %lu pdp_mem_size only %lu bytes are left for "
-			 "ext device, which looks too small",
-			 odin_tc_name(tc),
-			 (unsigned long)tc->tc_mem.size,
-			 (unsigned long)pdp_mem_size,
-			 (unsigned long)tc->ext_heap_mem_size);
+		dev_warn(
+			&pdev->dev,
+			"%s MEM region (bar 4) has size of %lu, with %lu pdp_mem_size only %lu bytes are left for "
+			"ext device, which looks too small",
+			odin_tc_name(tc), (unsigned long)tc->tc_mem.size,
+			(unsigned long)pdp_mem_size,
+			(unsigned long)tc->ext_heap_mem_size);
 		/* Continue as this is only a 'helpful warning' not a hard
 		 * requirement
 		 */
 	}
 	tc->ext_heap_mem_base = tc->tc_mem.base;
-	tc->pdp_heap_mem_base =
-		tc->tc_mem.base + tc->ext_heap_mem_size;
+	tc->pdp_heap_mem_base = tc->tc_mem.base + tc->ext_heap_mem_size;
 #if defined(SUPPORT_FAKE_SECURE_ION_HEAP)
-	tc->secure_heap_mem_base = tc->pdp_heap_mem_base +
-		tc->pdp_heap_mem_size;
+	tc->secure_heap_mem_base =
+		tc->pdp_heap_mem_base + tc->pdp_heap_mem_size;
 	tc->secure_heap_mem_size = secure_mem_size;
 #endif
 
@@ -1615,22 +1532,18 @@ static int odin_dev_init(struct tc_device *tc, struct pci_dev *pdev,
 
 	/* CDMA initialisation */
 	val = ioread32(tc->tcf.registers + ODN_CORE_SUPPORTED_FEATURES);
-	tc->dma_nchan = REG_FIELD_GET(val,
-				       ODN_SUPPORTED_FEATURES_2X_CDMA_AND_IRQS);
+	tc->dma_nchan =
+		REG_FIELD_GET(val, ODN_SUPPORTED_FEATURES_2X_CDMA_AND_IRQS);
 	tc->dma_nchan++;
 	dev_info(&tc->pdev->dev, "Odin RTL has %u DMA(s)\n", tc->dma_nchan);
 	mutex_init(&tc->dma_mutex);
 
 	if (tc->odin) {
-		val = ioread32(tc->tcf.registers +
-		       ODN_CORE_REL);
-		dev_info(&pdev->dev, "%s = 0x%08x\n",
-			"ODN_CORE_REL", val);
+		val = ioread32(tc->tcf.registers + ODN_CORE_REL);
+		dev_info(&pdev->dev, "%s = 0x%08x\n", "ODN_CORE_REL", val);
 	} else {
-		val = ioread32(tc->tcf.registers +
-		       SRS_CORE_REVISION);
-		dev_info(&pdev->dev, "%s = 0x%08x\n",
-			"SRS_CORE_REVISION", val);
+		val = ioread32(tc->tcf.registers + SRS_CORE_REVISION);
+		dev_info(&pdev->dev, "%s = 0x%08x\n", "SRS_CORE_REVISION", val);
 	}
 
 	val = ioread32(tc->tcf.registers +
@@ -1638,10 +1551,9 @@ static int odin_dev_init(struct tc_device *tc, struct pci_dev *pdev,
 	dev_info(&pdev->dev, "%s = 0x%08x\n",
 		 common_reg_name(tc, CORE_CHANGE_SET), val);
 
-	val = ioread32(tc->tcf.registers +
-		       common_reg_offset(tc, CORE_USER_ID));
-	dev_info(&pdev->dev, "%s = 0x%08x\n",
-		 common_reg_name(tc, CORE_USER_ID), val);
+	val = ioread32(tc->tcf.registers + common_reg_offset(tc, CORE_USER_ID));
+	dev_info(&pdev->dev, "%s = 0x%08x\n", common_reg_name(tc, CORE_USER_ID),
+		 val);
 
 	val = ioread32(tc->tcf.registers +
 		       common_reg_offset(tc, CORE_USER_BUILD));
@@ -1652,12 +1564,12 @@ err_out:
 	return err;
 
 err_odin_unmap_sys_registers:
-	dev_info(&pdev->dev,
-		 "%s: failed - unmapping the io regions.\n", __func__);
+	dev_info(&pdev->dev, "%s: failed - unmapping the io regions.\n",
+		 __func__);
 
 	iounmap(tc->tcf.registers);
-	release_pci_io_addr(pdev, ODN_SYS_BAR,
-			 tc->tcf.region.base, tc->tcf.region.size);
+	release_pci_io_addr(pdev, ODN_SYS_BAR, tc->tcf.region.base,
+			    tc->tcf.region.size);
 	goto err_out;
 }
 
@@ -1673,17 +1585,16 @@ static void odin_dev_cleanup(struct tc_device *tc)
 
 	iounmap(tc->tcf.registers);
 
-	release_pci_io_addr(tc->pdev,
-			ODN_SYS_BAR,
-			tc->tcf.region.base,
-			tc->tcf.region.size);
+	release_pci_io_addr(tc->pdev, ODN_SYS_BAR, tc->tcf.region.base,
+			    tc->tcf.region.size);
 }
 
 static u32 odin_interrupt_id_to_flag(int interrupt_id)
 {
-	if ((interrupt_id >= TC_INTERRUPT_OSID0) && (interrupt_id <= TC_INTERRUPT_OSID31))
-	{
-		return ODN_INTERRUPT_ENABLE_OSID(interrupt_id - TC_INTERRUPT_OSID0);
+	if ((interrupt_id >= TC_INTERRUPT_OSID0) &&
+	    (interrupt_id <= TC_INTERRUPT_OSID31)) {
+		return ODN_INTERRUPT_ENABLE_OSID(interrupt_id -
+						 TC_INTERRUPT_OSID0);
 	}
 
 	switch (interrupt_id) {
@@ -1702,11 +1613,10 @@ static u32 odin_interrupt_id_to_flag(int interrupt_id)
 	}
 }
 
-int odin_init(struct tc_device *tc, struct pci_dev *pdev,
-	      int *core_clock, int *mem_clock, int *clock_multiplex,
-	      int pdp_mem_size, int secure_mem_size,
-	      int mem_latency, int mem_wresp_latency, int mem_mode,
-	      bool fbc_bypass)
+int odin_init(struct tc_device *tc, struct pci_dev *pdev, int *core_clock,
+	      int *mem_clock, int *clock_multiplex, int pdp_mem_size,
+	      int secure_mem_size, int mem_latency, int mem_wresp_latency,
+	      int mem_mode, bool fbc_bypass)
 {
 	int err = 0;
 
@@ -1726,8 +1636,7 @@ int odin_init(struct tc_device *tc, struct pci_dev *pdev,
 
 	err = odin_enable_irq(tc);
 	if (err) {
-		dev_err(&pdev->dev,
-			"Failed to initialise IRQ\n");
+		dev_err(&pdev->dev, "Failed to initialise IRQ\n");
 		goto err_dev_cleanup;
 	}
 
@@ -1760,29 +1669,28 @@ int odin_register_pdp_device(struct tc_device *tc)
 	resource_size_t reg_start = pci_resource_start(tc->pdev, ODN_SYS_BAR);
 	struct resource pdp_resources_odin[] = {
 		DEFINE_RES_MEM_NAMED(reg_start +
-				ODN_PDP_REGS_OFFSET, /* start */
-				ODN_PDP_REGS_SIZE, /* size */
-				"pdp-regs"),
+					     ODN_PDP_REGS_OFFSET, /* start */
+				     ODN_PDP_REGS_SIZE, /* size */
+				     "pdp-regs"),
 		DEFINE_RES_MEM_NAMED(reg_start +
-				ODN_PDP2_REGS_OFFSET, /* start */
-				ODN_PDP2_REGS_SIZE, /* size */
-				"pdp2-regs"),
-		DEFINE_RES_MEM_NAMED(reg_start +
-				ODN_SYS_REGS_OFFSET +
+					     ODN_PDP2_REGS_OFFSET, /* start */
+				     ODN_PDP2_REGS_SIZE, /* size */
+				     "pdp2-regs"),
+		DEFINE_RES_MEM_NAMED(
+			reg_start + ODN_SYS_REGS_OFFSET +
 				common_reg_offset(tc, REG_BANK_ODN_CLK_BLK) +
 				ODN_PDP_P_CLK_OUT_DIVIDER_REG1, /* start */
-				ODN_PDP_P_CLK_IN_DIVIDER_REG -
+			ODN_PDP_P_CLK_IN_DIVIDER_REG -
 				ODN_PDP_P_CLK_OUT_DIVIDER_REG1 + 4, /* size */
-				"pll-regs"),
+			"pll-regs"),
 		DEFINE_RES_MEM_NAMED(reg_start +
-				ODN_PDP2_PFIM_OFFSET, /* start */
-				ODN_PDP2_PFIM_SIZE, /* size */
-				"pfim-regs"),
-		DEFINE_RES_MEM_NAMED(reg_start +
-				ODN_SYS_REGS_OFFSET +
-				ODN_REG_BANK_CORE, /* start */
-				ODN_CORE_MMCM_LOCK_STATUS + 4, /* size */
-				"odn-core"),
+					     ODN_PDP2_PFIM_OFFSET, /* start */
+				     ODN_PDP2_PFIM_SIZE, /* size */
+				     "pfim-regs"),
+		DEFINE_RES_MEM_NAMED(reg_start + ODN_SYS_REGS_OFFSET +
+					     ODN_REG_BANK_CORE, /* start */
+				     ODN_CORE_MMCM_LOCK_STATUS + 4, /* size */
+				     "odn-core"),
 	};
 
 	struct tc_pdp_platform_data pdata = {
@@ -1805,8 +1713,8 @@ int odin_register_pdp_device(struct tc_device *tc)
 	tc->pdp_dev = platform_device_register_full(&pdp_device_info);
 	if (IS_ERR(tc->pdp_dev)) {
 		err = PTR_ERR(tc->pdp_dev);
-		dev_err(&tc->pdev->dev,
-			"Failed to register PDP device (%d)\n", err);
+		dev_err(&tc->pdev->dev, "Failed to register PDP device (%d)\n",
+			err);
 		tc->pdp_dev = NULL;
 		goto err_out;
 	}
@@ -1821,19 +1729,23 @@ int odin_register_ext_device(struct tc_device *tc)
 	int err = 0;
 	int osid;
 
-	unsigned long EXTHeapSize  = tc->ext_heap_mem_size/RGX_NUM_DRIVERS_SUPPORTED;
-	unsigned long PDPHeapSize  = tc->pdp_heap_mem_size/RGX_NUM_DRIVERS_SUPPORTED;
+	unsigned long EXTHeapSize =
+		tc->ext_heap_mem_size / RGX_NUM_DRIVERS_SUPPORTED;
+	unsigned long PDPHeapSize =
+		tc->pdp_heap_mem_size / RGX_NUM_DRIVERS_SUPPORTED;
 
-	for (osid=0; osid < RGX_NUM_DRIVERS_SUPPORTED; osid++)
-	{
-		unsigned long EXTHeapBase = tc->tc_mem.base + osid*EXTHeapSize;
-		unsigned long PDPHeapBase = tc->pdp_heap_mem_base + osid*PDPHeapSize;
+	for (osid = 0; osid < RGX_NUM_DRIVERS_SUPPORTED; osid++) {
+		unsigned long EXTHeapBase =
+			tc->tc_mem.base + osid * EXTHeapSize;
+		unsigned long PDPHeapBase =
+			tc->pdp_heap_mem_base + osid * PDPHeapSize;
 
 		struct resource odin_rogue_resources[] = {
-			DEFINE_RES_MEM_NAMED(pci_resource_start(tc->pdev, ODN_DUT_SOCIF_BAR) +
-								 osid*ODN_DUT_SOCIF_SIZE,
-								 ODN_DUT_SOCIF_SIZE,
-								 "rogue-regs"),
+			DEFINE_RES_MEM_NAMED(
+				pci_resource_start(tc->pdev,
+						   ODN_DUT_SOCIF_BAR) +
+					osid * ODN_DUT_SOCIF_SIZE,
+				ODN_DUT_SOCIF_SIZE, "rogue-regs"),
 		};
 
 		struct tc_rogue_platform_data pdata = {
@@ -1867,13 +1779,14 @@ int odin_register_ext_device(struct tc_device *tc)
 		else if (tc->orion)
 			pdata.baseboard = TC_BASEBOARD_ORION;
 
-		tc->ext_dev[osid]
-			= platform_device_register_full(&odin_rogue_dev_info);
+		tc->ext_dev[osid] =
+			platform_device_register_full(&odin_rogue_dev_info);
 
 		if (IS_ERR(tc->ext_dev[osid])) {
 			err = PTR_ERR(tc->ext_dev[osid]);
 			dev_err(&tc->pdev->dev,
-				"Failed to register rogue device[%u] (%d)\n", osid, err);
+				"Failed to register rogue device[%u] (%d)\n",
+				osid, err);
 			tc->ext_dev[osid] = NULL;
 		}
 	}
@@ -1890,13 +1803,11 @@ int odin_register_dma_device(struct tc_device *tc)
 
 	struct resource odin_cdma_resources[] = {
 		DEFINE_RES_MEM_NAMED(reg_start +
-				     ODIN_DMA_REGS_OFFSET,     /* start */
-				     ODIN_DMA_REGS_SIZE,       /* size */
+					     ODIN_DMA_REGS_OFFSET, /* start */
+				     ODIN_DMA_REGS_SIZE, /* size */
 				     "cdma-regs"),
-		DEFINE_RES_IRQ_NAMED(TC_INTERRUPT_CDMA,
-				     "cdma-irq"),
-		DEFINE_RES_IRQ_NAMED(TC_INTERRUPT_CDMA2,
-				     "cdma-irq2"),
+		DEFINE_RES_IRQ_NAMED(TC_INTERRUPT_CDMA, "cdma-irq"),
+		DEFINE_RES_IRQ_NAMED(TC_INTERRUPT_CDMA2, "cdma-irq2"),
 	};
 
 	struct tc_dma_platform_data pdata = {
@@ -1917,54 +1828,50 @@ int odin_register_dma_device(struct tc_device *tc)
 		.size_data = sizeof(pdata),
 	};
 
-	tc->dma_dev
-		= platform_device_register_full(&odin_cdma_dev_info);
+	tc->dma_dev = platform_device_register_full(&odin_cdma_dev_info);
 
 	if (IS_ERR(tc->dma_dev)) {
 		err = PTR_ERR(tc->dma_dev);
-		dev_err(&tc->pdev->dev,
-			"Failed to register CDMA device (%d)\n", err);
+		dev_err(&tc->pdev->dev, "Failed to register CDMA device (%d)\n",
+			err);
 		tc->dma_dev = NULL;
 	}
 
 	return err;
 }
 
-void odin_enable_interrupt_register(struct tc_device *tc,
-				    int interrupt_id)
+void odin_enable_interrupt_register(struct tc_device *tc, int interrupt_id)
 {
 	u32 val;
 	u32 flag;
 
-	if ((interrupt_id >= TC_INTERRUPT_OSID0) && (interrupt_id <= TC_INTERRUPT_OSID31))
-	{
+	if ((interrupt_id >= TC_INTERRUPT_OSID0) &&
+	    (interrupt_id <= TC_INTERRUPT_OSID31)) {
 		u32 osid = interrupt_id - TC_INTERRUPT_OSID0;
 
-		dev_info(&tc->pdev->dev,
-			"Enabling Odin OSID%u interrupts\n", osid);
-	}
-	else
-	{
+		dev_info(&tc->pdev->dev, "Enabling Odin OSID%u interrupts\n",
+			 osid);
+	} else {
 		switch (interrupt_id) {
 		case TC_INTERRUPT_PDP:
 			dev_info(&tc->pdev->dev,
-				"Enabling Odin PDP interrupts\n");
+				 "Enabling Odin PDP interrupts\n");
 			break;
 		case TC_INTERRUPT_EXT:
 			dev_info(&tc->pdev->dev,
-				"Enabling Odin DUT interrupts\n");
+				 "Enabling Odin DUT interrupts\n");
 			break;
 		case TC_INTERRUPT_PDP2:
 			dev_info(&tc->pdev->dev,
-				"Enabling Odin PDP2 interrupts\n");
+				 "Enabling Odin PDP2 interrupts\n");
 			break;
 		case TC_INTERRUPT_CDMA:
 			dev_info(&tc->pdev->dev,
-				"Enabling Odin CDMA interrupts\n");
+				 "Enabling Odin CDMA interrupts\n");
 			break;
 		case TC_INTERRUPT_CDMA2:
 			dev_info(&tc->pdev->dev,
-				"Enabling Odin CDMA2 interrupts\n");
+				 "Enabling Odin CDMA2 interrupts\n");
 			break;
 		default:
 			dev_err(&tc->pdev->dev,
@@ -1978,43 +1885,40 @@ void odin_enable_interrupt_register(struct tc_device *tc,
 	flag = odin_interrupt_id_to_flag(interrupt_id);
 	val |= flag;
 	iowrite32(val, tc->tcf.registers +
-		  common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
+			       common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
 }
 
-void odin_disable_interrupt_register(struct tc_device *tc,
-				     int interrupt_id)
+void odin_disable_interrupt_register(struct tc_device *tc, int interrupt_id)
 {
 	u32 val;
 
-	if ((interrupt_id >= TC_INTERRUPT_OSID0) && (interrupt_id <= TC_INTERRUPT_OSID31))
-	{
+	if ((interrupt_id >= TC_INTERRUPT_OSID0) &&
+	    (interrupt_id <= TC_INTERRUPT_OSID31)) {
 		u32 osid = interrupt_id - TC_INTERRUPT_OSID0;
 
-		dev_info(&tc->pdev->dev,
-			"Disabling Odin OSID%u interrupts\n", osid);
-	}
-	else
-	{
+		dev_info(&tc->pdev->dev, "Disabling Odin OSID%u interrupts\n",
+			 osid);
+	} else {
 		switch (interrupt_id) {
 		case TC_INTERRUPT_PDP:
 			dev_info(&tc->pdev->dev,
-				"Disabling Odin PDP interrupts\n");
+				 "Disabling Odin PDP interrupts\n");
 			break;
 		case TC_INTERRUPT_EXT:
 			dev_info(&tc->pdev->dev,
-				"Disabling Odin DUT interrupts\n");
+				 "Disabling Odin DUT interrupts\n");
 			break;
 		case TC_INTERRUPT_PDP2:
 			dev_info(&tc->pdev->dev,
-				"Disabling Odin PDP2 interrupts\n");
+				 "Disabling Odin PDP2 interrupts\n");
 			break;
 		case TC_INTERRUPT_CDMA:
 			dev_info(&tc->pdev->dev,
-				"Disabling Odin CDMA interrupts\n");
+				 "Disabling Odin CDMA interrupts\n");
 			break;
 		case TC_INTERRUPT_CDMA2:
 			dev_info(&tc->pdev->dev,
-				"Disabling Odin CDMA2 interrupts\n");
+				 "Disabling Odin CDMA2 interrupts\n");
 			break;
 
 		default:
@@ -2027,7 +1931,7 @@ void odin_disable_interrupt_register(struct tc_device *tc,
 		       common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
 	val &= ~(odin_interrupt_id_to_flag(interrupt_id));
 	iowrite32(val, tc->tcf.registers +
-		  common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
+			       common_reg_offset(tc, CORE_INTERRUPT_ENABLE));
 }
 
 irqreturn_t odin_irq_handler(int irq, void *data)
@@ -2042,12 +1946,11 @@ irqreturn_t odin_irq_handler(int irq, void *data)
 
 #if defined(TC_FAKE_INTERRUPTS)
 	/* If we're faking interrupts pretend we got both ext and PDP ints */
-	interrupt_status = ODN_INTERRUPT_STATUS_DUT
-		| ODN_INTERRUPT_STATUS_PDP1;
+	interrupt_status = ODN_INTERRUPT_STATUS_DUT | ODN_INTERRUPT_STATUS_PDP1;
 #else
-	interrupt_status = ioread32(tc->tcf.registers +
-				    common_reg_offset(tc,
-						      CORE_INTERRUPT_STATUS));
+	interrupt_status =
+		ioread32(tc->tcf.registers +
+			 common_reg_offset(tc, CORE_INTERRUPT_STATUS));
 #endif
 
 	if (interrupt_status & ODN_INTERRUPT_STATUS_DUT) {
@@ -2104,14 +2007,16 @@ irqreturn_t odin_irq_handler(int irq, void *data)
 	if (interrupt_status & ODN_INTERRUPT_STATUS_OS_IRQ_MASK) {
 		unsigned osid;
 
-		for (osid=0; osid < RGX_NUM_DRIVERS_SUPPORTED; osid++)
-		{
+		for (osid = 0; osid < RGX_NUM_DRIVERS_SUPPORTED; osid++) {
 			struct tc_interrupt_handler *ext_int =
-				&tc->interrupt_handlers[TC_INTERRUPT_OSID0 + osid];
+				&tc->interrupt_handlers[TC_INTERRUPT_OSID0 +
+							osid];
 
 			if (ext_int->enabled && ext_int->handler_function) {
-				ext_int->handler_function(ext_int->handler_data);
-				interrupt_clear |= ODN_INTERRUPT_CLEAR_OSID(osid);
+				ext_int->handler_function(
+					ext_int->handler_data);
+				interrupt_clear |=
+					ODN_INTERRUPT_CLEAR_OSID(osid);
 			}
 		}
 		ret = IRQ_HANDLED;
@@ -2120,7 +2025,7 @@ irqreturn_t odin_irq_handler(int irq, void *data)
 	if (interrupt_clear)
 		iowrite32(interrupt_clear,
 			  tc->tcf.registers +
-			  common_reg_offset(tc, CORE_INTERRUPT_CLR));
+				  common_reg_offset(tc, CORE_INTERRUPT_CLR));
 
 	/*
 	 * Orion PDP interrupts are occasionally masked because, for unknown
@@ -2135,13 +2040,17 @@ irqreturn_t odin_irq_handler(int irq, void *data)
 	 */
 
 	if (tc->orion) {
-		if (REG_FIELD_GET(ioread32(tc->tcf.registers +
-					   SRS_CORE_INTERRUPT_TIMEOUT_CLR),
-				  SRS_INTERRUPT_TIMEOUT_CLR_INTERRUPT_MST_TIMEOUT)) {
-			dev_warn(&tc->pdev->dev,
-				 "Orion PDP interrupts were masked, clearing now\n");
-			iowrite32(SRS_INTERRUPT_TIMEOUT_CLR_INTERRUPT_MST_TIMEOUT_CLR_MASK,
-				  tc->tcf.registers + SRS_CORE_INTERRUPT_TIMEOUT_CLR);
+		if (REG_FIELD_GET(
+			    ioread32(tc->tcf.registers +
+				     SRS_CORE_INTERRUPT_TIMEOUT_CLR),
+			    SRS_INTERRUPT_TIMEOUT_CLR_INTERRUPT_MST_TIMEOUT)) {
+			dev_warn(
+				&tc->pdev->dev,
+				"Orion PDP interrupts were masked, clearing now\n");
+			iowrite32(
+				SRS_INTERRUPT_TIMEOUT_CLR_INTERRUPT_MST_TIMEOUT_CLR_MASK,
+				tc->tcf.registers +
+					SRS_CORE_INTERRUPT_TIMEOUT_CLR);
 		}
 	}
 
@@ -2157,13 +2066,13 @@ int odin_sys_info(struct tc_device *tc, u32 *tmp, u32 *pll)
 	return 0;
 }
 
-int odin_sys_strings(struct tc_device *tc,
-		     char *str_fpga_rev, size_t size_fpga_rev,
-		     char *str_tcf_core_rev, size_t size_tcf_core_rev,
+int odin_sys_strings(struct tc_device *tc, char *str_fpga_rev,
+		     size_t size_fpga_rev, char *str_tcf_core_rev,
+		     size_t size_tcf_core_rev,
 		     char *str_tcf_core_target_build_id,
-		     size_t size_tcf_core_target_build_id,
-		     char *str_pci_ver, size_t size_pci_ver,
-		     char *str_macro_ver, size_t size_macro_ver)
+		     size_t size_tcf_core_target_build_id, char *str_pci_ver,
+		     size_t size_pci_ver, char *str_macro_ver,
+		     size_t size_macro_ver)
 {
 	u32 tcver = tc_odin_subvers(&tc->pdev->dev);
 	char temp_str[12];
@@ -2171,32 +2080,26 @@ int odin_sys_strings(struct tc_device *tc,
 
 	if (tc->odin) {
 		/* Read the Odin major and minor revision ID register Rx-xx */
-		val = ioread32(tc->tcf.registers +
-				   ODN_CORE_REL);
+		val = ioread32(tc->tcf.registers + ODN_CORE_REL);
 
-		snprintf(str_tcf_core_rev,
-			 size_tcf_core_rev,
-			 "%d.%d",
-			 HEX2DEC((val & ODN_REL_MAJOR_MASK)
-				 >> ODN_REL_MAJOR_SHIFT),
-			 HEX2DEC((val & ODN_REL_MINOR_MASK)
-				 >> ODN_REL_MINOR_SHIFT));
+		snprintf(str_tcf_core_rev, size_tcf_core_rev, "%d.%d",
+			 HEX2DEC((val & ODN_REL_MAJOR_MASK) >>
+				 ODN_REL_MAJOR_SHIFT),
+			 HEX2DEC((val & ODN_REL_MINOR_MASK) >>
+				 ODN_REL_MINOR_SHIFT));
 	} else {
 		/* Read the Orion major and minor revision ID register Rx-xx */
-		val = ioread32(tc->tcf.registers +
-				   SRS_CORE_REVISION);
+		val = ioread32(tc->tcf.registers + SRS_CORE_REVISION);
 
-		snprintf(str_tcf_core_rev,
-			 size_tcf_core_rev,
-			 "%d.%d",
-			 HEX2DEC((val & SRS_REVISION_MAJOR_MASK)
-				 >> SRS_REVISION_MAJOR_SHIFT),
-			 HEX2DEC((val & SRS_REVISION_MINOR_MASK)
-				 >> SRS_REVISION_MINOR_SHIFT));
+		snprintf(str_tcf_core_rev, size_tcf_core_rev, "%d.%d",
+			 HEX2DEC((val & SRS_REVISION_MAJOR_MASK) >>
+				 SRS_REVISION_MAJOR_SHIFT),
+			 HEX2DEC((val & SRS_REVISION_MINOR_MASK) >>
+				 SRS_REVISION_MINOR_SHIFT));
 	}
 
-	dev_info(&tc->pdev->dev, "%s core revision %s\n",
-		 odin_tc_name(tc), str_tcf_core_rev);
+	dev_info(&tc->pdev->dev, "%s core revision %s\n", odin_tc_name(tc),
+		 str_tcf_core_rev);
 
 	/* Read the Odin register containing the Perforce changelist
 	 * value that the FPGA build was generated from
@@ -2204,22 +2107,19 @@ int odin_sys_strings(struct tc_device *tc,
 	val = ioread32(tc->tcf.registers +
 		       common_reg_offset(tc, CORE_CHANGE_SET));
 
-	snprintf(str_tcf_core_target_build_id,
-		 size_tcf_core_target_build_id,
+	snprintf(str_tcf_core_target_build_id, size_tcf_core_target_build_id,
 		 "%d",
-		 (val & CHANGE_SET_SET_MASK[tcver])
-		 >> CHANGE_SET_SET_SHIFT[tcver]);
+		 (val & CHANGE_SET_SET_MASK[tcver]) >>
+			 CHANGE_SET_SET_SHIFT[tcver]);
 
 	/* Read the Odin User_ID register containing the User ID for
 	 * identification of a modified build
 	 */
 	val = ioread32(tc->tcf.registers + common_reg_offset(tc, CORE_USER_ID));
 
-	snprintf(temp_str,
-		 sizeof(temp_str),
-		 "%d",
-		 HEX2DEC((val & USER_ID_ID_MASK[tcver])
-			 >> USER_ID_ID_SHIFT[tcver]));
+	snprintf(temp_str, sizeof(temp_str), "%d",
+		 HEX2DEC((val & USER_ID_ID_MASK[tcver]) >>
+			 USER_ID_ID_SHIFT[tcver]));
 
 	/* Read the Odin User_Build register containing the User build
 	 * number for identification of modified builds
@@ -2227,11 +2127,9 @@ int odin_sys_strings(struct tc_device *tc,
 	val = ioread32(tc->tcf.registers +
 		       common_reg_offset(tc, CORE_USER_BUILD));
 
-	snprintf(temp_str,
-		 sizeof(temp_str),
-		 "%d",
-		 HEX2DEC((val & USER_BUILD_BUILD_MASK[tcver])
-			 >> USER_BUILD_BUILD_SHIFT[tcver]));
+	snprintf(temp_str, sizeof(temp_str), "%d",
+		 HEX2DEC((val & USER_BUILD_BUILD_MASK[tcver]) >>
+			 USER_BUILD_BUILD_SHIFT[tcver]));
 
 	return 0;
 }
@@ -2250,13 +2148,10 @@ bool odin_pfim_compatible(struct tc_device *tc)
 {
 	u32 val;
 
-	val = ioread32(tc->tcf.registers +
-		       ODN_CORE_REL);
+	val = ioread32(tc->tcf.registers + ODN_CORE_REL);
 
-	return ((REG_FIELD_GET(val, ODN_REL_MAJOR)
-		 >= ODIN_PFIM_RELNUM));
+	return ((REG_FIELD_GET(val, ODN_REL_MAJOR) >= ODIN_PFIM_RELNUM));
 }
-
 
 struct dma_chan *odin_cdma_chan(struct tc_device *tc, char *name)
 {
@@ -2305,8 +2200,7 @@ struct dma_chan *odin_cdma_chan(struct tc_device *tc, char *name)
 	return tc->dma_chans[chan_idx];
 }
 
-void odin_cdma_chan_free(struct tc_device *tc,
-			 void *chan_priv)
+void odin_cdma_chan_free(struct tc_device *tc, void *chan_priv)
 {
 	struct dma_chan *dma_chan = (struct dma_chan *)chan_priv;
 	u32 chan_idx;

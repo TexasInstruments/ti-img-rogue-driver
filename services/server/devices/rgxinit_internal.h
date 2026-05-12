@@ -51,12 +51,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "rgxdevice.h"
 
 /* Services internal heap identification */
-#define RGX_FIRMWARE_CODE_HEAP_IDENT        "FwCode"       /*!< RGX Firmware Code Heap identifier */
-#define RGX_FIRMWARE_PRIV_DATA_HEAP_IDENT   "FwPrivData"   /*!< RGX Firmware Private Data Heap identifier */
-#define RGX_FIRMWARE_PRIV_RODATA_HEAP_IDENT "FwPrivRoData" /*!< RGX Firmware Private RoData Heap identifier */
-#define RGX_FIRMWARE_MAIN_HEAP_IDENT        "FwMain"       /*!< RGX Main Firmware Heap identifier */
-#define RGX_FIRMWARE_CONFIG_HEAP_IDENT      "FwConfig"     /*!< RGX Config firmware Heap identifier */
-#define RGX_FIRMWARE_CUSTOM_HEAP_IDENT      "FwCustom"     /*!< RGX Firmware Custom Heap identifier */
+#define RGX_FIRMWARE_CODE_HEAP_IDENT \
+	"FwCode" /*!< RGX Firmware Code Heap identifier */
+#define RGX_FIRMWARE_PRIV_DATA_HEAP_IDENT \
+	"FwPrivData" /*!< RGX Firmware Private Data Heap identifier */
+#define RGX_FIRMWARE_PRIV_RODATA_HEAP_IDENT \
+	"FwPrivRoData" /*!< RGX Firmware Private RoData Heap identifier */
+#define RGX_FIRMWARE_MAIN_HEAP_IDENT \
+	"FwMain" /*!< RGX Main Firmware Heap identifier */
+#define RGX_FIRMWARE_CONFIG_HEAP_IDENT \
+	"FwConfig" /*!< RGX Config firmware Heap identifier */
+#define RGX_FIRMWARE_CUSTOM_HEAP_IDENT \
+	"FwCustom" /*!< RGX Firmware Custom Heap identifier */
 
 /*************************************************************************/ /*!
 @Function       RGXDeviceInitCallbacks
@@ -79,17 +85,16 @@ void RGXDeviceInitCallbacks(PVRSRV_DEVICE_NODE *psDeviceNode);
  */ /*************************************************************************/
 IMG_BOOL SampleIRQCount(PVRSRV_RGXDEV_INFO *psDevInfo);
 
-IMG_BOOL RGXAckHwIrq(PVRSRV_RGXDEV_INFO *psDevInfo,
-                     IMG_UINT32 ui32IRQStatusReg,
-                     IMG_UINT32 ui32IRQStatusEventMask,
-                     IMG_UINT32 ui32IRQClearReg,
-                     IMG_UINT32 ui32IRQClearMask);
+IMG_BOOL RGXAckHwIrq(PVRSRV_RGXDEV_INFO *psDevInfo, IMG_UINT32 ui32IRQStatusReg,
+		     IMG_UINT32 ui32IRQStatusEventMask,
+		     IMG_UINT32 ui32IRQClearReg, IMG_UINT32 ui32IRQClearMask);
 
 IMG_BOOL RGXAckIrqDedicated(PVRSRV_RGXDEV_INFO *psDevInfo);
 #endif
 
 #if !defined(SUPPORT_TRUSTED_DEVICE)
-#if defined(RGX_FEATURE_AXI_ACE_BIT_MASK) || defined(RGX_FEATURE_AXI_ACELITE_BIT_MASK)
+#if defined(RGX_FEATURE_AXI_ACE_BIT_MASK) || \
+	defined(RGX_FEATURE_AXI_ACELITE_BIT_MASK)
 
 /*!
 ************************************************************************************
@@ -103,7 +108,7 @@ IMG_BOOL RGXAckIrqDedicated(PVRSRV_RGXDEV_INFO *psDevInfo);
  @Return        PVRSRV_ERROR
 ************************************************************************************/
 PVRSRV_ERROR RGXGetCoreSnoopMode(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
-                                 PVRSRV_DEVICE_SNOOP_MODE *peCacheSnoopingMode);
+				 PVRSRV_DEVICE_SNOOP_MODE *peCacheSnoopingMode);
 
 /*************************************************************************/ /*!
 @Function       RGXInitialiseCacheSnooping

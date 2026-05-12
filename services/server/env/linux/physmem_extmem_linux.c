@@ -60,8 +60,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "kernel_compatibility.h"
 
-typedef struct _WRAP_KERNEL_MAP_DATA_
-{
+typedef struct _WRAP_KERNEL_MAP_DATA_ {
 	void *pvKernLinAddr;
 	IMG_BOOL bVMAP;
 } WRAP_KERNEL_MAP_DATA;
@@ -74,27 +73,24 @@ static void _FreeWrapData(PMR_WRAP_DATA *psPrivData)
 	OSFreeMem(psPrivData);
 }
 
-
 /* Allocate the PMR private data */
 static PVRSRV_ERROR _AllocWrapData(PMR_WRAP_DATA **ppsPrivData,
-                                   PVRSRV_DEVICE_NODE *psDevNode,
-                                   IMG_DEVMEM_SIZE_T uiSize,
-                                   PVRSRV_MEMALLOCFLAGS_T uiFlags)
+				   PVRSRV_DEVICE_NODE *psDevNode,
+				   IMG_DEVMEM_SIZE_T uiSize,
+				   PVRSRV_MEMALLOCFLAGS_T uiFlags)
 {
 	PVRSRV_ERROR eError;
 	PMR_WRAP_DATA *psPrivData;
 	IMG_UINT32 ui32CPUCacheMode;
 
 	eError = DevmemCPUCacheMode(uiFlags, &ui32CPUCacheMode);
-	if (eError != PVRSRV_OK)
-	{
+	if (eError != PVRSRV_OK) {
 		goto eReturn;
 	}
 
 	/* Allocate and initialise private factory data */
 	psPrivData = OSAllocZMem(sizeof(*psPrivData));
-	if (psPrivData == NULL)
-	{
+	if (psPrivData == NULL) {
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto eReturn;
 	}
@@ -105,25 +101,27 @@ static PVRSRV_ERROR _AllocWrapData(PMR_WRAP_DATA **ppsPrivData,
 	psPrivData->uiTotalNumPages = uiSize >> PAGE_SHIFT;
 
 	/* Allocate page and phys address arrays */
-	psPrivData->ppsPageArray = OSAllocZMem(sizeof(*(psPrivData->ppsPageArray)) * psPrivData->uiTotalNumPages);
-	if (psPrivData->ppsPageArray == NULL)
-	{
+	psPrivData->ppsPageArray =
+		OSAllocZMem(sizeof(*(psPrivData->ppsPageArray)) *
+			    psPrivData->uiTotalNumPages);
+	if (psPrivData->ppsPageArray == NULL) {
 		OSFreeMem(psPrivData);
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto eReturn;
 	}
 
-	psPrivData->ppvPhysAddr = OSAllocZMem(sizeof(*(psPrivData->ppvPhysAddr)) * psPrivData->uiTotalNumPages);
-	if (psPrivData->ppvPhysAddr == NULL)
-	{
+	psPrivData->ppvPhysAddr =
+		OSAllocZMem(sizeof(*(psPrivData->ppvPhysAddr)) *
+			    psPrivData->uiTotalNumPages);
+	if (psPrivData->ppvPhysAddr == NULL) {
 		OSFreeMem(psPrivData->ppsPageArray);
 		OSFreeMem(psPrivData);
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto eReturn;
 	}
 
-	if (uiFlags & (PVRSRV_MEMALLOCFLAG_CPU_WRITEABLE | PVRSRV_MEMALLOCFLAG_GPU_WRITEABLE))
-	{
+	if (uiFlags & (PVRSRV_MEMALLOCFLAG_CPU_WRITEABLE |
+		       PVRSRV_MEMALLOCFLAG_GPU_WRITEABLE)) {
 		psPrivData->bWrite = IMG_TRUE;
 	}
 
@@ -143,21 +141,19 @@ eReturn:
 
 #if (LINUX_VERSION_CODE <= KERNEL_VERSION(5, 6, 0))
 
-#define _get_user_pages_fast(puiAddress, num_pages, bWrite, pages)  get_user_pages_fast( \
-    (unsigned long)puiAddress, \
-    (int)num_pages, \
-    (int) (bWrite ? FOLL_WRITE : 0) | PVR_FOLL_LONGTERM, \
-    pages)
+#define _get_user_pages_fast(puiAddress, num_pages, bWrite, pages) \
+	get_user_pages_fast(                                       \
+		(unsigned long)puiAddress, (int)num_pages,         \
+		(int)(bWrite ? FOLL_WRITE : 0) | PVR_FOLL_LONGTERM, pages)
 
 #define _unpin_user_page(p) put_page(p)
 
 #else
 
-#define _get_user_pages_fast(puiAddress, num_pages, bWrite, pages) pin_user_pages_fast( \
-    (unsigned long)puiAddress, \
-    (int) num_pages, \
-    (int) (bWrite ? FOLL_WRITE : 0) | PVR_FOLL_LONGTERM, \
-    pages)
+#define _get_user_pages_fast(puiAddress, num_pages, bWrite, pages) \
+	pin_user_pages_fast(                                       \
+		(unsigned long)puiAddress, (int)num_pages,         \
+		(int)(bWrite ? FOLL_WRITE : 0) | PVR_FOLL_LONGTERM, pages)
 
 #define _unpin_user_page(p) unpin_user_page(p)
 
@@ -171,10 +167,8 @@ static void _FreeGetUserPages(PMR_WRAP_DATA *psPrivData)
 {
 	IMG_UINT32 i;
 
-	for (i = 0; i < psPrivData->uiTotalNumPages; i++)
-	{
-		if (IMG_TRUE == psPrivData->bWrite)
-		{
+	for (i = 0; i < psPrivData->uiTotalNumPages; i++) {
+		if (IMG_TRUE == psPrivData->bWrite) {
 			/* Write data back to fs if necessary */
 			set_page_dirty_lock(psPrivData->ppsPageArray[i]);
 		}
@@ -193,42 +187,43 @@ static void _FreeGetUserPages(PMR_WRAP_DATA *psPrivData)
 /* Get the page structures and physical addresses mapped to
  * a CPU virtual range via get_user_pages() */
 static PVRSRV_ERROR _TryGetUserPages(PVRSRV_DEVICE_NODE *psDevNode,
-                                IMG_DEVMEM_SIZE_T uiSize,
-                                IMG_CPU_VIRTADDR pvCpuVAddr,
-                                PMR_WRAP_DATA *psPrivData)
+				     IMG_DEVMEM_SIZE_T uiSize,
+				     IMG_CPU_VIRTADDR pvCpuVAddr,
+				     PMR_WRAP_DATA *psPrivData)
 {
 	IMG_INT32 i, iMappedPages;
-	IMG_INT32  iRequestedPages = uiSize >> PAGE_SHIFT;
+	IMG_INT32 iRequestedPages = uiSize >> PAGE_SHIFT;
 	PVRSRV_ERROR eError;
 
-	IMG_UINT64 ui64DmaMask = dma_get_mask(psDevNode->psDevConfig->pvOSDevice);
+	IMG_UINT64 ui64DmaMask =
+		dma_get_mask(psDevNode->psDevConfig->pvOSDevice);
 
 	/* Do the actual call */
-	iMappedPages = _get_user_pages_fast((uintptr_t) pvCpuVAddr, iRequestedPages,
-	                                    psPrivData->bWrite, psPrivData->ppsPageArray);
-	if (iMappedPages < 0)
-	{
-		PVR_DPF((_PVR_DBG_LEVEL,
-		         "_get_user_pages_fast() failed, expected num pages %d, got error %d",
-		         psPrivData->uiTotalNumPages,
-		         iMappedPages));
+	iMappedPages = _get_user_pages_fast((uintptr_t)pvCpuVAddr,
+					    iRequestedPages, psPrivData->bWrite,
+					    psPrivData->ppsPageArray);
+	if (iMappedPages < 0) {
+		PVR_DPF((
+			_PVR_DBG_LEVEL,
+			"_get_user_pages_fast() failed, expected num pages %d, got error %d",
+			psPrivData->uiTotalNumPages, iMappedPages));
 
 		return PVRSRV_ERROR_FAILED_TO_ACQUIRE_PAGES;
-	}
-	else if (iMappedPages != iRequestedPages)
-	{
-		PVR_DPF((_PVR_DBG_LEVEL,
-		         "_get_user_pages_fast() failed, expected num pages %d, got number pages %d",
-		         psPrivData->uiTotalNumPages,
-		         iMappedPages));
+	} else if (iMappedPages != iRequestedPages) {
+		PVR_DPF((
+			_PVR_DBG_LEVEL,
+			"_get_user_pages_fast() failed, expected num pages %d, got number pages %d",
+			psPrivData->uiTotalNumPages, iMappedPages));
 
-		PVR_GOTO_WITH_ERROR(eError, PVRSRV_ERROR_FAILED_TO_ACQUIRE_PAGES, ErrUnpinPages);
+		PVR_GOTO_WITH_ERROR(eError,
+				    PVRSRV_ERROR_FAILED_TO_ACQUIRE_PAGES,
+				    ErrUnpinPages);
 	}
 
 	/* Fill the physical address array */
-	for (i = 0; i < psPrivData->uiTotalNumPages; i++)
-	{
-		psPrivData->ppvPhysAddr[i].uiAddr = page_to_phys(psPrivData->ppsPageArray[i]);
+	for (i = 0; i < psPrivData->uiTotalNumPages; i++) {
+		psPrivData->ppvPhysAddr[i].uiAddr =
+			page_to_phys(psPrivData->ppsPageArray[i]);
 
 		/* Check the data transfer capability of the DMA.
 		 *
@@ -236,28 +231,26 @@ static PVRSRV_ERROR _TryGetUserPages(PVRSRV_DEVICE_NODE *psDevNode,
 		 * APOLLO test chips TCF5 or ES2 can only access 4G maximum memory from the card.
 		 * Hence pages with a physical address beyond 4G range cannot be accessed by the
 		 * device. An error is reported in such a case. */
-		if (psPrivData->ppvPhysAddr[i].uiAddr & ~ui64DmaMask)
-		{
+		if (psPrivData->ppvPhysAddr[i].uiAddr & ~ui64DmaMask) {
 			PVR_DPF((PVR_DBG_ERROR,
-					"Backed page @pos:%d Physical Address: %pa exceeds GPU "
-					"accessible range(mask): 0x%0llx",
-					i, &psPrivData->ppvPhysAddr[i].uiAddr, ui64DmaMask));
+				 "Backed page @pos:%d Physical Address: %pa exceeds GPU "
+				 "accessible range(mask): 0x%0llx",
+				 i, &psPrivData->ppvPhysAddr[i].uiAddr,
+				 ui64DmaMask));
 
 			psPrivData->bWrite = IMG_FALSE;
 
 			PVR_GOTO_WITH_ERROR(eError,
-			                    PVRSRV_ERROR_INVALID_PHYS_ADDR,
-			                    ErrUnpinPages);
+					    PVRSRV_ERROR_INVALID_PHYS_ADDR,
+					    ErrUnpinPages);
 		}
 	}
 
 	return PVRSRV_OK;
 
 ErrUnpinPages:
-	for (i = 0; i < iRequestedPages; i++)
-	{
-		if (psPrivData->ppsPageArray[i] != NULL)
-		{
+	for (i = 0; i < iRequestedPages; i++) {
+		if (psPrivData->ppsPageArray[i] != NULL) {
 			_unpin_user_page(psPrivData->ppsPageArray[i]);
 		}
 	}
@@ -272,31 +265,30 @@ static PVRSRV_ERROR _WrapExtMemReleasePages(PMR_WRAP_DATA *psPrivData)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 
-	switch (psPrivData->eWrapType)
-	{
-		case WRAP_TYPE_GET_USER_PAGES:
-			_FreeGetUserPages(psPrivData);
-			break;
+	switch (psPrivData->eWrapType) {
+	case WRAP_TYPE_GET_USER_PAGES:
+		_FreeGetUserPages(psPrivData);
+		break;
 #if defined(SUPPORT_LINUX_WRAP_EXTMEM_PAGE_TABLE_WALK)
-		case WRAP_TYPE_FIND_PHYS_FROM_VIRT:
-			if (psPrivData->psDevNode->psDevConfig->pfnReleaseWrapMemPhysPagesFromVirt)
-			{
-				psPrivData->psDevNode->psDevConfig->pfnReleaseWrapMemPhysPagesFromVirt(psPrivData);
-			}
-			else
-			{
-				eError = PVRSRV_ERROR_NOT_IMPLEMENTED;
-				goto FreeWrapDataReturn;
-			}
-			break;
+	case WRAP_TYPE_FIND_PHYS_FROM_VIRT:
+		if (psPrivData->psDevNode->psDevConfig
+			    ->pfnReleaseWrapMemPhysPagesFromVirt) {
+			psPrivData->psDevNode->psDevConfig
+				->pfnReleaseWrapMemPhysPagesFromVirt(
+					psPrivData);
+		} else {
+			eError = PVRSRV_ERROR_NOT_IMPLEMENTED;
+			goto FreeWrapDataReturn;
+		}
+		break;
 #endif
-		case WRAP_TYPE_NULL:
-			/* fall through */
-		default:
-			PVR_DPF((PVR_DBG_ERROR,
-					"%s: Wrong wrap type, cannot release pages",
-					__func__));
-			return PVRSRV_ERROR_INVALID_WRAP_TYPE;
+	case WRAP_TYPE_NULL:
+		/* fall through */
+	default:
+		PVR_DPF((PVR_DBG_ERROR,
+			 "%s: Wrong wrap type, cannot release pages",
+			 __func__));
+		return PVRSRV_ERROR_INVALID_WRAP_TYPE;
 	}
 
 #if defined(SUPPORT_LINUX_WRAP_EXTMEM_PAGE_TABLE_WALK)
@@ -311,55 +303,43 @@ FreeWrapDataReturn:
  * Will try both methods:
  * get_user_pages or find_vma + page table walk if the first one fails */
 static PVRSRV_ERROR _WrapExtMemAcquirePages(PVRSRV_DEVICE_NODE *psDevNode,
-                                            IMG_DEVMEM_SIZE_T uiSize,
-                                            IMG_CPU_VIRTADDR pvCpuVAddr,
-                                            PMR_WRAP_DATA *psPrivData)
+					    IMG_DEVMEM_SIZE_T uiSize,
+					    IMG_CPU_VIRTADDR pvCpuVAddr,
+					    PMR_WRAP_DATA *psPrivData)
 {
 	PVRSRV_ERROR eError;
 
-	eError = _TryGetUserPages(psDevNode,
-	                          uiSize,
-	                          pvCpuVAddr,
-	                          psPrivData);
-	if (eError == PVRSRV_OK)
-	{
+	eError = _TryGetUserPages(psDevNode, uiSize, pvCpuVAddr, psPrivData);
+	if (eError == PVRSRV_OK) {
 		psPrivData->eWrapType = WRAP_TYPE_GET_USER_PAGES;
-		PVR_DPF((PVR_DBG_MESSAGE,
-				"%s: Used GetUserPages",
-				__func__));
+		PVR_DPF((PVR_DBG_MESSAGE, "%s: Used GetUserPages", __func__));
 		return PVRSRV_OK;
 	}
 
 #if defined(SUPPORT_LINUX_WRAP_EXTMEM_PAGE_TABLE_WALK)
-	if (PVRSRV_ERROR_INVALID_PHYS_ADDR != eError)
-	{
+	if (PVRSRV_ERROR_INVALID_PHYS_ADDR != eError) {
 		PVRSRV_ERROR eError2;
 		PFN_SYS_ACQUIRE_PHYS_PAGES_FROM_VIRT psPfnAcquire =
-		    psDevNode->psDevConfig->pfnAcquireWrapMemPhysPagesFromVirt;
+			psDevNode->psDevConfig
+				->pfnAcquireWrapMemPhysPagesFromVirt;
 
-		if (psPfnAcquire)
-		{
-			eError2 = (*psPfnAcquire)(uiSize, (uintptr_t) pvCpuVAddr,
-			                          (void *)psPrivData);
-		}
-		else
-		{
+		if (psPfnAcquire) {
+			eError2 = (*psPfnAcquire)(uiSize, (uintptr_t)pvCpuVAddr,
+						  (void *)psPrivData);
+		} else {
 			eError2 = PVRSRV_ERROR_NOT_IMPLEMENTED;
 		}
-		if (eError2 == PVRSRV_OK)
-		{
+		if (eError2 == PVRSRV_OK) {
 			psPrivData->eWrapType = WRAP_TYPE_FIND_PHYS_FROM_VIRT;
 			PVR_DPF((PVR_DBG_MESSAGE,
-					"%s: Used WrapTypeFindPhysFromVirt",
-					__func__));
+				 "%s: Used WrapTypeFindPhysFromVirt",
+				 __func__));
 			return PVRSRV_OK;
 		}
 
 		PVR_WARN_IF_ERROR(eError, "_TryGetUserPages");
 		PVR_LOG_ERROR(eError2, "FindVMA");
-	}
-	else
-	{
+	} else {
 		PVR_LOG_ERROR(eError, "_TryGetUserPages");
 	}
 #else
@@ -371,16 +351,12 @@ static PVRSRV_ERROR _WrapExtMemAcquirePages(PVRSRV_DEVICE_NODE *psDevNode,
 }
 
 static PVRSRV_ERROR
-PMRDevPhysAddrExtMem(PMR_IMPL_PRIVDATA pvPriv,
-                     IMG_UINT32 ui32Log2PageSize,
-                     IMG_UINT32 ui32NumOfPages,
-                     IMG_DEVMEM_OFFSET_T *puiOffset,
+PMRDevPhysAddrExtMem(PMR_IMPL_PRIVDATA pvPriv, IMG_UINT32 ui32Log2PageSize,
+		     IMG_UINT32 ui32NumOfPages, IMG_DEVMEM_OFFSET_T *puiOffset,
 #if defined(SUPPORT_STATIC_IPA)
-                     IMG_UINT64 ui64IPAPolicyValue,
-                     IMG_UINT64 ui64IPAClearMask,
+		     IMG_UINT64 ui64IPAPolicyValue, IMG_UINT64 ui64IPAClearMask,
 #endif
-                     IMG_BOOL *pbValid,
-                     IMG_DEV_PHYADDR *psDevPAddr)
+		     IMG_BOOL *pbValid, IMG_DEV_PHYADDR *psDevPAddr)
 {
 	const PMR_WRAP_DATA *psWrapData = pvPriv;
 	IMG_UINT32 uiPageSize = 1U << PAGE_SHIFT;
@@ -393,47 +369,44 @@ PMRDevPhysAddrExtMem(PMR_IMPL_PRIVDATA pvPriv,
 	PVR_UNREFERENCED_PARAMETER(ui64IPAClearMask);
 #endif
 
-
-	if (PAGE_SHIFT != ui32Log2PageSize)
-	{
+	if (PAGE_SHIFT != ui32Log2PageSize) {
 		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Requested ui32Log2PageSize %u is different from "
-				"OS page shift %u. Not supported.",
-				__func__,
-				ui32Log2PageSize,
-				PAGE_SHIFT));
+			 "%s: Requested ui32Log2PageSize %u is different from "
+			 "OS page shift %u. Not supported.",
+			 __func__, ui32Log2PageSize, PAGE_SHIFT));
 		return PVRSRV_ERROR_PMR_INCOMPATIBLE_CONTIGUITY;
 	}
 
-	for (uiIdx=0; uiIdx < ui32NumOfPages; uiIdx++)
-	{
+	for (uiIdx = 0; uiIdx < ui32NumOfPages; uiIdx++) {
 		uiPageIndex = puiOffset[uiIdx] >> PAGE_SHIFT;
-		uiInPageOffset = puiOffset[uiIdx] - ((IMG_DEVMEM_OFFSET_T)uiPageIndex << PAGE_SHIFT);
+		uiInPageOffset =
+			puiOffset[uiIdx] -
+			((IMG_DEVMEM_OFFSET_T)uiPageIndex << PAGE_SHIFT);
 
-		PVR_LOG_RETURN_IF_FALSE(uiPageIndex < psWrapData->uiTotalNumPages,
-		                        "puiOffset out of range", PVRSRV_ERROR_OUT_OF_RANGE);
+		PVR_LOG_RETURN_IF_FALSE(
+			uiPageIndex < psWrapData->uiTotalNumPages,
+			"puiOffset out of range", PVRSRV_ERROR_OUT_OF_RANGE);
 
 		PVR_ASSERT(uiInPageOffset < uiPageSize);
 
 		/* The ExtMem is only enabled in UMA mode, in that mode, the device physical
 		 * address translation will be handled by the PMR factory after this call.
 		 * Here we just copy the physical address like other callback implementations. */
-		psDevPAddr[uiIdx].uiAddr = psWrapData->ppvPhysAddr[uiPageIndex].uiAddr;
+		psDevPAddr[uiIdx].uiAddr =
+			psWrapData->ppvPhysAddr[uiPageIndex].uiAddr;
 		pbValid[uiIdx] = IMG_TRUE;
 
 		psDevPAddr[uiIdx].uiAddr += uiInPageOffset;
 #if defined(SUPPORT_STATIC_IPA)
 		psDevPAddr[uiIdx].uiAddr &= ~ui64IPAClearMask;
 		psDevPAddr[uiIdx].uiAddr |= ui64IPAPolicyValue;
-#endif	/* SUPPORT_STATIC_IPA */
+#endif /* SUPPORT_STATIC_IPA */
 	}
 
 	return PVRSRV_OK;
 }
 
-
-static void
-PMRFinalizeExtMem(PMR_IMPL_PRIVDATA pvPriv)
+static void PMRFinalizeExtMem(PMR_IMPL_PRIVDATA pvPriv)
 {
 	PMR_WRAP_DATA *psWrapData = pvPriv;
 
@@ -441,132 +414,119 @@ PMRFinalizeExtMem(PMR_IMPL_PRIVDATA pvPriv)
 	PVR_LOG_IF_ERROR(eError, "_WrapExtMemReleasePages");
 }
 
-
 static void _UnmapPage(PMR_WRAP_DATA *psWrapData,
-                       WRAP_KERNEL_MAP_DATA *psMapData)
+		       WRAP_KERNEL_MAP_DATA *psMapData)
 {
 	IMG_BOOL bSuccess;
 
-	if (psMapData->bVMAP)
-	{
+	if (psMapData->bVMAP) {
 		vunmap(psMapData->pvKernLinAddr);
-	}
-	else
-	{
-		if (psWrapData->ui32CPUCacheFlags & ~(PVRSRV_MEMALLOCFLAG_CPU_CACHE_MODE_MASK))
-		{
-			PVR_DPF((PVR_DBG_ERROR, "%s: Unable to unmap wrapped extmem "
-			        "page - wrong cached mode flags passed. This may leak "
-			        "memory.", __func__));
-			PVR_DPF((PVR_DBG_ERROR, "Found non-cpu cache mode flag when unmapping from "
-					 "the cpu"));
-		}
-		else
-		{
-			bSuccess = OSUnMapPhysToLin(psMapData->pvKernLinAddr, PAGE_SIZE);
-			if (!bSuccess)
-			{
-				PVR_DPF((PVR_DBG_ERROR, "%s: Unable to unmap wrapped extmem "
-				        "page. This may leak memory.", __func__));
+	} else {
+		if (psWrapData->ui32CPUCacheFlags &
+		    ~(PVRSRV_MEMALLOCFLAG_CPU_CACHE_MODE_MASK)) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "%s: Unable to unmap wrapped extmem "
+				 "page - wrong cached mode flags passed. This may leak "
+				 "memory.",
+				 __func__));
+			PVR_DPF((PVR_DBG_ERROR,
+				 "Found non-cpu cache mode flag when unmapping from "
+				 "the cpu"));
+		} else {
+			bSuccess = OSUnMapPhysToLin(psMapData->pvKernLinAddr,
+						    PAGE_SIZE);
+			if (!bSuccess) {
+				PVR_DPF((PVR_DBG_ERROR,
+					 "%s: Unable to unmap wrapped extmem "
+					 "page. This may leak memory.",
+					 __func__));
 			}
 		}
 	}
 }
 
-static void _MapPage(PMR_WRAP_DATA *psWrapData,
-                     IMG_UINT32 uiPageIdx,
-                     WRAP_KERNEL_MAP_DATA *psMapData)
+static void _MapPage(PMR_WRAP_DATA *psWrapData, IMG_UINT32 uiPageIdx,
+		     WRAP_KERNEL_MAP_DATA *psMapData)
 {
 	IMG_UINT8 *puiLinCPUAddr;
 
-	if (psWrapData->ppsPageArray[uiPageIdx])
-	{
+	if (psWrapData->ppsPageArray[uiPageIdx]) {
 		pgprot_t prot = PAGE_KERNEL;
 
-		switch (PVRSRV_CPU_CACHE_MODE(psWrapData->ui32CPUCacheFlags))
-		{
-			case PVRSRV_MEMALLOCFLAG_CPU_UNCACHED:
-				prot = pgprot_noncached(prot);
-				break;
+		switch (PVRSRV_CPU_CACHE_MODE(psWrapData->ui32CPUCacheFlags)) {
+		case PVRSRV_MEMALLOCFLAG_CPU_UNCACHED:
+			prot = pgprot_noncached(prot);
+			break;
 
-			case PVRSRV_MEMALLOCFLAG_CPU_UNCACHED_WC:
-				prot = pgprot_writecombine(prot);
-				break;
+		case PVRSRV_MEMALLOCFLAG_CPU_UNCACHED_WC:
+			prot = pgprot_writecombine(prot);
+			break;
 
-			case PVRSRV_MEMALLOCFLAG_CPU_CACHED:
-				break;
+		case PVRSRV_MEMALLOCFLAG_CPU_CACHED:
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 
-		puiLinCPUAddr = vmap(&psWrapData->ppsPageArray[uiPageIdx], 1, VM_MAP, prot);
+		puiLinCPUAddr = vmap(&psWrapData->ppsPageArray[uiPageIdx], 1,
+				     VM_MAP, prot);
 
 		psMapData->bVMAP = IMG_TRUE;
-	}
-	else
-	{
-		puiLinCPUAddr = (IMG_UINT8*) OSMapPhysToLin(psWrapData->ppvPhysAddr[uiPageIdx],
-		                                              PAGE_SIZE,
-		                                              psWrapData->ui32CPUCacheFlags);
+	} else {
+		puiLinCPUAddr = (IMG_UINT8 *)OSMapPhysToLin(
+			psWrapData->ppvPhysAddr[uiPageIdx], PAGE_SIZE,
+			psWrapData->ui32CPUCacheFlags);
 
 		psMapData->bVMAP = IMG_FALSE;
 	}
 
 	psMapData->pvKernLinAddr = puiLinCPUAddr;
-
 }
 
 static PVRSRV_ERROR _CopyBytesExtMem(PMR_IMPL_PRIVDATA pvPriv,
-                                     IMG_DEVMEM_OFFSET_T uiOffset,
-                                     IMG_UINT8 *pcBuffer,
-                                     size_t uiBufSz,
-                                     size_t *puiNumBytes,
-                                     IMG_BOOL bWrite)
+				     IMG_DEVMEM_OFFSET_T uiOffset,
+				     IMG_UINT8 *pcBuffer, size_t uiBufSz,
+				     size_t *puiNumBytes, IMG_BOOL bWrite)
 {
-	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA*) pvPriv;
+	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA *)pvPriv;
 	size_t uiBytesToCopy = uiBufSz;
 	IMG_UINT32 uiPageIdx = uiOffset >> PAGE_SHIFT;
 	IMG_BOOL bFirst = IMG_TRUE;
 	WRAP_KERNEL_MAP_DATA sKernMapData;
 
-
-	if ((uiBufSz + uiOffset) > (psWrapData->uiTotalNumPages << PAGE_SHIFT))
-	{
+	if ((uiBufSz + uiOffset) >
+	    (psWrapData->uiTotalNumPages << PAGE_SHIFT)) {
 		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Trying to read out of bounds of PMR.",
-				__func__));
+			 "%s: Trying to read out of bounds of PMR.", __func__));
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
 	/* Copy the pages */
-	while (uiBytesToCopy != 0)
-	{
+	while (uiBytesToCopy != 0) {
 		size_t uiBytesPerLoop;
 		IMG_DEVMEM_OFFSET_T uiCopyOffset;
 
-		if (bFirst)
-		{
+		if (bFirst) {
 			bFirst = IMG_FALSE;
 			uiCopyOffset = (uiOffset & ~PAGE_MASK);
-			uiBytesPerLoop = (uiBufSz >= (PAGE_SIZE - uiCopyOffset)) ?
-					PAGE_SIZE - uiCopyOffset : uiBufSz;
-		}
-		else
-		{
+			uiBytesPerLoop =
+				(uiBufSz >= (PAGE_SIZE - uiCopyOffset)) ?
+					PAGE_SIZE - uiCopyOffset :
+					uiBufSz;
+		} else {
 			uiCopyOffset = 0;
-			uiBytesPerLoop = (uiBytesToCopy > PAGE_SIZE) ? PAGE_SIZE : uiBytesToCopy;
+			uiBytesPerLoop = (uiBytesToCopy > PAGE_SIZE) ?
+						 PAGE_SIZE :
+						 uiBytesToCopy;
 		}
 
-		_MapPage(psWrapData,
-		         uiPageIdx,
-		         &sKernMapData);
+		_MapPage(psWrapData, uiPageIdx, &sKernMapData);
 
-		if (sKernMapData.pvKernLinAddr == NULL)
-		{
+		if (sKernMapData.pvKernLinAddr == NULL) {
 			PVR_DPF((PVR_DBG_ERROR,
-					"%s: Unable to map wrapped extmem page.",
-					__func__));
+				 "%s: Unable to map wrapped extmem page.",
+				 __func__));
 			return PVRSRV_ERROR_OUT_OF_MEMORY;
 		}
 
@@ -574,21 +534,18 @@ static PVRSRV_ERROR _CopyBytesExtMem(PMR_IMPL_PRIVDATA pvPriv,
 		 * know whether the wrapped memory was originally imported as cached.
 		 */
 
-		if (bWrite)
-		{
-			OSDeviceMemCopy(sKernMapData.pvKernLinAddr + uiCopyOffset,
-			          pcBuffer,
-			          uiBytesPerLoop);
-		}
-		else
-		{
+		if (bWrite) {
+			OSDeviceMemCopy(sKernMapData.pvKernLinAddr +
+						uiCopyOffset,
+					pcBuffer, uiBytesPerLoop);
+		} else {
 			OSDeviceMemCopy(pcBuffer,
-			          sKernMapData.pvKernLinAddr + uiCopyOffset,
-			          uiBytesPerLoop);
+					sKernMapData.pvKernLinAddr +
+						uiCopyOffset,
+					uiBytesPerLoop);
 		}
 
-		_UnmapPage(psWrapData,
-		           &sKernMapData);
+		_UnmapPage(psWrapData, &sKernMapData);
 
 		uiBytesToCopy -= uiBytesPerLoop;
 		uiPageIdx++;
@@ -599,106 +556,83 @@ static PVRSRV_ERROR _CopyBytesExtMem(PMR_IMPL_PRIVDATA pvPriv,
 	return PVRSRV_OK;
 }
 
-static PVRSRV_ERROR
-PMRReadBytesExtMem(PMR_IMPL_PRIVDATA pvPriv,
-                   IMG_DEVMEM_OFFSET_T uiOffset,
-                   IMG_UINT8 *pcBuffer,
-                   size_t uiBufSz,
-                   size_t *puiNumBytes)
+static PVRSRV_ERROR PMRReadBytesExtMem(PMR_IMPL_PRIVDATA pvPriv,
+				       IMG_DEVMEM_OFFSET_T uiOffset,
+				       IMG_UINT8 *pcBuffer, size_t uiBufSz,
+				       size_t *puiNumBytes)
 {
-
-	return _CopyBytesExtMem(pvPriv,
-	                        uiOffset,
-	                        pcBuffer,
-	                        uiBufSz,
-	                        puiNumBytes,
-	                        IMG_FALSE);
+	return _CopyBytesExtMem(pvPriv, uiOffset, pcBuffer, uiBufSz,
+				puiNumBytes, IMG_FALSE);
 }
 
-static PVRSRV_ERROR
-PMRWriteBytesExtMem(PMR_IMPL_PRIVDATA pvPriv,
-                    IMG_DEVMEM_OFFSET_T uiOffset,
-                    IMG_UINT8 *pcBuffer,
-                    size_t uiBufSz,
-                    size_t *puiNumBytes)
+static PVRSRV_ERROR PMRWriteBytesExtMem(PMR_IMPL_PRIVDATA pvPriv,
+					IMG_DEVMEM_OFFSET_T uiOffset,
+					IMG_UINT8 *pcBuffer, size_t uiBufSz,
+					size_t *puiNumBytes)
 {
-	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA*) pvPriv;
+	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA *)pvPriv;
 
-	if (!psWrapData->bWrite)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Attempt to write to read only vma.",
-		                        __func__));
+	if (!psWrapData->bWrite) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "%s: Attempt to write to read only vma.", __func__));
 		return PVRSRV_ERROR_PMR_NOT_PERMITTED;
 	}
 
-	return _CopyBytesExtMem(pvPriv,
-	                        uiOffset,
-	                        pcBuffer,
-	                        uiBufSz,
-	                        puiNumBytes,
-	                        IMG_TRUE);
+	return _CopyBytesExtMem(pvPriv, uiOffset, pcBuffer, uiBufSz,
+				puiNumBytes, IMG_TRUE);
 }
 
-
 static PVRSRV_ERROR
-PMRAcquireKernelMappingDataExtMem(PMR_IMPL_PRIVDATA pvPriv,
-                                  size_t uiOffset,
-                                  size_t uiSize,
-                                  void **ppvKernelAddressOut,
-                                  IMG_HANDLE *phHandleOut,
-                                  PMR_FLAGS_T ulFlags)
+PMRAcquireKernelMappingDataExtMem(PMR_IMPL_PRIVDATA pvPriv, size_t uiOffset,
+				  size_t uiSize, void **ppvKernelAddressOut,
+				  IMG_HANDLE *phHandleOut, PMR_FLAGS_T ulFlags)
 {
 	PVRSRV_ERROR eError;
-	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA*) pvPriv;
+	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA *)pvPriv;
 	WRAP_KERNEL_MAP_DATA *psKernMapData;
 	IMG_UINT32 ui32PageIndex = uiOffset >> PAGE_SHIFT;
 	IMG_UINT32 ui32PageOffset = (IMG_UINT32)(uiOffset & ~PAGE_MASK);
 
 	/* Offset was out of bounds */
-	if (ui32PageIndex > psWrapData->uiTotalNumPages)
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Error, offset out of PMR bounds.",
-				__func__));
+	if (ui32PageIndex > psWrapData->uiTotalNumPages) {
+		PVR_DPF((PVR_DBG_ERROR, "%s: Error, offset out of PMR bounds.",
+			 __func__));
 		eError = PVRSRV_ERROR_INVALID_PARAMS;
 		goto e0;
 	}
 
 	/* We can not map in more than one page with ioremap.
 	 * Only possible with physically contiguous pages */
-	if ((ui32PageOffset + uiSize) > PAGE_SIZE)
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Error, cannot map more than one page for wrapped extmem.",
-				__func__));
+	if ((ui32PageOffset + uiSize) > PAGE_SIZE) {
+		PVR_DPF((
+			PVR_DBG_ERROR,
+			"%s: Error, cannot map more than one page for wrapped extmem.",
+			__func__));
 		eError = PVRSRV_ERROR_INVALID_PARAMS;
 		goto e0;
 	}
 
 	psKernMapData = OSAllocMem(sizeof(*psKernMapData));
-	if (psKernMapData == NULL)
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Error, unable to allocate memory for kernel mapping data.",
-				__func__));
+	if (psKernMapData == NULL) {
+		PVR_DPF((
+			PVR_DBG_ERROR,
+			"%s: Error, unable to allocate memory for kernel mapping data.",
+			__func__));
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto e0;
 	}
 
-	_MapPage(psWrapData,
-	         ui32PageIndex,
-	         psKernMapData);
+	_MapPage(psWrapData, ui32PageIndex, psKernMapData);
 
-	if (psKernMapData->pvKernLinAddr == NULL)
-	{
+	if (psKernMapData->pvKernLinAddr == NULL) {
 		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Unable to map wrapped extmem page.",
-				__func__));
+			 "%s: Unable to map wrapped extmem page.", __func__));
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto e1;
 	}
 
-	*ppvKernelAddressOut = ((IMG_CHAR *) psKernMapData->pvKernLinAddr) + ui32PageOffset;
+	*ppvKernelAddressOut =
+		((IMG_CHAR *)psKernMapData->pvKernLinAddr) + ui32PageOffset;
 	*phHandleOut = psKernMapData;
 
 	return PVRSRV_OK;
@@ -712,13 +646,12 @@ e0:
 }
 
 static void PMRReleaseKernelMappingDataExtMem(PMR_IMPL_PRIVDATA pvPriv,
-                                              IMG_HANDLE hHandle)
+					      IMG_HANDLE hHandle)
 {
-	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA*) pvPriv;
-	WRAP_KERNEL_MAP_DATA *psKernMapData = (void*) hHandle;
+	PMR_WRAP_DATA *psWrapData = (PMR_WRAP_DATA *)pvPriv;
+	WRAP_KERNEL_MAP_DATA *psKernMapData = (void *)hHandle;
 
-	_UnmapPage(psWrapData,
-	           psKernMapData);
+	_UnmapPage(psWrapData, psKernMapData);
 
 	OSFreeMem(psKernMapData);
 }
@@ -736,7 +669,6 @@ static inline void begin_user_mode_access(IMG_UINT *uiState)
 #else
 	PVR_UNREFERENCED_PARAMETER(uiState);
 #endif
-
 }
 
 static inline void end_user_mode_access(IMG_UINT uiState)
@@ -755,26 +687,25 @@ static inline void end_user_mode_access(IMG_UINT uiState)
 }
 
 static PVRSRV_ERROR _FlushUMVirtualRange(PVRSRV_DEVICE_NODE *psDevNode,
-							PMR_WRAP_DATA *psPrivData,
-							IMG_DEVMEM_SIZE_T uiSize,
-							IMG_CPU_VIRTADDR pvCpuVAddr)
+					 PMR_WRAP_DATA *psPrivData,
+					 IMG_DEVMEM_SIZE_T uiSize,
+					 IMG_CPU_VIRTADDR pvCpuVAddr)
 {
 	struct vm_area_struct *psVMArea;
 	PVRSRV_ERROR eError = PVRSRV_OK;
-	IMG_UINT	uiUserAccessState=0;
+	IMG_UINT uiUserAccessState = 0;
 
 	mmap_read_lock(current->mm);
 
 	psVMArea = find_vma(current->mm, (uintptr_t)pvCpuVAddr);
-	if (psVMArea == NULL)
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-		         "%s: Couldn't find memory region containing start address %p",
-		         __func__, (void *)pvCpuVAddr));
+	if (psVMArea == NULL) {
+		PVR_DPF((
+			PVR_DBG_ERROR,
+			"%s: Couldn't find memory region containing start address %p",
+			__func__, (void *)pvCpuVAddr));
 		eError = PVRSRV_ERROR_INVALID_CPU_ADDR;
 		goto UMFlushUnlockReturn;
 	}
-
 
 	/*
 	 * Latest kernels enable "Privileged access never" feature in the kernel
@@ -789,71 +720,64 @@ static PVRSRV_ERROR _FlushUMVirtualRange(PVRSRV_DEVICE_NODE *psDevNode,
 	 * */
 	begin_user_mode_access(&uiUserAccessState);
 	{
-		if (OSCPUCacheOpAddressType(psDevNode, PHYS_HEAP_TYPE_UNKNOWN) == OS_CACHE_OP_ADDR_TYPE_VIRTUAL)
-		{
-			IMG_CPU_PHYADDR sCPUPhysStart = {0};
+		if (OSCPUCacheOpAddressType(psDevNode,
+					    PHYS_HEAP_TYPE_UNKNOWN) ==
+		    OS_CACHE_OP_ADDR_TYPE_VIRTUAL) {
+			IMG_CPU_PHYADDR sCPUPhysStart = { 0 };
 
-			eError = CacheOpExec(psDevNode,
-								pvCpuVAddr,
-								((IMG_UINT8 *)pvCpuVAddr + uiSize),
-								sCPUPhysStart,
-								sCPUPhysStart,
-								PVRSRV_CACHE_OP_FLUSH);
-		}
-		else if (OSCPUCacheOpAddressType(psDevNode, PHYS_HEAP_TYPE_UNKNOWN) == OS_CACHE_OP_ADDR_TYPE_PHYSICAL)
-		{
+			eError = CacheOpExec(psDevNode, pvCpuVAddr,
+					     ((IMG_UINT8 *)pvCpuVAddr + uiSize),
+					     sCPUPhysStart, sCPUPhysStart,
+					     PVRSRV_CACHE_OP_FLUSH);
+		} else if (OSCPUCacheOpAddressType(psDevNode,
+						   PHYS_HEAP_TYPE_UNKNOWN) ==
+			   OS_CACHE_OP_ADDR_TYPE_PHYSICAL) {
 			IMG_CPU_PHYADDR sCPUPhysStart, sCPUPhysEnd;
 			IMG_UINT i = 0;
 
-			for (i = 0; i < psPrivData->uiTotalNumPages; i++)
-			{
-				sCPUPhysStart.uiAddr = psPrivData->ppvPhysAddr[i].uiAddr;
-				sCPUPhysEnd.uiAddr = sCPUPhysStart.uiAddr + PAGE_SIZE;
+			for (i = 0; i < psPrivData->uiTotalNumPages; i++) {
+				sCPUPhysStart.uiAddr =
+					psPrivData->ppvPhysAddr[i].uiAddr;
+				sCPUPhysEnd.uiAddr =
+					sCPUPhysStart.uiAddr + PAGE_SIZE;
 
-				eError = CacheOpExec(psDevNode,
-									NULL,
-									NULL,
-									sCPUPhysStart,
-									sCPUPhysEnd,
-									PVRSRV_CACHE_OP_FLUSH);
-				if (eError != PVRSRV_OK)
-				{
+				eError = CacheOpExec(psDevNode, NULL, NULL,
+						     sCPUPhysStart, sCPUPhysEnd,
+						     PVRSRV_CACHE_OP_FLUSH);
+				if (eError != PVRSRV_OK) {
 					break;
 				}
 			}
-		}
-		else if (OSCPUCacheOpAddressType(psDevNode, PHYS_HEAP_TYPE_UNKNOWN) == OS_CACHE_OP_ADDR_TYPE_BOTH)
-		{
+		} else if (OSCPUCacheOpAddressType(psDevNode,
+						   PHYS_HEAP_TYPE_UNKNOWN) ==
+			   OS_CACHE_OP_ADDR_TYPE_BOTH) {
 			IMG_CPU_PHYADDR sCPUPhysStart, sCPUPhysEnd;
 			void *pvVirtStart, *pvVirtEnd;
 			IMG_UINT i = 0;
 
-			for (i = 0; i < psPrivData->uiTotalNumPages; i++)
-			{
+			for (i = 0; i < psPrivData->uiTotalNumPages; i++) {
 				pvVirtStart = pvCpuVAddr + (i * PAGE_SIZE);
 				pvVirtEnd = pvVirtStart + PAGE_SIZE;
-				sCPUPhysStart.uiAddr = psPrivData->ppvPhysAddr[i].uiAddr;
-				sCPUPhysEnd.uiAddr = sCPUPhysStart.uiAddr + PAGE_SIZE;
+				sCPUPhysStart.uiAddr =
+					psPrivData->ppvPhysAddr[i].uiAddr;
+				sCPUPhysEnd.uiAddr =
+					sCPUPhysStart.uiAddr + PAGE_SIZE;
 
-				eError = CacheOpExec(psDevNode,
-									pvVirtStart,
-									pvVirtEnd,
-									sCPUPhysStart,
-									sCPUPhysEnd,
-									PVRSRV_CACHE_OP_FLUSH);
-				if (eError != PVRSRV_OK)
-				{
+				eError = CacheOpExec(psDevNode, pvVirtStart,
+						     pvVirtEnd, sCPUPhysStart,
+						     sCPUPhysEnd,
+						     PVRSRV_CACHE_OP_FLUSH);
+				if (eError != PVRSRV_OK) {
 					break;
 				}
 			}
 		}
 
-		if (PVRSRV_OK != eError)
-		{
-			PVR_DPF((PVR_DBG_ERROR,
-					"%s: Failed to clean the virtual region cache %p",
-					__func__,
-					pvCpuVAddr));
+		if (PVRSRV_OK != eError) {
+			PVR_DPF((
+				PVR_DBG_ERROR,
+				"%s: Failed to clean the virtual region cache %p",
+				__func__, pvCpuVAddr));
 			goto UMFlushFailed;
 		}
 	}
@@ -867,82 +791,79 @@ UMFlushUnlockReturn:
 }
 
 static const PMR_IMPL_FUNCTAB _sPMRWrapPFuncTab = {
-    .pfnLockPhysAddresses = NULL,
-    .pfnUnlockPhysAddresses = NULL,
-    .pfnDevPhysAddr = &PMRDevPhysAddrExtMem,
-    .pfnAcquireKernelMappingData = PMRAcquireKernelMappingDataExtMem,
-    .pfnReleaseKernelMappingData = PMRReleaseKernelMappingDataExtMem,
-    .pfnReadBytes = PMRReadBytesExtMem,
-    .pfnWriteBytes = PMRWriteBytesExtMem,
-    .pfnChangeSparseMem = NULL,
-    .pfnFinalize = &PMRFinalizeExtMem,
+	.pfnLockPhysAddresses = NULL,
+	.pfnUnlockPhysAddresses = NULL,
+	.pfnDevPhysAddr = &PMRDevPhysAddrExtMem,
+	.pfnAcquireKernelMappingData = PMRAcquireKernelMappingDataExtMem,
+	.pfnReleaseKernelMappingData = PMRReleaseKernelMappingDataExtMem,
+	.pfnReadBytes = PMRReadBytesExtMem,
+	.pfnWriteBytes = PMRWriteBytesExtMem,
+	.pfnChangeSparseMem = NULL,
+	.pfnFinalize = &PMRFinalizeExtMem,
 };
 
-static inline PVRSRV_ERROR PhysmemValidateParam(IMG_DEVMEM_SIZE_T uiSize,
-                                                IMG_CPU_VIRTADDR pvCpuVAddr,
-                                                PVRSRV_MEMALLOCFLAGS_T *puiFlags)
+static inline PVRSRV_ERROR
+PhysmemValidateParam(IMG_DEVMEM_SIZE_T uiSize, IMG_CPU_VIRTADDR pvCpuVAddr,
+		     PVRSRV_MEMALLOCFLAGS_T *puiFlags)
 {
 	PVRSRV_MEMALLOCFLAGS_T uiFlags = *puiFlags;
 
 	PVR_LOG_RETURN_IF_INVALID_PARAM(uiSize != 0, "uiSize");
 
-	if (uiSize > PMR_MAX_SUPPORTED_SIZE)
-	{
+	if (uiSize > PMR_MAX_SUPPORTED_SIZE) {
 		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Requested size too large (max supported ""size 0x%llx Bytes).",
-				__func__,
-				PMR_MAX_SUPPORTED_SIZE));
+			 "%s: Requested size too large (max supported "
+			 "size 0x%llx Bytes).",
+			 __func__, PMR_MAX_SUPPORTED_SIZE));
 		return PVRSRV_ERROR_PMR_TOO_LARGE;
 	}
 
-	if (uiSize & (PAGE_SIZE - 1))
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Given size %llu is not multiple of OS page size (%lu)",
-				__func__,
-				uiSize,
-				PAGE_SIZE));
+	if (uiSize & (PAGE_SIZE - 1)) {
+		PVR_DPF((
+			PVR_DBG_ERROR,
+			"%s: Given size %llu is not multiple of OS page size (%lu)",
+			__func__, uiSize, PAGE_SIZE));
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
-	if (((uintptr_t)pvCpuVAddr) & (PAGE_SIZE - 1))
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Given address %p is not aligned to OS page size (%lu)",
-				__func__,
-				pvCpuVAddr,
-				PAGE_SIZE));
+	if (((uintptr_t)pvCpuVAddr) & (PAGE_SIZE - 1)) {
+		PVR_DPF((
+			PVR_DBG_ERROR,
+			"%s: Given address %p is not aligned to OS page size (%lu)",
+			__func__, pvCpuVAddr, PAGE_SIZE));
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
-	if (!access_ok(pvCpuVAddr, uiSize))
-	{
-		PVR_DPF((PVR_DBG_ERROR, "Invalid User mode CPU virtual address"));
+	if (!access_ok(pvCpuVAddr, uiSize)) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "Invalid User mode CPU virtual address"));
 		return PVRSRV_ERROR_INVALID_CPU_ADDR;
 	}
 
 	/* Fail if requesting coherency on one side but uncached on the other */
 	if ((PVRSRV_CHECK_CPU_CACHE_COHERENT(uiFlags) &&
-			(PVRSRV_CHECK_GPU_UNCACHED(uiFlags) || PVRSRV_CHECK_GPU_WRITE_COMBINE(uiFlags))))
-	{
-		PVR_DPF((PVR_DBG_ERROR, "Request for CPU coherency but specifying GPU uncached "
-				"Please use GPU cached flags for coherency."));
+	     (PVRSRV_CHECK_GPU_UNCACHED(uiFlags) ||
+	      PVRSRV_CHECK_GPU_WRITE_COMBINE(uiFlags)))) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "Request for CPU coherency but specifying GPU uncached "
+			 "Please use GPU cached flags for coherency."));
 		return PVRSRV_ERROR_UNSUPPORTED_CACHE_MODE;
 	}
 
 	if ((PVRSRV_CHECK_GPU_CACHE_COHERENT(uiFlags) &&
-			(PVRSRV_CHECK_CPU_UNCACHED(uiFlags) || PVRSRV_CHECK_CPU_WRITE_COMBINE(uiFlags))))
-	{
-		PVR_DPF((PVR_DBG_ERROR, "Request for GPU coherency but specifying CPU uncached "
-				"Please use CPU cached flags for coherency."));
+	     (PVRSRV_CHECK_CPU_UNCACHED(uiFlags) ||
+	      PVRSRV_CHECK_CPU_WRITE_COMBINE(uiFlags)))) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "Request for GPU coherency but specifying CPU uncached "
+			 "Please use CPU cached flags for coherency."));
 		return PVRSRV_ERROR_UNSUPPORTED_CACHE_MODE;
 	}
 
-	if (uiFlags & PVRSRV_MEMALLOCFLAG_DEVICE_FLAGS_MASK)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "%s: Device specific flags not supported. "
-		                        "Passed Flags: 0x%"PVRSRV_MEMALLOCFLAGS_FMTSPEC,
-		                        __func__, uiFlags));
+	if (uiFlags & PVRSRV_MEMALLOCFLAG_DEVICE_FLAGS_MASK) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "%s: Device specific flags not supported. "
+			 "Passed Flags: 0x%" PVRSRV_MEMALLOCFLAGS_FMTSPEC,
+			 __func__, uiFlags));
 		return PVRSRV_ERROR_INVALID_FLAGS;
 	}
 
@@ -950,16 +871,15 @@ static inline PVRSRV_ERROR PhysmemValidateParam(IMG_DEVMEM_SIZE_T uiSize,
 #if defined(DEBUG)
 		       PVRSRV_MEMALLOCFLAG_POISON_ON_FREE |
 #endif
-		       PVRSRV_MEMALLOCFLAG_POISON_ON_ALLOC))
-	{
-		PVR_DPF((PVR_DBG_WARNING, "%s: ignoring CPU accessibility associated flags", __func__));
-		uiFlags &= ~(
-			PVRSRV_MEMALLOCFLAG_ZERO_ON_ALLOC |
+		       PVRSRV_MEMALLOCFLAG_POISON_ON_ALLOC)) {
+		PVR_DPF((PVR_DBG_WARNING,
+			 "%s: ignoring CPU accessibility associated flags",
+			 __func__));
+		uiFlags &= ~(PVRSRV_MEMALLOCFLAG_ZERO_ON_ALLOC |
 #if defined(DEBUG)
-			PVRSRV_MEMALLOCFLAG_POISON_ON_FREE |
+			     PVRSRV_MEMALLOCFLAG_POISON_ON_FREE |
 #endif
-			PVRSRV_MEMALLOCFLAG_POISON_ON_ALLOC
-		);
+			     PVRSRV_MEMALLOCFLAG_POISON_ON_ALLOC);
 	}
 
 	*puiFlags = uiFlags;
@@ -968,80 +888,65 @@ static inline PVRSRV_ERROR PhysmemValidateParam(IMG_DEVMEM_SIZE_T uiSize,
 }
 
 PVRSRV_ERROR
-PhysmemWrapExtMemOS(CONNECTION_DATA * psConnection,
-                    PVRSRV_DEVICE_NODE *psDevNode,
-                    IMG_DEVMEM_SIZE_T uiSize,
-                    IMG_CPU_VIRTADDR pvCpuVAddr,
-                    PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                    PMR **ppsPMRPtr)
+PhysmemWrapExtMemOS(CONNECTION_DATA *psConnection,
+		    PVRSRV_DEVICE_NODE *psDevNode, IMG_DEVMEM_SIZE_T uiSize,
+		    IMG_CPU_VIRTADDR pvCpuVAddr, PVRSRV_MEMALLOCFLAGS_T uiFlags,
+		    PMR **ppsPMRPtr)
 {
 	PVRSRV_ERROR eError;
-	IMG_UINT32	ui32MappingTable = 0;
+	IMG_UINT32 ui32MappingTable = 0;
 	PMR_WRAP_DATA *psPrivData;
 	PMR *psPMR;
 	IMG_BOOL bIsPMRDestroyed = IMG_FALSE;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0))
 	/* Ignore the most significant byte. */
 	pvCpuVAddr = (IMG_CPU_VIRTADDR)untagged_addr((uintptr_t)pvCpuVAddr);
 #endif
 
-	eError = PhysmemValidateParam(uiSize,
-	                              pvCpuVAddr,
-	                              &uiFlags);
-	if (eError != PVRSRV_OK)
-	{
+	eError = PhysmemValidateParam(uiSize, pvCpuVAddr, &uiFlags);
+	if (eError != PVRSRV_OK) {
 		return eError;
 	}
 
 	/* Allocate private factory data */
-	eError = _AllocWrapData(&psPrivData,
-	                        psDevNode,
-	                        uiSize,
-	                        uiFlags);
-	if (eError != PVRSRV_OK)
-	{
+	eError = _AllocWrapData(&psPrivData, psDevNode, uiSize, uiFlags);
+	if (eError != PVRSRV_OK) {
 		return eError;
 	}
 
 	/* Actually find and acquire the pages and physical addresses */
-	eError = _WrapExtMemAcquirePages(psDevNode,
-	                                 uiSize,
-	                                 pvCpuVAddr,
-	                                 psPrivData);
-	if (eError != PVRSRV_OK)
-	{
+	eError = _WrapExtMemAcquirePages(psDevNode, uiSize, pvCpuVAddr,
+					 psPrivData);
+	if (eError != PVRSRV_OK) {
 		_FreeWrapData(psPrivData);
 		goto e0;
 	}
 
 	/* Create a suitable PMR */
-	eError = PMRCreatePMR(psDevNode->apsPhysHeap[PVRSRV_PHYS_HEAP_CPU_LOCAL],
-	                      uiSize,    /* PMR_SIZE_T uiLogicalSize                             */
-	                      1,    /* IMG_UINT32 ui32NumPhysChunks                */
-	                      1,    /* IMG_UINT32 ui32NumLogicalChunks          */
-	                      &ui32MappingTable,
-	                      PAGE_SHIFT,           /* PMR_LOG2ALIGN_T uiLog2ContiguityGuarantee */
-	                      (uiFlags & PVRSRV_MEMALLOCFLAGS_PMRFLAGSMASK), /* PMR_FLAGS_T uiFlags */
-	                      "WrappedExtMem",      /* const IMG_CHAR *pszAnnotation             */
-	                      &_sPMRWrapPFuncTab,   /* const PMR_IMPL_FUNCTAB *psFuncTab         */
-	                      psPrivData,           /* PMR_IMPL_PRIVDATA pvPrivData              */
-	                      PMR_TYPE_EXTMEM,
-	                      &psPMR,               /* PMR **ppsPMRPtr                           */
-	                      PDUMP_NONE);          /* IMG_UINT32 ui32PDumpFlags                 */
-	if (eError != PVRSRV_OK)
-	{
+	eError = PMRCreatePMR(
+		psDevNode->apsPhysHeap[PVRSRV_PHYS_HEAP_CPU_LOCAL],
+		uiSize, /* PMR_SIZE_T uiLogicalSize                             */
+		1, /* IMG_UINT32 ui32NumPhysChunks                */
+		1, /* IMG_UINT32 ui32NumLogicalChunks          */
+		&ui32MappingTable,
+		PAGE_SHIFT, /* PMR_LOG2ALIGN_T uiLog2ContiguityGuarantee */
+		(uiFlags &
+		 PVRSRV_MEMALLOCFLAGS_PMRFLAGSMASK), /* PMR_FLAGS_T uiFlags */
+		"WrappedExtMem", /* const IMG_CHAR *pszAnnotation             */
+		&_sPMRWrapPFuncTab, /* const PMR_IMPL_FUNCTAB *psFuncTab         */
+		psPrivData, /* PMR_IMPL_PRIVDATA pvPrivData              */
+		PMR_TYPE_EXTMEM,
+		&psPMR, /* PMR **ppsPMRPtr                           */
+		PDUMP_NONE); /* IMG_UINT32 ui32PDumpFlags                 */
+	if (eError != PVRSRV_OK) {
 		goto e1;
 	}
 
-	if (PVRSRV_CHECK_CPU_CACHE_CLEAN(uiFlags))
-	{
-		eError = _FlushUMVirtualRange(psDevNode,
-									psPrivData,
-									uiSize,
-									pvCpuVAddr);
-		if (eError != PVRSRV_OK)
-		{
+	if (PVRSRV_CHECK_CPU_CACHE_CLEAN(uiFlags)) {
+		eError = _FlushUMVirtualRange(psDevNode, psPrivData, uiSize,
+					      pvCpuVAddr);
+		if (eError != PVRSRV_OK) {
 			goto e2;
 		}
 	}
@@ -1055,11 +960,10 @@ PhysmemWrapExtMemOS(CONNECTION_DATA * psConnection,
 
 	return PVRSRV_OK;
 e2:
-	(void) PMRUnrefPMR(psPMR);
+	(void)PMRUnrefPMR(psPMR);
 	bIsPMRDestroyed = IMG_TRUE;
 e1:
-	if (!bIsPMRDestroyed)
-	{
+	if (!bIsPMRDestroyed) {
 		(void)_WrapExtMemReleasePages(psPrivData);
 	}
 e0:

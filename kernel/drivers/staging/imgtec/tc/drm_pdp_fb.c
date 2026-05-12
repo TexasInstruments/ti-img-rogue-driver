@@ -71,18 +71,14 @@ static struct fb_ops pdp_fbdev_ops = {
 #endif
 };
 
-
-static struct fb_info *
-pdp_fbdev_helper_alloc(struct drm_fb_helper *helper)
+static struct fb_info *pdp_fbdev_helper_alloc(struct drm_fb_helper *helper)
 {
 	return drm_fb_helper_alloc_info(helper);
 }
 
-static inline void
-pdp_fbdev_helper_fill_info(struct drm_fb_helper *helper,
-			   struct drm_fb_helper_surface_size *sizes,
-			   struct fb_info *info,
-			   struct drm_mode_fb_cmd2 __maybe_unused *mode_cmd)
+static inline void pdp_fbdev_helper_fill_info(
+	struct drm_fb_helper *helper, struct drm_fb_helper_surface_size *sizes,
+	struct fb_info *info, struct drm_mode_fb_cmd2 __maybe_unused *mode_cmd)
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0))
 	drm_fb_helper_fill_fix(info, mode_cmd->pitches[0],
@@ -110,18 +106,18 @@ static int pdp_fbdev_probe(struct drm_fb_helper *helper,
 			   struct drm_fb_helper_surface_size *sizes)
 #else
 int pdp_fbdev_driver_fbdev_probe(struct drm_fb_helper *helper,
-			   struct drm_fb_helper_surface_size *sizes)
+				 struct drm_fb_helper_surface_size *sizes)
 #endif
 {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0))
 	struct pdp_fbdev *pdp_fbdev =
 		container_of(helper, struct pdp_fbdev, helper);
 #else
-	struct pdp_fbdev *pdp_fbdev = ((struct pdp_drm_private*)helper->dev->dev_private)->fbdev;
+	struct pdp_fbdev *pdp_fbdev =
+		((struct pdp_drm_private *)helper->dev->dev_private)->fbdev;
 	pdp_fbdev->helper = *helper;
 #endif
-	struct drm_framebuffer *fb =
-		to_drm_framebuffer(&pdp_fbdev->fb);
+	struct drm_framebuffer *fb = to_drm_framebuffer(&pdp_fbdev->fb);
 	struct drm_device *dev = helper->dev;
 	struct drm_mode_fb_cmd2 mode_cmd;
 	struct pdp_gem_object *pdp_obj;
@@ -250,9 +246,10 @@ struct pdp_fbdev *pdp_fbdev_create(struct pdp_drm_private *dev_priv)
 
 	err = drm_fb_helper_initial_config(&pdp_fbdev->helper
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0))
-					   , preferred_bpp
+					   ,
+					   preferred_bpp
 #endif
-					  );
+	);
 	if (err)
 		goto err_fb_helper_fini;
 

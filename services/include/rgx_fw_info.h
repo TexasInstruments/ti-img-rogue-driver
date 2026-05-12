@@ -54,8 +54,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #define FW_BLOCK_SIZE 4096L
 
-typedef enum
-{
+typedef enum {
 	META_CODE = 0,
 	META_PRIVATE_DATA,
 	META_PRIVATE_RODATA,
@@ -76,8 +75,7 @@ typedef enum
 	RISCV_COREMEM_DATA,
 } RGX_FW_SECTION_ID;
 
-typedef enum
-{
+typedef enum {
 	NONE = 0,
 	FW_CODE,
 	FW_RWDATA,
@@ -85,7 +83,6 @@ typedef enum
 	FW_COREMEM_CODE,
 	FW_COREMEM_DATA
 } RGX_FW_SECTION_TYPE;
-
 
 /*
  * FW binary format with FW info attached:
@@ -111,7 +108,7 @@ typedef enum
  *                          FILE_SIZE
  */
 
-#define FW_INFO_VERSION  (3)
+#define FW_INFO_VERSION (3)
 
 /* Firmware is built for open source driver and uses open source version numbering */
 #define FW_INFO_FLAGS_OPEN_SOURCE (1U)
@@ -126,29 +123,28 @@ typedef enum
 
 #define FW_VERSION_BUILD PVRVERSION_BUILD
 
-typedef struct
-{
+typedef struct {
 	/* FW_INFO_VERSION 1 */
-	IMG_UINT32 ui32InfoVersion;      /* FW info version */
-	IMG_UINT32 ui32HeaderLen;        /* Header length */
-	IMG_UINT32 ui32LayoutEntryNum;   /* Number of entries in the layout table */
-	IMG_UINT32 ui32LayoutEntrySize;  /* Size of an entry in the layout table */
+	IMG_UINT32 ui32InfoVersion; /* FW info version */
+	IMG_UINT32 ui32HeaderLen; /* Header length */
+	IMG_UINT32 ui32LayoutEntryNum; /* Number of entries in the layout table */
+	IMG_UINT32 ui32LayoutEntrySize; /* Size of an entry in the layout table */
 	IMG_UINT64 RGXFW_ALIGN ui64BVNC; /* BVNC */
-	IMG_UINT32 ui32FwPageSize;       /* Page size of processor on which firmware executes */
-	IMG_UINT32 ui32Flags;            /* Compatibility flags */
+	IMG_UINT32
+		ui32FwPageSize; /* Page size of processor on which firmware executes */
+	IMG_UINT32 ui32Flags; /* Compatibility flags */
 
 	/* FW_INFO_VERSION 2 */
-	IMG_UINT16 ui16PVRVersionMajor;  /* DDK major version number */
-	IMG_UINT16 ui16PVRVersionMinor;  /* DDK minor version number */
-	IMG_UINT32 ui32PVRVersionBuild;  /* DDK build number */
+	IMG_UINT16 ui16PVRVersionMajor; /* DDK major version number */
+	IMG_UINT16 ui16PVRVersionMinor; /* DDK minor version number */
+	IMG_UINT32 ui32PVRVersionBuild; /* DDK build number */
 
 	/* FW_INFO_VERSION 3 */
-	IMG_UINT32 ui32DeviceInfoSize;   /* Device info size (in bytes). */
+	IMG_UINT32 ui32DeviceInfoSize; /* Device info size (in bytes). */
 	IMG_UINT32 ui32Padding;
 } RGX_FW_INFO_HEADER;
 
-typedef struct
-{
+typedef struct {
 	RGX_FW_SECTION_ID eId;
 	RGX_FW_SECTION_TYPE eType;
 	IMG_UINT32 ui32BaseAddr;
@@ -157,12 +153,12 @@ typedef struct
 	IMG_UINT32 ui32AllocOffset;
 } RGX_FW_LAYOUT_ENTRY;
 
-typedef struct
-{
-	IMG_UINT64 ui64BRNMaskSize;      /* BRN Mask size (in IMG_UINT64s) */
-	IMG_UINT64 ui64ERNMaskSize;      /* ERN Mask size (in IMG_UINT64s) */
-	IMG_UINT64 ui64FeatureMaskSize;  /* Feature Mask size (in IMG_UINT64s) */
-	IMG_UINT64 ui64FeatureParamSize; /* Feature Parameter size (in IMG_UINT64s) */
+typedef struct {
+	IMG_UINT64 ui64BRNMaskSize; /* BRN Mask size (in IMG_UINT64s) */
+	IMG_UINT64 ui64ERNMaskSize; /* ERN Mask size (in IMG_UINT64s) */
+	IMG_UINT64 ui64FeatureMaskSize; /* Feature Mask size (in IMG_UINT64s) */
+	IMG_UINT64
+		ui64FeatureParamSize; /* Feature Parameter size (in IMG_UINT64s) */
 } RGX_FW_DEVICE_INFO_HEADER;
 
 #endif /* RGX_FW_INFO_H */

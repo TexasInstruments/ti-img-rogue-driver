@@ -65,15 +65,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static_assert(CACHE_BATCH_MAX <= IMG_UINT32_MAX,
 	      "CACHE_BATCH_MAX must not be larger than IMG_UINT32_MAX");
 
-static size_t
-PVRSRVBridgeCacheOpQueue(IMG_UINT32 ui32DispatchTableEntry,
-			 IMG_UINT8 *psCacheOpQueueIN_UI8,
-			 IMG_UINT8 *psCacheOpQueueOUT_UI8, CONNECTION_DATA *psConnection)
+static size_t PVRSRVBridgeCacheOpQueue(IMG_UINT32 ui32DispatchTableEntry,
+				       IMG_UINT8 *psCacheOpQueueIN_UI8,
+				       IMG_UINT8 *psCacheOpQueueOUT_UI8,
+				       CONNECTION_DATA *psConnection)
 {
 	PVRSRV_BRIDGE_IN_CACHEOPQUEUE *psCacheOpQueueIN =
-	    (PVRSRV_BRIDGE_IN_CACHEOPQUEUE *) IMG_OFFSET_ADDR(psCacheOpQueueIN_UI8, 0);
+		(PVRSRV_BRIDGE_IN_CACHEOPQUEUE *)IMG_OFFSET_ADDR(
+			psCacheOpQueueIN_UI8, 0);
 	PVRSRV_BRIDGE_OUT_CACHEOPQUEUE *psCacheOpQueueOUT =
-	    (PVRSRV_BRIDGE_OUT_CACHEOPQUEUE *) IMG_OFFSET_ADDR(psCacheOpQueueOUT_UI8, 0);
+		(PVRSRV_BRIDGE_OUT_CACHEOPQUEUE *)IMG_OFFSET_ADDR(
+			psCacheOpQueueOUT_UI8, 0);
 
 	PMR **psPMRInt = NULL;
 	IMG_HANDLE *hPMRInt2 = NULL;
@@ -88,149 +90,155 @@ PVRSRVBridgeCacheOpQueue(IMG_UINT32 ui32DispatchTableEntry,
 
 	IMG_UINT32 ui32BufferSize = 0;
 	IMG_UINT64 ui64BufferSize =
-	    ((IMG_UINT64) psCacheOpQueueIN->ui32NumCacheOps * sizeof(PMR *)) +
-	    ((IMG_UINT64) psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_HANDLE)) +
-	    ((IMG_UINT64) psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_UINT64)) +
-	    ((IMG_UINT64) psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_OFFSET_T)) +
-	    ((IMG_UINT64) psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_SIZE_T)) +
-	    ((IMG_UINT64) psCacheOpQueueIN->ui32NumCacheOps * sizeof(PVRSRV_CACHE_OP)) + 0;
+		((IMG_UINT64)psCacheOpQueueIN->ui32NumCacheOps *
+		 sizeof(PMR *)) +
+		((IMG_UINT64)psCacheOpQueueIN->ui32NumCacheOps *
+		 sizeof(IMG_HANDLE)) +
+		((IMG_UINT64)psCacheOpQueueIN->ui32NumCacheOps *
+		 sizeof(IMG_UINT64)) +
+		((IMG_UINT64)psCacheOpQueueIN->ui32NumCacheOps *
+		 sizeof(IMG_DEVMEM_OFFSET_T)) +
+		((IMG_UINT64)psCacheOpQueueIN->ui32NumCacheOps *
+		 sizeof(IMG_DEVMEM_SIZE_T)) +
+		((IMG_UINT64)psCacheOpQueueIN->ui32NumCacheOps *
+		 sizeof(PVRSRV_CACHE_OP)) +
+		0;
 
-	if (unlikely(psCacheOpQueueIN->ui32NumCacheOps > CACHE_BATCH_MAX))
-	{
-		psCacheOpQueueOUT->eError = PVRSRV_ERROR_BRIDGE_ARRAY_SIZE_TOO_BIG;
+	if (unlikely(psCacheOpQueueIN->ui32NumCacheOps > CACHE_BATCH_MAX)) {
+		psCacheOpQueueOUT->eError =
+			PVRSRV_ERROR_BRIDGE_ARRAY_SIZE_TOO_BIG;
 		goto CacheOpQueue_exit;
 	}
 
-	if (ui64BufferSize > IMG_UINT32_MAX)
-	{
-		psCacheOpQueueOUT->eError = PVRSRV_ERROR_BRIDGE_BUFFER_TOO_SMALL;
+	if (ui64BufferSize > IMG_UINT32_MAX) {
+		psCacheOpQueueOUT->eError =
+			PVRSRV_ERROR_BRIDGE_BUFFER_TOO_SMALL;
 		goto CacheOpQueue_exit;
 	}
 
-	ui32BufferSize = (IMG_UINT32) ui64BufferSize;
+	ui32BufferSize = (IMG_UINT32)ui64BufferSize;
 
-	if (ui32BufferSize != 0)
-	{
+	if (ui32BufferSize != 0) {
 		/* Try to use remainder of input buffer for copies if possible, word-aligned for safety. */
-		IMG_UINT32 ui32InBufferOffset =
-		    PVR_ALIGN(sizeof(*psCacheOpQueueIN), sizeof(unsigned long));
+		IMG_UINT32 ui32InBufferOffset = PVR_ALIGN(
+			sizeof(*psCacheOpQueueIN), sizeof(unsigned long));
 		IMG_UINT32 ui32InBufferExcessSize =
-		    ui32InBufferOffset >=
-		    PVRSRV_MAX_BRIDGE_IN_SIZE ? 0 : PVRSRV_MAX_BRIDGE_IN_SIZE - ui32InBufferOffset;
+			ui32InBufferOffset >= PVRSRV_MAX_BRIDGE_IN_SIZE ?
+				0 :
+				PVRSRV_MAX_BRIDGE_IN_SIZE - ui32InBufferOffset;
 
 		bHaveEnoughSpace = ui32BufferSize <= ui32InBufferExcessSize;
-		if (bHaveEnoughSpace)
-		{
-			IMG_BYTE *pInputBuffer = (IMG_BYTE *) (void *)psCacheOpQueueIN;
+		if (bHaveEnoughSpace) {
+			IMG_BYTE *pInputBuffer =
+				(IMG_BYTE *)(void *)psCacheOpQueueIN;
 
 			pArrayArgsBuffer = &pInputBuffer[ui32InBufferOffset];
-		}
-		else
-		{
+		} else {
 			pArrayArgsBuffer = OSAllocZMemNoStats(ui32BufferSize);
 
-			if (!pArrayArgsBuffer)
-			{
-				psCacheOpQueueOUT->eError = PVRSRV_ERROR_OUT_OF_MEMORY;
+			if (!pArrayArgsBuffer) {
+				psCacheOpQueueOUT->eError =
+					PVRSRV_ERROR_OUT_OF_MEMORY;
 				goto CacheOpQueue_exit;
 			}
 		}
 	}
 
-	if (psCacheOpQueueIN->ui32NumCacheOps != 0)
-	{
-		psPMRInt = (PMR **) IMG_OFFSET_ADDR(pArrayArgsBuffer, ui32NextOffset);
-		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps * sizeof(PMR *);
-		hPMRInt2 = (IMG_HANDLE *) IMG_OFFSET_ADDR(pArrayArgsBuffer, ui32NextOffset);
-		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_HANDLE);
+	if (psCacheOpQueueIN->ui32NumCacheOps != 0) {
+		psPMRInt = (PMR **)IMG_OFFSET_ADDR(pArrayArgsBuffer,
+						   ui32NextOffset);
+		ui32NextOffset +=
+			psCacheOpQueueIN->ui32NumCacheOps * sizeof(PMR *);
+		hPMRInt2 = (IMG_HANDLE *)IMG_OFFSET_ADDR(pArrayArgsBuffer,
+							 ui32NextOffset);
+		ui32NextOffset +=
+			psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_HANDLE);
 	}
 
 	/* Copy the data over */
-	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_HANDLE) > 0)
-	{
-		if (CopyFromUserWrapper
-		    (NULL, ui32DispatchTableEntry, hPMRInt2,
-		     (const void __user *)psCacheOpQueueIN->phPMR,
-		     psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_HANDLE)) != PVRSRV_OK)
-		{
+	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_HANDLE) > 0) {
+		if (CopyFromUserWrapper(
+			    NULL, ui32DispatchTableEntry, hPMRInt2,
+			    (const void __user *)psCacheOpQueueIN->phPMR,
+			    psCacheOpQueueIN->ui32NumCacheOps *
+				    sizeof(IMG_HANDLE)) != PVRSRV_OK) {
 			psCacheOpQueueOUT->eError = PVRSRV_ERROR_INVALID_PARAMS;
 
 			goto CacheOpQueue_exit;
 		}
 	}
-	if (psCacheOpQueueIN->ui32NumCacheOps != 0)
-	{
-		ui64AddressInt = (IMG_UINT64 *) IMG_OFFSET_ADDR(pArrayArgsBuffer, ui32NextOffset);
-		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_UINT64);
+	if (psCacheOpQueueIN->ui32NumCacheOps != 0) {
+		ui64AddressInt = (IMG_UINT64 *)IMG_OFFSET_ADDR(pArrayArgsBuffer,
+							       ui32NextOffset);
+		ui32NextOffset +=
+			psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_UINT64);
 	}
 
 	/* Copy the data over */
-	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_UINT64) > 0)
-	{
-		if (CopyFromUserWrapper
-		    (NULL, ui32DispatchTableEntry, ui64AddressInt,
-		     (const void __user *)psCacheOpQueueIN->pui64Address,
-		     psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_UINT64)) != PVRSRV_OK)
-		{
+	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_UINT64) > 0) {
+		if (CopyFromUserWrapper(
+			    NULL, ui32DispatchTableEntry, ui64AddressInt,
+			    (const void __user *)psCacheOpQueueIN->pui64Address,
+			    psCacheOpQueueIN->ui32NumCacheOps *
+				    sizeof(IMG_UINT64)) != PVRSRV_OK) {
 			psCacheOpQueueOUT->eError = PVRSRV_ERROR_INVALID_PARAMS;
 
 			goto CacheOpQueue_exit;
 		}
 	}
-	if (psCacheOpQueueIN->ui32NumCacheOps != 0)
-	{
-		uiOffsetInt =
-		    (IMG_DEVMEM_OFFSET_T *) IMG_OFFSET_ADDR(pArrayArgsBuffer, ui32NextOffset);
-		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_OFFSET_T);
+	if (psCacheOpQueueIN->ui32NumCacheOps != 0) {
+		uiOffsetInt = (IMG_DEVMEM_OFFSET_T *)IMG_OFFSET_ADDR(
+			pArrayArgsBuffer, ui32NextOffset);
+		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps *
+				  sizeof(IMG_DEVMEM_OFFSET_T);
 	}
 
 	/* Copy the data over */
-	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_OFFSET_T) > 0)
-	{
-		if (CopyFromUserWrapper
-		    (NULL, ui32DispatchTableEntry, uiOffsetInt,
-		     (const void __user *)psCacheOpQueueIN->puiOffset,
-		     psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_OFFSET_T)) != PVRSRV_OK)
-		{
+	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_OFFSET_T) >
+	    0) {
+		if (CopyFromUserWrapper(
+			    NULL, ui32DispatchTableEntry, uiOffsetInt,
+			    (const void __user *)psCacheOpQueueIN->puiOffset,
+			    psCacheOpQueueIN->ui32NumCacheOps *
+				    sizeof(IMG_DEVMEM_OFFSET_T)) != PVRSRV_OK) {
 			psCacheOpQueueOUT->eError = PVRSRV_ERROR_INVALID_PARAMS;
 
 			goto CacheOpQueue_exit;
 		}
 	}
-	if (psCacheOpQueueIN->ui32NumCacheOps != 0)
-	{
-		uiSizeInt = (IMG_DEVMEM_SIZE_T *) IMG_OFFSET_ADDR(pArrayArgsBuffer, ui32NextOffset);
-		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_SIZE_T);
+	if (psCacheOpQueueIN->ui32NumCacheOps != 0) {
+		uiSizeInt = (IMG_DEVMEM_SIZE_T *)IMG_OFFSET_ADDR(
+			pArrayArgsBuffer, ui32NextOffset);
+		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps *
+				  sizeof(IMG_DEVMEM_SIZE_T);
 	}
 
 	/* Copy the data over */
-	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_SIZE_T) > 0)
-	{
-		if (CopyFromUserWrapper
-		    (NULL, ui32DispatchTableEntry, uiSizeInt,
-		     (const void __user *)psCacheOpQueueIN->puiSize,
-		     psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_SIZE_T)) != PVRSRV_OK)
-		{
+	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(IMG_DEVMEM_SIZE_T) > 0) {
+		if (CopyFromUserWrapper(
+			    NULL, ui32DispatchTableEntry, uiSizeInt,
+			    (const void __user *)psCacheOpQueueIN->puiSize,
+			    psCacheOpQueueIN->ui32NumCacheOps *
+				    sizeof(IMG_DEVMEM_SIZE_T)) != PVRSRV_OK) {
 			psCacheOpQueueOUT->eError = PVRSRV_ERROR_INVALID_PARAMS;
 
 			goto CacheOpQueue_exit;
 		}
 	}
-	if (psCacheOpQueueIN->ui32NumCacheOps != 0)
-	{
-		iuCacheOpInt =
-		    (PVRSRV_CACHE_OP *) IMG_OFFSET_ADDR(pArrayArgsBuffer, ui32NextOffset);
-		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps * sizeof(PVRSRV_CACHE_OP);
+	if (psCacheOpQueueIN->ui32NumCacheOps != 0) {
+		iuCacheOpInt = (PVRSRV_CACHE_OP *)IMG_OFFSET_ADDR(
+			pArrayArgsBuffer, ui32NextOffset);
+		ui32NextOffset += psCacheOpQueueIN->ui32NumCacheOps *
+				  sizeof(PVRSRV_CACHE_OP);
 	}
 
 	/* Copy the data over */
-	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(PVRSRV_CACHE_OP) > 0)
-	{
-		if (CopyFromUserWrapper
-		    (NULL, ui32DispatchTableEntry, iuCacheOpInt,
-		     (const void __user *)psCacheOpQueueIN->piuCacheOp,
-		     psCacheOpQueueIN->ui32NumCacheOps * sizeof(PVRSRV_CACHE_OP)) != PVRSRV_OK)
-		{
+	if (psCacheOpQueueIN->ui32NumCacheOps * sizeof(PVRSRV_CACHE_OP) > 0) {
+		if (CopyFromUserWrapper(
+			    NULL, ui32DispatchTableEntry, iuCacheOpInt,
+			    (const void __user *)psCacheOpQueueIN->piuCacheOp,
+			    psCacheOpQueueIN->ui32NumCacheOps *
+				    sizeof(PVRSRV_CACHE_OP)) != PVRSRV_OK) {
 			psCacheOpQueueOUT->eError = PVRSRV_ERROR_INVALID_PARAMS;
 
 			goto CacheOpQueue_exit;
@@ -243,16 +251,13 @@ PVRSRVBridgeCacheOpQueue(IMG_UINT32 ui32DispatchTableEntry,
 	{
 		IMG_UINT32 i;
 
-		for (i = 0; i < psCacheOpQueueIN->ui32NumCacheOps; i++)
-		{
+		for (i = 0; i < psCacheOpQueueIN->ui32NumCacheOps; i++) {
 			/* Look up the address from the handle */
-			psCacheOpQueueOUT->eError =
-			    PVRSRVLookupHandleUnlocked(psConnection->psHandleBase,
-						       (void **)&psPMRInt[i],
-						       hPMRInt2[i],
-						       PVRSRV_HANDLE_TYPE_PHYSMEM_PMR, IMG_TRUE);
-			if (unlikely(psCacheOpQueueOUT->eError != PVRSRV_OK))
-			{
+			psCacheOpQueueOUT->eError = PVRSRVLookupHandleUnlocked(
+				psConnection->psHandleBase,
+				(void **)&psPMRInt[i], hPMRInt2[i],
+				PVRSRV_HANDLE_TYPE_PHYSMEM_PMR, IMG_TRUE);
+			if (unlikely(psCacheOpQueueOUT->eError != PVRSRV_OK)) {
 				UnlockHandle(psConnection->psHandleBase);
 				goto CacheOpQueue_exit;
 			}
@@ -262,30 +267,25 @@ PVRSRVBridgeCacheOpQueue(IMG_UINT32 ui32DispatchTableEntry,
 	UnlockHandle(psConnection->psHandleBase);
 
 	psCacheOpQueueOUT->eError =
-	    CacheOpQueue(psConnection, OSGetDevNode(psConnection),
-			 psCacheOpQueueIN->ui32NumCacheOps,
-			 psPMRInt,
-			 ui64AddressInt,
-			 uiOffsetInt, uiSizeInt, iuCacheOpInt, psCacheOpQueueIN->ui32OpTimeline);
+		CacheOpQueue(psConnection, OSGetDevNode(psConnection),
+			     psCacheOpQueueIN->ui32NumCacheOps, psPMRInt,
+			     ui64AddressInt, uiOffsetInt, uiSizeInt,
+			     iuCacheOpInt, psCacheOpQueueIN->ui32OpTimeline);
 
 CacheOpQueue_exit:
 
 	/* Lock over handle lookup cleanup. */
 	LockHandle(psConnection->psHandleBase);
 
-	if (hPMRInt2)
-	{
+	if (hPMRInt2) {
 		IMG_UINT32 i;
 
-		for (i = 0; i < psCacheOpQueueIN->ui32NumCacheOps; i++)
-		{
-
+		for (i = 0; i < psCacheOpQueueIN->ui32NumCacheOps; i++) {
 			/* Unreference the previously looked up handle */
-			if (psPMRInt && psPMRInt[i])
-			{
-				PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase,
-							    hPMRInt2[i],
-							    PVRSRV_HANDLE_TYPE_PHYSMEM_PMR);
+			if (psPMRInt && psPMRInt[i]) {
+				PVRSRVReleaseHandleUnlocked(
+					psConnection->psHandleBase, hPMRInt2[i],
+					PVRSRV_HANDLE_TYPE_PHYSMEM_PMR);
 			}
 		}
 	}
@@ -298,17 +298,13 @@ CacheOpQueue_exit:
 		PVR_ASSERT(ui32BufferSize == ui32NextOffset);
 #endif /* PVRSRV_NEED_PVR_ASSERT */
 
-	if (pArrayArgsBuffer != NULL)
-	{
-		if (bHaveEnoughSpace)
-		{
+	if (pArrayArgsBuffer != NULL) {
+		if (bHaveEnoughSpace) {
 			/* Clear buffer to prevent next bridge call from using stale data.
 			 * This could for example happen if the call errors before initialising
 			 * all of the data. */
 			OSCachedMemSet(pArrayArgsBuffer, 0, ui32BufferSize);
-		}
-		else
-		{
+		} else {
 			OSFreeMemNoStats(pArrayArgsBuffer);
 		}
 	}
@@ -316,15 +312,17 @@ CacheOpQueue_exit:
 	return offsetof(PVRSRV_BRIDGE_OUT_CACHEOPQUEUE, eError);
 }
 
-static size_t
-PVRSRVBridgeCacheOpExec(IMG_UINT32 ui32DispatchTableEntry,
-			IMG_UINT8 *psCacheOpExecIN_UI8,
-			IMG_UINT8 *psCacheOpExecOUT_UI8, CONNECTION_DATA *psConnection)
+static size_t PVRSRVBridgeCacheOpExec(IMG_UINT32 ui32DispatchTableEntry,
+				      IMG_UINT8 *psCacheOpExecIN_UI8,
+				      IMG_UINT8 *psCacheOpExecOUT_UI8,
+				      CONNECTION_DATA *psConnection)
 {
 	PVRSRV_BRIDGE_IN_CACHEOPEXEC *psCacheOpExecIN =
-	    (PVRSRV_BRIDGE_IN_CACHEOPEXEC *) IMG_OFFSET_ADDR(psCacheOpExecIN_UI8, 0);
+		(PVRSRV_BRIDGE_IN_CACHEOPEXEC *)IMG_OFFSET_ADDR(
+			psCacheOpExecIN_UI8, 0);
 	PVRSRV_BRIDGE_OUT_CACHEOPEXEC *psCacheOpExecOUT =
-	    (PVRSRV_BRIDGE_OUT_CACHEOPEXEC *) IMG_OFFSET_ADDR(psCacheOpExecOUT_UI8, 0);
+		(PVRSRV_BRIDGE_OUT_CACHEOPEXEC *)IMG_OFFSET_ADDR(
+			psCacheOpExecOUT_UI8, 0);
 
 	IMG_HANDLE hPMR = psCacheOpExecIN->hPMR;
 	PMR *psPMRInt = NULL;
@@ -333,23 +331,21 @@ PVRSRVBridgeCacheOpExec(IMG_UINT32 ui32DispatchTableEntry,
 	LockHandle(psConnection->psHandleBase);
 
 	/* Look up the address from the handle */
-	psCacheOpExecOUT->eError =
-	    PVRSRVLookupHandleUnlocked(psConnection->psHandleBase,
-				       (void **)&psPMRInt,
-				       hPMR, PVRSRV_HANDLE_TYPE_PHYSMEM_PMR, IMG_TRUE);
-	if (unlikely(psCacheOpExecOUT->eError != PVRSRV_OK))
-	{
+	psCacheOpExecOUT->eError = PVRSRVLookupHandleUnlocked(
+		psConnection->psHandleBase, (void **)&psPMRInt, hPMR,
+		PVRSRV_HANDLE_TYPE_PHYSMEM_PMR, IMG_TRUE);
+	if (unlikely(psCacheOpExecOUT->eError != PVRSRV_OK)) {
 		UnlockHandle(psConnection->psHandleBase);
 		goto CacheOpExec_exit;
 	}
 	/* Release now we have looked up handles. */
 	UnlockHandle(psConnection->psHandleBase);
 
-	psCacheOpExecOUT->eError =
-	    CacheOpValExec(psPMRInt,
-			   psCacheOpExecIN->ui64Address,
-			   psCacheOpExecIN->uiOffset,
-			   psCacheOpExecIN->uiSize, psCacheOpExecIN->iuCacheOp);
+	psCacheOpExecOUT->eError = CacheOpValExec(psPMRInt,
+						  psCacheOpExecIN->ui64Address,
+						  psCacheOpExecIN->uiOffset,
+						  psCacheOpExecIN->uiSize,
+						  psCacheOpExecIN->iuCacheOp);
 
 CacheOpExec_exit:
 
@@ -357,10 +353,9 @@ CacheOpExec_exit:
 	LockHandle(psConnection->psHandleBase);
 
 	/* Unreference the previously looked up handle */
-	if (psPMRInt)
-	{
-		PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase,
-					    hPMR, PVRSRV_HANDLE_TYPE_PHYSMEM_PMR);
+	if (psPMRInt) {
+		PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase, hPMR,
+					    PVRSRV_HANDLE_TYPE_PHYSMEM_PMR);
 	}
 	/* Release now we have cleaned up look up handles. */
 	UnlockHandle(psConnection->psHandleBase);
@@ -368,15 +363,17 @@ CacheOpExec_exit:
 	return offsetof(PVRSRV_BRIDGE_OUT_CACHEOPEXEC, eError);
 }
 
-static size_t
-PVRSRVBridgeCacheOpLog(IMG_UINT32 ui32DispatchTableEntry,
-		       IMG_UINT8 *psCacheOpLogIN_UI8,
-		       IMG_UINT8 *psCacheOpLogOUT_UI8, CONNECTION_DATA *psConnection)
+static size_t PVRSRVBridgeCacheOpLog(IMG_UINT32 ui32DispatchTableEntry,
+				     IMG_UINT8 *psCacheOpLogIN_UI8,
+				     IMG_UINT8 *psCacheOpLogOUT_UI8,
+				     CONNECTION_DATA *psConnection)
 {
 	PVRSRV_BRIDGE_IN_CACHEOPLOG *psCacheOpLogIN =
-	    (PVRSRV_BRIDGE_IN_CACHEOPLOG *) IMG_OFFSET_ADDR(psCacheOpLogIN_UI8, 0);
+		(PVRSRV_BRIDGE_IN_CACHEOPLOG *)IMG_OFFSET_ADDR(
+			psCacheOpLogIN_UI8, 0);
 	PVRSRV_BRIDGE_OUT_CACHEOPLOG *psCacheOpLogOUT =
-	    (PVRSRV_BRIDGE_OUT_CACHEOPLOG *) IMG_OFFSET_ADDR(psCacheOpLogOUT_UI8, 0);
+		(PVRSRV_BRIDGE_OUT_CACHEOPLOG *)IMG_OFFSET_ADDR(
+			psCacheOpLogOUT_UI8, 0);
 
 	IMG_HANDLE hPMR = psCacheOpLogIN->hPMR;
 	PMR *psPMRInt = NULL;
@@ -385,25 +382,20 @@ PVRSRVBridgeCacheOpLog(IMG_UINT32 ui32DispatchTableEntry,
 	LockHandle(psConnection->psHandleBase);
 
 	/* Look up the address from the handle */
-	psCacheOpLogOUT->eError =
-	    PVRSRVLookupHandleUnlocked(psConnection->psHandleBase,
-				       (void **)&psPMRInt,
-				       hPMR, PVRSRV_HANDLE_TYPE_PHYSMEM_PMR, IMG_TRUE);
-	if (unlikely(psCacheOpLogOUT->eError != PVRSRV_OK))
-	{
+	psCacheOpLogOUT->eError = PVRSRVLookupHandleUnlocked(
+		psConnection->psHandleBase, (void **)&psPMRInt, hPMR,
+		PVRSRV_HANDLE_TYPE_PHYSMEM_PMR, IMG_TRUE);
+	if (unlikely(psCacheOpLogOUT->eError != PVRSRV_OK)) {
 		UnlockHandle(psConnection->psHandleBase);
 		goto CacheOpLog_exit;
 	}
 	/* Release now we have looked up handles. */
 	UnlockHandle(psConnection->psHandleBase);
 
-	psCacheOpLogOUT->eError =
-	    CacheOpLog(psPMRInt,
-		       psCacheOpLogIN->ui64Address,
-		       psCacheOpLogIN->uiOffset,
-		       psCacheOpLogIN->uiSize,
-		       psCacheOpLogIN->i64StartTime,
-		       psCacheOpLogIN->i64EndTime, psCacheOpLogIN->iuCacheOp);
+	psCacheOpLogOUT->eError = CacheOpLog(
+		psPMRInt, psCacheOpLogIN->ui64Address, psCacheOpLogIN->uiOffset,
+		psCacheOpLogIN->uiSize, psCacheOpLogIN->i64StartTime,
+		psCacheOpLogIN->i64EndTime, psCacheOpLogIN->iuCacheOp);
 
 CacheOpLog_exit:
 
@@ -411,10 +403,9 @@ CacheOpLog_exit:
 	LockHandle(psConnection->psHandleBase);
 
 	/* Unreference the previously looked up handle */
-	if (psPMRInt)
-	{
-		PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase,
-					    hPMR, PVRSRV_HANDLE_TYPE_PHYSMEM_PMR);
+	if (psPMRInt) {
+		PVRSRVReleaseHandleUnlocked(psConnection->psHandleBase, hPMR,
+					    PVRSRV_HANDLE_TYPE_PHYSMEM_PMR);
 	}
 	/* Release now we have cleaned up look up handles. */
 	UnlockHandle(psConnection->psHandleBase);
@@ -434,17 +425,22 @@ void DeinitCACHEBridge(void);
  */
 PVRSRV_ERROR InitCACHEBridge(void)
 {
-
-	SetDispatchTableEntry(PVRSRV_BRIDGE_CACHE, PVRSRV_BRIDGE_CACHE_CACHEOPQUEUE,
-			      PVRSRVBridgeCacheOpQueue, NULL, sizeof(PVRSRV_BRIDGE_IN_CACHEOPQUEUE),
+	SetDispatchTableEntry(PVRSRV_BRIDGE_CACHE,
+			      PVRSRV_BRIDGE_CACHE_CACHEOPQUEUE,
+			      PVRSRVBridgeCacheOpQueue, NULL,
+			      sizeof(PVRSRV_BRIDGE_IN_CACHEOPQUEUE),
 			      sizeof(PVRSRV_BRIDGE_OUT_CACHEOPQUEUE));
 
-	SetDispatchTableEntry(PVRSRV_BRIDGE_CACHE, PVRSRV_BRIDGE_CACHE_CACHEOPEXEC,
-			      PVRSRVBridgeCacheOpExec, NULL, sizeof(PVRSRV_BRIDGE_IN_CACHEOPEXEC),
+	SetDispatchTableEntry(PVRSRV_BRIDGE_CACHE,
+			      PVRSRV_BRIDGE_CACHE_CACHEOPEXEC,
+			      PVRSRVBridgeCacheOpExec, NULL,
+			      sizeof(PVRSRV_BRIDGE_IN_CACHEOPEXEC),
 			      sizeof(PVRSRV_BRIDGE_OUT_CACHEOPEXEC));
 
-	SetDispatchTableEntry(PVRSRV_BRIDGE_CACHE, PVRSRV_BRIDGE_CACHE_CACHEOPLOG,
-			      PVRSRVBridgeCacheOpLog, NULL, sizeof(PVRSRV_BRIDGE_IN_CACHEOPLOG),
+	SetDispatchTableEntry(PVRSRV_BRIDGE_CACHE,
+			      PVRSRV_BRIDGE_CACHE_CACHEOPLOG,
+			      PVRSRVBridgeCacheOpLog, NULL,
+			      sizeof(PVRSRV_BRIDGE_IN_CACHEOPLOG),
 			      sizeof(PVRSRV_BRIDGE_OUT_CACHEOPLOG));
 
 	return PVRSRV_OK;
@@ -455,11 +451,12 @@ PVRSRV_ERROR InitCACHEBridge(void)
  */
 void DeinitCACHEBridge(void)
 {
+	UnsetDispatchTableEntry(PVRSRV_BRIDGE_CACHE,
+				PVRSRV_BRIDGE_CACHE_CACHEOPQUEUE);
 
-	UnsetDispatchTableEntry(PVRSRV_BRIDGE_CACHE, PVRSRV_BRIDGE_CACHE_CACHEOPQUEUE);
+	UnsetDispatchTableEntry(PVRSRV_BRIDGE_CACHE,
+				PVRSRV_BRIDGE_CACHE_CACHEOPEXEC);
 
-	UnsetDispatchTableEntry(PVRSRV_BRIDGE_CACHE, PVRSRV_BRIDGE_CACHE_CACHEOPEXEC);
-
-	UnsetDispatchTableEntry(PVRSRV_BRIDGE_CACHE, PVRSRV_BRIDGE_CACHE_CACHEOPLOG);
-
+	UnsetDispatchTableEntry(PVRSRV_BRIDGE_CACHE,
+				PVRSRV_BRIDGE_CACHE_CACHEOPLOG);
 }

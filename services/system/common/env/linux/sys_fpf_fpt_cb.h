@@ -52,8 +52,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sys_fwif_fpf_fpt_cb.h"
 #include "sys_fpf_fpt_cb_apu_if.h"
 
-typedef struct _RGX_FPF_KICK_COMMS_CONFIG_
-{
+typedef struct _RGX_FPF_KICK_COMMS_CONFIG_ {
 	struct fpf_cb_config sApu2GpuConfig;
 	struct fpf_cb_config sGpu2ApuConfig;
 	struct fpf_kickreg_config sAPUKickRegConfig;
@@ -65,12 +64,11 @@ typedef struct _RGX_FPF_KICK_COMMS_CONFIG_
 	IMG_HANDLE hFpfApuKickReg;
 } RGX_FPF_KICK_COMMS_CONFIG;
 
-
 PVRSRV_ERROR SysFpfFptCbDeviceInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig);
 void SysFpfFptCbDeviceDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig);
 
 PVRSRV_ERROR SysFpfFptCbCommunicationInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig,
-                                          RGX_FPF_KICK_COMMS_FWCTX *ppsContext);
+					  RGX_FPF_KICK_COMMS_FWCTX *ppsContext);
 
 void SysFpfFptCbCommunicationDeInit(PVRSRV_DEVICE_CONFIG *psDeviceConfig);
 

@@ -51,31 +51,31 @@
 struct pvr_exp_fence_context;
 struct pvr_exp_fence;
 
-
 #if defined(SUPPORT_FASTPATH_FENCE)
 enum PVRSRV_ERROR_TAG pvr_exp_fence_module_init(void);
 void pvr_exp_fence_module_deinit(void);
 #endif
 
-struct pvr_exp_fence_context *pvr_exp_fence_context_create(const char *name,
-				const char *driver_name);
+struct pvr_exp_fence_context *
+pvr_exp_fence_context_create(const char *name, const char *driver_name);
 void pvr_exp_fence_context_destroy(struct pvr_exp_fence_context *fence_context);
-struct dma_fence *pvr_exp_fence_create(struct pvr_exp_fence_context *fence_context,
-				       int fd,
-				       u64 *sync_pt_idx);
+struct dma_fence *
+pvr_exp_fence_create(struct pvr_exp_fence_context *fence_context, int fd,
+		     u64 *sync_pt_idx);
 
 #if defined(SUPPORT_FASTPATH_FENCE)
-struct dma_fence *pvr_exp_fence_create_with_fp_token(struct pvr_exp_fence_context *fence_context,
-						     int fd,
-						     u64 *sync_pt_idx);
+struct dma_fence *
+pvr_exp_fence_create_with_fp_token(struct pvr_exp_fence_context *fence_context,
+				   int fd, u64 *sync_pt_idx);
 #endif
 
 const char *pvr_exp_fence_context_name(struct pvr_exp_fence_context *fctx);
 
-enum PVRSRV_ERROR_TAG pvr_exp_fence_assign_checkpoint(PVRSRV_FENCE fence_to_resolve,
-						      struct dma_fence *fence,
-						      PSYNC_CHECKPOINT_CONTEXT checkpoint_context,
-						      PSYNC_CHECKPOINT *assigned_checkpoint);
+enum PVRSRV_ERROR_TAG
+pvr_exp_fence_assign_checkpoint(PVRSRV_FENCE fence_to_resolve,
+				struct dma_fence *fence,
+				PSYNC_CHECKPOINT_CONTEXT checkpoint_context,
+				PSYNC_CHECKPOINT *assigned_checkpoint);
 
 enum PVRSRV_ERROR_TAG pvr_exp_fence_rollback(struct dma_fence *fence);
 
@@ -88,6 +88,7 @@ struct pvr_exp_fence *to_pvr_exp_fence(struct dma_fence *fence);
 struct SYNC_CHECKPOINT_TAG *
 pvr_exp_fence_get_checkpoint(struct pvr_exp_fence *export_fence);
 
-const struct pvr_fence_print_ops *get_pvr_exp_fence_print_ops(const struct dma_fence *fence);
+const struct pvr_fence_print_ops *
+get_pvr_exp_fence_print_ops(const struct dma_fence *fence);
 
 #endif /* !defined(__PVR_EXPORT_FENCES_H__) */

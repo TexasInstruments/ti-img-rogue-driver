@@ -61,18 +61,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 struct fpf_cb_config {
 	phys_addr_t buff_paddr; /*!< Physical address of the circular buffer. */
-	size_t buff_pages;      /*!< Number of pages of the circular buffer
+	size_t buff_pages; /*!< Number of pages of the circular buffer
 	                             allocation. */
 	phys_addr_t ctrl_paddr; /*!< Physical address of the circular buffer
 	                             control structure. */
-	size_t ctrl_pages;      /*!< Number of pages of the circular buffer
+	size_t ctrl_pages; /*!< Number of pages of the circular buffer
 	                             control structure allocation (usually 1
 	                             page). */
-	size_t page_shift;      /*!< Page shift of the pages used in circular
+	size_t page_shift; /*!< Page shift of the pages used in circular
 	                             buffer allocations (usually 12 for 4K
 	                             pages). */
 };
-
 
 /*!
  * @Function    fpf_apu2gpu_acquire_cb
@@ -116,7 +115,8 @@ extern int fpf_apu2gpu_supply_kickreg(struct fpf_kickreg_config *mts_config);
  *              `fpf_kickreg_config` for details..
  * @Return      0 on success and standard negative error code on failure.
  */
-extern int fpf_gpu2apu_acquire_kickreg(struct fpf_kickreg_config *apu_kickreg_config);
+extern int
+fpf_gpu2apu_acquire_kickreg(struct fpf_kickreg_config *apu_kickreg_config);
 
 /*!
  * @Function    fpf_apu_res_get

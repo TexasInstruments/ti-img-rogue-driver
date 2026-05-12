@@ -59,8 +59,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "kernel_compatibility.h"
 
-typedef struct _PMR_PHYSWRAP_DATA_
-{
+typedef struct _PMR_PHYSWRAP_DATA_ {
 	/* Device for which this allocation has been made */
 	PVRSRV_DEVICE_NODE *psDevNode;
 
@@ -75,7 +74,6 @@ typedef struct _PMR_PHYSWRAP_DATA_
 
 } PMR_PHYSWRAP_DATA;
 
-
 /* Free the PMR private data */
 static void _FreeWrapData(PMR_PHYSWRAP_DATA *psPrivData)
 {
@@ -85,18 +83,17 @@ static void _FreeWrapData(PMR_PHYSWRAP_DATA *psPrivData)
 
 /* Allocate the PMR private data */
 static PVRSRV_ERROR _AllocWrapData(PMR_PHYSWRAP_DATA **ppsPrivData,
-                                   PVRSRV_DEVICE_NODE *psDevNode,
-                                   IMG_DEVMEM_SIZE_T uiSize,
-                                   IMG_UINT32 uiLog2PageSize,
-                                   PVRSRV_MEMALLOCFLAGS_T uiFlags)
+				   PVRSRV_DEVICE_NODE *psDevNode,
+				   IMG_DEVMEM_SIZE_T uiSize,
+				   IMG_UINT32 uiLog2PageSize,
+				   PVRSRV_MEMALLOCFLAGS_T uiFlags)
 {
 	PVRSRV_ERROR eError;
 	PMR_PHYSWRAP_DATA *psPrivData;
 
 	/* Allocate and initialise private factory data */
 	psPrivData = OSAllocZMem(sizeof(*psPrivData));
-	if (psPrivData == NULL)
-	{
+	if (psPrivData == NULL) {
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto eReturn;
 	}
@@ -105,9 +102,10 @@ static PVRSRV_ERROR _AllocWrapData(PMR_PHYSWRAP_DATA **ppsPrivData,
 	psPrivData->uiLog2PageSize = uiLog2PageSize;
 	psPrivData->uiTotalNumPages = uiSize >> uiLog2PageSize;
 
-	psPrivData->ppvPhysAddr = OSAllocZMem(sizeof(*(psPrivData->ppvPhysAddr)) * psPrivData->uiTotalNumPages);
-	if (psPrivData->ppvPhysAddr == NULL)
-	{
+	psPrivData->ppvPhysAddr =
+		OSAllocZMem(sizeof(*(psPrivData->ppvPhysAddr)) *
+			    psPrivData->uiTotalNumPages);
+	if (psPrivData->ppvPhysAddr == NULL) {
 		OSFreeMem(psPrivData);
 		eError = PVRSRV_ERROR_OUT_OF_MEMORY;
 		goto eReturn;
@@ -121,9 +119,8 @@ eReturn:
 	return eError;
 }
 
-static void _WrapPhysAddrs(PMR_PHYSWRAP_DATA *psPrivData,
-                           PHYS_HEAP *psPhysHeap,
-                           IMG_CPU_PHYADDR *pasCPUPhysAddrs)
+static void _WrapPhysAddrs(PMR_PHYSWRAP_DATA *psPrivData, PHYS_HEAP *psPhysHeap,
+			   IMG_CPU_PHYADDR *pasCPUPhysAddrs)
 {
 	/* Translate between CPU phys addrs and DEV phys addrs
 	 * that can be mapped by the GPU.
@@ -133,29 +130,22 @@ static void _WrapPhysAddrs(PMR_PHYSWRAP_DATA *psPrivData,
 	IMG_UINT32 i;
 
 	/* Don't translate here since they will be translated at the PMR level before mapping */
-	for (i = 0; i < psPrivData->uiTotalNumPages; i++)
-	{
+	for (i = 0; i < psPrivData->uiTotalNumPages; i++) {
 		psPrivData->ppvPhysAddr[i].uiAddr = pasCPUPhysAddrs[i].uiAddr;
 	}
 #else
-	PhysHeapCpuPAddrToDevPAddr(psPhysHeap,
-	                           psPrivData->uiTotalNumPages,
-	                           psPrivData->ppvPhysAddr,
-	                           pasCPUPhysAddrs);
+	PhysHeapCpuPAddrToDevPAddr(psPhysHeap, psPrivData->uiTotalNumPages,
+				   psPrivData->ppvPhysAddr, pasCPUPhysAddrs);
 #endif
 }
 
-static PVRSRV_ERROR
-PMRDevPhysAddrPhysWrapMem(PMR_IMPL_PRIVDATA pvPriv,
-                          IMG_UINT32 ui32Log2PageSize,
-                          IMG_UINT32 ui32NumOfPages,
-                          IMG_DEVMEM_OFFSET_T *puiOffset,
+static PVRSRV_ERROR PMRDevPhysAddrPhysWrapMem(
+	PMR_IMPL_PRIVDATA pvPriv, IMG_UINT32 ui32Log2PageSize,
+	IMG_UINT32 ui32NumOfPages, IMG_DEVMEM_OFFSET_T *puiOffset,
 #if defined(SUPPORT_STATIC_IPA)
-                          IMG_UINT64 ui64IPAPolicyValue,
-                          IMG_UINT64 ui64IPAClearMask,
+	IMG_UINT64 ui64IPAPolicyValue, IMG_UINT64 ui64IPAClearMask,
 #endif
-                          IMG_BOOL *pbValid,
-                          IMG_DEV_PHYADDR *psDevPAddr)
+	IMG_BOOL *pbValid, IMG_DEV_PHYADDR *psDevPAddr)
 {
 	const PMR_PHYSWRAP_DATA *psWrapData = pvPriv;
 	IMG_UINT32 uiPageSize = 1U << PAGE_SHIFT;
@@ -168,43 +158,42 @@ PMRDevPhysAddrPhysWrapMem(PMR_IMPL_PRIVDATA pvPriv,
 	PVR_UNREFERENCED_PARAMETER(ui64IPAClearMask);
 #endif
 
-
-	if (psWrapData->uiLog2PageSize != ui32Log2PageSize)
-	{
+	if (psWrapData->uiLog2PageSize != ui32Log2PageSize) {
 		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Requested ui32Log2PageSize %u is different from "
-				"Wrapped page size %u. Not supported.",
-				__func__,
-				ui32Log2PageSize,
-				psWrapData->uiLog2PageSize));
+			 "%s: Requested ui32Log2PageSize %u is different from "
+			 "Wrapped page size %u. Not supported.",
+			 __func__, ui32Log2PageSize,
+			 psWrapData->uiLog2PageSize));
 		return PVRSRV_ERROR_PMR_INCOMPATIBLE_CONTIGUITY;
 	}
 
-	for (uiIdx=0; uiIdx < ui32NumOfPages; uiIdx++)
-	{
+	for (uiIdx = 0; uiIdx < ui32NumOfPages; uiIdx++) {
 		uiPageIndex = puiOffset[uiIdx] >> PAGE_SHIFT;
-		uiInPageOffset = puiOffset[uiIdx] - ((IMG_DEVMEM_OFFSET_T)uiPageIndex << PAGE_SHIFT);
+		uiInPageOffset =
+			puiOffset[uiIdx] -
+			((IMG_DEVMEM_OFFSET_T)uiPageIndex << PAGE_SHIFT);
 
-		PVR_LOG_RETURN_IF_FALSE(uiPageIndex < psWrapData->uiTotalNumPages,
-		                        "puiOffset out of range", PVRSRV_ERROR_OUT_OF_RANGE);
+		PVR_LOG_RETURN_IF_FALSE(
+			uiPageIndex < psWrapData->uiTotalNumPages,
+			"puiOffset out of range", PVRSRV_ERROR_OUT_OF_RANGE);
 
 		PVR_ASSERT(uiInPageOffset < uiPageSize);
 
-		psDevPAddr[uiIdx].uiAddr = psWrapData->ppvPhysAddr[uiPageIndex].uiAddr;
+		psDevPAddr[uiIdx].uiAddr =
+			psWrapData->ppvPhysAddr[uiPageIndex].uiAddr;
 		pbValid[uiIdx] = IMG_TRUE;
 
 		psDevPAddr[uiIdx].uiAddr += uiInPageOffset;
 #if defined(SUPPORT_STATIC_IPA)
 		psDevPAddr[uiIdx].uiAddr &= ~ui64IPAClearMask;
 		psDevPAddr[uiIdx].uiAddr |= ui64IPAPolicyValue;
-#endif	/* SUPPORT_STATIC_IPA */
+#endif /* SUPPORT_STATIC_IPA */
 	}
 
 	return PVRSRV_OK;
 }
 
-static void
-PMRFinalizePhysWrapMem(PMR_IMPL_PRIVDATA pvPriv)
+static void PMRFinalizePhysWrapMem(PMR_IMPL_PRIVDATA pvPriv)
 {
 	PMR_PHYSWRAP_DATA *psWrapData = pvPriv;
 
@@ -212,139 +201,124 @@ PMRFinalizePhysWrapMem(PMR_IMPL_PRIVDATA pvPriv)
 }
 
 static const PMR_IMPL_FUNCTAB _sPMRWrapPFuncTab = {
-    .pfnDevPhysAddr = &PMRDevPhysAddrPhysWrapMem,
-    .pfnFinalize = &PMRFinalizePhysWrapMem,
+	.pfnDevPhysAddr = &PMRDevPhysAddrPhysWrapMem,
+	.pfnFinalize = &PMRFinalizePhysWrapMem,
 };
 
 static inline PVRSRV_ERROR PhysmemValidateParam(IMG_CPU_PHYADDR *psPhysAddrs,
-                                                PHYS_HEAP *psPhysHeap,
-                                                IMG_DEVMEM_SIZE_T uiSize,
-                                                IMG_UINT32 uiLog2PageSize,
-                                                PVRSRV_MEMALLOCFLAGS_T uiFlags)
+						PHYS_HEAP *psPhysHeap,
+						IMG_DEVMEM_SIZE_T uiSize,
+						IMG_UINT32 uiLog2PageSize,
+						PVRSRV_MEMALLOCFLAGS_T uiFlags)
 {
 	IMG_UINT32 uiNumPages = uiSize >> uiLog2PageSize;
 	IMG_UINT32 i;
 
 	PVR_LOG_RETURN_IF_INVALID_PARAM(uiSize != 0, "uiSize");
 
-	if (uiLog2PageSize != PhysHeapGetPageShift(psPhysHeap))
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Incompatible log2pagesize, actual %u, expected %u.",
-				__func__,
-				uiLog2PageSize,
-				PhysHeapGetPageShift(psPhysHeap)));
+	if (uiLog2PageSize != PhysHeapGetPageShift(psPhysHeap)) {
+		PVR_DPF((
+			PVR_DBG_ERROR,
+			"%s: Incompatible log2pagesize, actual %u, expected %u.",
+			__func__, uiLog2PageSize,
+			PhysHeapGetPageShift(psPhysHeap)));
 		return PVRSRV_ERROR_PMR_INCOMPATIBLE_CONTIGUITY;
 	}
 
-	if (uiSize > PMR_MAX_SUPPORTED_SIZE)
-	{
+	if (uiSize > PMR_MAX_SUPPORTED_SIZE) {
 		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Requested size too large (max supported ""size 0x%llx Bytes).",
-				__func__,
-				PMR_MAX_SUPPORTED_SIZE));
+			 "%s: Requested size too large (max supported "
+			 "size 0x%llx Bytes).",
+			 __func__, PMR_MAX_SUPPORTED_SIZE));
 		return PVRSRV_ERROR_PMR_TOO_LARGE;
 	}
 
-	if (uiSize & (uiLog2PageSize - 1))
-	{
-		PVR_DPF((PVR_DBG_ERROR,
-				"%s: Given size %llu is not multiple of given page size (%u)",
-				__func__,
-				uiSize,
-				uiLog2PageSize));
+	if (uiSize & (uiLog2PageSize - 1)) {
+		PVR_DPF((
+			PVR_DBG_ERROR,
+			"%s: Given size %llu is not multiple of given page size (%u)",
+			__func__, uiSize, uiLog2PageSize));
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
-	for (i = 0; i < uiNumPages; i++)
-	{
-		if (psPhysAddrs[i].uiAddr & (uiLog2PageSize - 1))
-		{
-			PVR_DPF((PVR_DBG_ERROR,
-					"%s: Given address 0x%llx is not aligned to given page size (%u)",
-					__func__,
-					(unsigned long long)psPhysAddrs[i].uiAddr,
-					uiLog2PageSize));
+	for (i = 0; i < uiNumPages; i++) {
+		if (psPhysAddrs[i].uiAddr & (uiLog2PageSize - 1)) {
+			PVR_DPF((
+				PVR_DBG_ERROR,
+				"%s: Given address 0x%llx is not aligned to given page size (%u)",
+				__func__,
+				(unsigned long long)psPhysAddrs[i].uiAddr,
+				uiLog2PageSize));
 			return PVRSRV_ERROR_INVALID_PARAMS;
 		}
 	}
 
 	/* Fail if requesting coherency on one side but uncached on the other */
 	if ((PVRSRV_CHECK_CPU_CACHE_COHERENT(uiFlags) &&
-			(PVRSRV_CHECK_GPU_UNCACHED(uiFlags) || PVRSRV_CHECK_GPU_WRITE_COMBINE(uiFlags))))
-	{
-		PVR_DPF((PVR_DBG_ERROR, "Request for CPU coherency but specifying GPU uncached "
-				"Please use GPU cached flags for coherency."));
+	     (PVRSRV_CHECK_GPU_UNCACHED(uiFlags) ||
+	      PVRSRV_CHECK_GPU_WRITE_COMBINE(uiFlags)))) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "Request for CPU coherency but specifying GPU uncached "
+			 "Please use GPU cached flags for coherency."));
 		return PVRSRV_ERROR_UNSUPPORTED_CACHE_MODE;
 	}
 
 	if ((PVRSRV_CHECK_GPU_CACHE_COHERENT(uiFlags) &&
-			(PVRSRV_CHECK_CPU_UNCACHED(uiFlags) || PVRSRV_CHECK_CPU_WRITE_COMBINE(uiFlags))))
-	{
-		PVR_DPF((PVR_DBG_ERROR, "Request for GPU coherency but specifying CPU uncached "
-				"Please use CPU cached flags for coherency."));
+	     (PVRSRV_CHECK_CPU_UNCACHED(uiFlags) ||
+	      PVRSRV_CHECK_CPU_WRITE_COMBINE(uiFlags)))) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "Request for GPU coherency but specifying CPU uncached "
+			 "Please use CPU cached flags for coherency."));
 		return PVRSRV_ERROR_UNSUPPORTED_CACHE_MODE;
 	}
 
 	return PVRSRV_OK;
 }
 
-
 PVRSRV_ERROR
-PhysmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode,
-                   IMG_CPU_PHYADDR *pasPhysAddrs,
-                   IMG_UINT32 uiLog2PageSize,
-                   IMG_DEVMEM_SIZE_T uiSize,
-                   PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                   PMR **ppsPMRPtr)
+PhysmemPhysWrapMem(PVRSRV_DEVICE_NODE *psDevNode, IMG_CPU_PHYADDR *pasPhysAddrs,
+		   IMG_UINT32 uiLog2PageSize, IMG_DEVMEM_SIZE_T uiSize,
+		   PVRSRV_MEMALLOCFLAGS_T uiFlags, PMR **ppsPMRPtr)
 {
 	PVRSRV_ERROR eError;
-	IMG_UINT32	ui32MappingTable = 0;
+	IMG_UINT32 ui32MappingTable = 0;
 	PMR_PHYSWRAP_DATA *psPrivData;
 	PMR *psPMR;
-	PHYS_HEAP *psPhysHeap = psDevNode->apsPhysHeap[PVRSRV_PHYS_HEAP_CPU_LOCAL];
+	PHYS_HEAP *psPhysHeap =
+		psDevNode->apsPhysHeap[PVRSRV_PHYS_HEAP_CPU_LOCAL];
 
-	eError = PhysmemValidateParam(pasPhysAddrs,
-	                              psPhysHeap,
-	                              uiSize,
-	                              uiLog2PageSize,
-	                              uiFlags);
-	if (eError != PVRSRV_OK)
-	{
+	eError = PhysmemValidateParam(pasPhysAddrs, psPhysHeap, uiSize,
+				      uiLog2PageSize, uiFlags);
+	if (eError != PVRSRV_OK) {
 		return eError;
 	}
 
 	/* Allocate private factory data */
-	eError = _AllocWrapData(&psPrivData,
-	                        psDevNode,
-	                        uiSize,
-                            uiLog2PageSize,
-	                        uiFlags);
-	if (eError != PVRSRV_OK)
-	{
+	eError = _AllocWrapData(&psPrivData, psDevNode, uiSize, uiLog2PageSize,
+				uiFlags);
+	if (eError != PVRSRV_OK) {
 		return eError;
 	}
 
-	_WrapPhysAddrs(psPrivData,
-	               psPhysHeap,
-	               pasPhysAddrs);
+	_WrapPhysAddrs(psPrivData, psPhysHeap, pasPhysAddrs);
 
 	/* Create a suitable PMR */
-	eError = PMRCreatePMR(psPhysHeap,
-	                      uiSize,    /* PMR_SIZE_T uiLogicalSize                             */
-	                      1,    /* IMG_UINT32 ui32NumPhysChunks                */
-	                      1,    /* IMG_UINT32 ui32NumLogicalChunks          */
-	                      &ui32MappingTable,
-	                      uiLog2PageSize,           /* PMR_LOG2ALIGN_T uiLog2ContiguityGuarantee */
-	                      (uiFlags & PVRSRV_MEMALLOCFLAGS_PMRFLAGSMASK), /* PMR_FLAGS_T uiFlags */
-	                      "PhysWrapMem",      /* const IMG_CHAR *pszAnnotation             */
-	                      &_sPMRWrapPFuncTab,   /* const PMR_IMPL_FUNCTAB *psFuncTab         */
-	                      psPrivData,           /* PMR_IMPL_PRIVDATA pvPrivData              */
-	                      PMR_TYPE_EXTMEM,
-	                      &psPMR,               /* PMR **ppsPMRPtr                           */
-	                      PDUMP_NONE);          /* IMG_UINT32 ui32PDumpFlags                 */
-	if (eError != PVRSRV_OK)
-	{
+	eError = PMRCreatePMR(
+		psPhysHeap,
+		uiSize, /* PMR_SIZE_T uiLogicalSize                             */
+		1, /* IMG_UINT32 ui32NumPhysChunks                */
+		1, /* IMG_UINT32 ui32NumLogicalChunks          */
+		&ui32MappingTable,
+		uiLog2PageSize, /* PMR_LOG2ALIGN_T uiLog2ContiguityGuarantee */
+		(uiFlags &
+		 PVRSRV_MEMALLOCFLAGS_PMRFLAGSMASK), /* PMR_FLAGS_T uiFlags */
+		"PhysWrapMem", /* const IMG_CHAR *pszAnnotation             */
+		&_sPMRWrapPFuncTab, /* const PMR_IMPL_FUNCTAB *psFuncTab         */
+		psPrivData, /* PMR_IMPL_PRIVDATA pvPrivData              */
+		PMR_TYPE_EXTMEM,
+		&psPMR, /* PMR **ppsPMRPtr                           */
+		PDUMP_NONE); /* IMG_UINT32 ui32PDumpFlags                 */
+	if (eError != PVRSRV_OK) {
 		goto e0;
 	}
 

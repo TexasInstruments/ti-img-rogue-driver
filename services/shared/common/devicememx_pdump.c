@@ -42,7 +42,6 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */ /**************************************************************************/
 
-
 #if defined(PDUMP)
 
 #include "devicememx_pdump.h"
@@ -50,50 +49,42 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "client_pdumpmm_bridge.h"
 #include "devicemem_utils.h"
 
-IMG_INTERNAL void
-DevmemXPDumpLoadMem(DEVMEMX_PHYSDESC *psMemDescPhys,
-                    IMG_DEVMEM_OFFSET_T uiOffset,
-                    IMG_DEVMEM_SIZE_T uiSize,
-                    PDUMP_FLAGS_T uiPDumpFlags)
+IMG_INTERNAL void DevmemXPDumpLoadMem(DEVMEMX_PHYSDESC *psMemDescPhys,
+				      IMG_DEVMEM_OFFSET_T uiOffset,
+				      IMG_DEVMEM_SIZE_T uiSize,
+				      PDUMP_FLAGS_T uiPDumpFlags)
 {
 	PVRSRV_ERROR eError;
 
 	PVR_ASSERT(uiSize != 0);
-	PVR_ASSERT(uiOffset + uiSize <= (psMemDescPhys->uiNumPages <<
-			psMemDescPhys->uiLog2PageSize));
+	PVR_ASSERT(uiOffset + uiSize <= (psMemDescPhys->uiNumPages
+					 << psMemDescPhys->uiLog2PageSize));
 
-	eError = BridgePMRPDumpLoadMem(GetBridgeHandle(psMemDescPhys->hConnection),
-	                               psMemDescPhys->hPMR,
-	                               uiOffset,
-	                               uiSize,
-	                               uiPDumpFlags,
-	                               IMG_FALSE);
+	eError = BridgePMRPDumpLoadMem(
+		GetBridgeHandle(psMemDescPhys->hConnection),
+		psMemDescPhys->hPMR, uiOffset, uiSize, uiPDumpFlags, IMG_FALSE);
 	PVR_LOG_IF_ERROR(eError, "BridgePMRPDumpLoadMem");
 }
 
-IMG_INTERNAL void
-DevmemXPDumpSaveMem(DEVMEMX_PHYSDESC *psMemDescPhys,
-                    IMG_DEVMEM_OFFSET_T uiOffset,
-                    IMG_DEVMEM_SIZE_T uiSize,
-					const IMG_CHAR *pszFilename,
-					IMG_UINT32 uiFileOffset,
-                    PDUMP_FLAGS_T uiPDumpFlags)
+IMG_INTERNAL void DevmemXPDumpSaveMem(DEVMEMX_PHYSDESC *psMemDescPhys,
+				      IMG_DEVMEM_OFFSET_T uiOffset,
+				      IMG_DEVMEM_SIZE_T uiSize,
+				      const IMG_CHAR *pszFilename,
+				      IMG_UINT32 uiFileOffset,
+				      PDUMP_FLAGS_T uiPDumpFlags)
 {
 	PVRSRV_ERROR eError;
 
 	PVR_UNREFERENCED_PARAMETER(uiPDumpFlags);
 
 	PVR_ASSERT(uiSize != 0);
-	PVR_ASSERT(uiOffset + uiSize <= (psMemDescPhys->uiNumPages <<
-			psMemDescPhys->uiLog2PageSize));
+	PVR_ASSERT(uiOffset + uiSize <= (psMemDescPhys->uiNumPages
+					 << psMemDescPhys->uiLog2PageSize));
 
-	eError = BridgePMRPDumpSaveToFile(GetBridgeHandle(psMemDescPhys->hConnection),
-									  psMemDescPhys->hPMR,
-									  uiOffset,
-									  uiSize,
-									  OSStringLength(pszFilename) + 1,
-									  pszFilename,
-									  uiFileOffset);
+	eError = BridgePMRPDumpSaveToFile(
+		GetBridgeHandle(psMemDescPhys->hConnection),
+		psMemDescPhys->hPMR, uiOffset, uiSize,
+		OSStringLength(pszFilename) + 1, pszFilename, uiFileOffset);
 	PVR_LOG_IF_ERROR(eError, "BridgePMRPDumpSaveToFile");
 }
 

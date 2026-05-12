@@ -81,9 +81,9 @@
 #include <drm/drm_atomic_helper.h>
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-#define	PVR_DRIVER_PRIME 0
+#define PVR_DRIVER_PRIME 0
 #else
-#define	PVR_DRIVER_PRIME DRIVER_PRIME
+#define PVR_DRIVER_PRIME DRIVER_PRIME
 #endif
 
 /* This header must always be included last */
@@ -128,7 +128,7 @@ static enum pdp_version pdp_get_version(struct drm_device *dev)
 	if (id != NULL && id->data != NULL)
 		version = *(enum pdp_version *)(id->data);
 	else if (pdev->id_entry != NULL)
-		version = (enum pdp_version) pdev->id_entry->driver_data;
+		version = (enum pdp_version)pdev->id_entry->driver_data;
 
 	return version;
 }
@@ -181,11 +181,12 @@ static int pdp_early_load(struct drm_device *dev)
 #endif
 
 	if (dev_priv->version == PDP_VERSION_APOLLO ||
-		dev_priv->version == PDP_VERSION_ODIN) {
+	    dev_priv->version == PDP_VERSION_ODIN) {
 #if !defined(SUPPORT_PLATO_DISPLAY)
 		err = tc_enable(dev->dev->parent);
 		if (err) {
-			DRM_ERROR("failed to enable parent device (err=%d)\n", err);
+			DRM_ERROR("failed to enable parent device (err=%d)\n",
+				  err);
 			goto err_dev_priv_free;
 		}
 
@@ -194,17 +195,18 @@ static int pdp_early_load(struct drm_device *dev)
 		 * the right display mode list later on
 		 */
 		if (dev_priv->version == PDP_VERSION_ODIN)
-			dev_priv->subversion = (enum pdp_odin_subversion)
-				tc_odin_subvers(dev->dev->parent);
+			dev_priv->subversion =
+				(enum pdp_odin_subversion)tc_odin_subvers(
+					dev->dev->parent);
 #endif
 	}
-
 #if defined(SUPPORT_PLATO_DISPLAY)
 	else if (dev_priv->version == PDP_VERSION_PLATO) {
-// XXX do we need to do this? Plato driver has already enabled device.
+		// XXX do we need to do this? Plato driver has already enabled device.
 		err = plato_enable(dev->dev->parent);
 		if (err) {
-			DRM_ERROR("failed to enable parent device (err=%d)\n", err);
+			DRM_ERROR("failed to enable parent device (err=%d)\n",
+				  err);
 			goto err_dev_priv_free;
 		}
 	}
@@ -230,13 +232,12 @@ static int pdp_early_load(struct drm_device *dev)
 	}
 
 	if (dev_priv->version == PDP_VERSION_APOLLO ||
-		dev_priv->version == PDP_VERSION_ODIN ||
-		dev_priv->version == PDP_VERSION_ORION_SOC) {
+	    dev_priv->version == PDP_VERSION_ODIN ||
+	    dev_priv->version == PDP_VERSION_ORION_SOC) {
 #if !defined(SUPPORT_PLATO_DISPLAY)
 		err = tc_set_interrupt_handler(dev->dev->parent,
-					   dev_priv->pdp_interrupt,
-					   pdp_irq_handler,
-					   dev);
+					       dev_priv->pdp_interrupt,
+					       pdp_irq_handler, dev);
 		if (err) {
 			DRM_ERROR("failed to set interrupt handler (err=%d)\n",
 				  err);
@@ -255,16 +256,16 @@ static int pdp_early_load(struct drm_device *dev)
 #if defined(SUPPORT_PLATO_DISPLAY)
 	else if (dev_priv->version == PDP_VERSION_PLATO) {
 		err = plato_set_interrupt_handler(dev->dev->parent,
-							PLATO_INTERRUPT_PDP,
-							pdp_irq_handler,
-							dev);
+						  PLATO_INTERRUPT_PDP,
+						  pdp_irq_handler, dev);
 		if (err) {
 			DRM_ERROR("failed to set interrupt handler (err=%d)\n",
 				  err);
 			goto err_vblank_cleanup;
 		}
 
-		err = plato_enable_interrupt(dev->dev->parent, PLATO_INTERRUPT_PDP);
+		err = plato_enable_interrupt(dev->dev->parent,
+					     PLATO_INTERRUPT_PDP);
 		if (err) {
 			DRM_ERROR("failed to enable pdp interrupts (err=%d)\n",
 				  err);
@@ -277,26 +278,21 @@ static int pdp_early_load(struct drm_device *dev)
 	dev->irq_enabled = true;
 #endif
 
-
 	return 0;
 
 err_uninstall_interrupt_handle:
 	if (dev_priv->version == PDP_VERSION_APOLLO ||
-		dev_priv->version == PDP_VERSION_ODIN ||
-		dev_priv->version == PDP_VERSION_ORION_SOC) {
+	    dev_priv->version == PDP_VERSION_ODIN ||
+	    dev_priv->version == PDP_VERSION_ORION_SOC) {
 #if !defined(SUPPORT_PLATO_DISPLAY)
 		tc_set_interrupt_handler(dev->dev->parent,
-					     dev_priv->pdp_interrupt,
-					     NULL,
-					     NULL);
+					 dev_priv->pdp_interrupt, NULL, NULL);
 #endif
 	}
 #if defined(SUPPORT_PLATO_DISPLAY)
 	else if (dev_priv->version == PDP_VERSION_PLATO) {
 		plato_set_interrupt_handler(dev->dev->parent,
-				PLATO_INTERRUPT_PDP,
-				NULL,
-				NULL);
+					    PLATO_INTERRUPT_PDP, NULL, NULL);
 	}
 #endif
 err_vblank_cleanup:
@@ -304,7 +300,7 @@ err_modeset_late_cleanup:
 	pdp_modeset_late_cleanup(dev_priv);
 err_disable_parent_device:
 	if (dev_priv->version == PDP_VERSION_APOLLO ||
-		dev_priv->version == PDP_VERSION_ODIN) {
+	    dev_priv->version == PDP_VERSION_ODIN) {
 #if !defined(SUPPORT_PLATO_DISPLAY)
 		tc_disable(dev->dev->parent);
 #endif
@@ -325,8 +321,7 @@ static int pdp_late_load(struct drm_device *dev)
 
 	err = pdp_modeset_late_init(dev_priv);
 	if (err) {
-		DRM_ERROR("late modeset initialisation failed (err=%d)\n",
-			  err);
+		DRM_ERROR("late modeset initialisation failed (err=%d)\n", err);
 		return err;
 	}
 
@@ -349,30 +344,26 @@ static void pdp_late_unload(struct drm_device *dev)
 
 	DRM_INFO("unloading %s device.\n", to_platform_device(dev->dev)->name);
 	if (dev_priv->version == PDP_VERSION_APOLLO ||
-		dev_priv->version == PDP_VERSION_ODIN ||
-		dev_priv->version == PDP_VERSION_ORION_SOC) {
+	    dev_priv->version == PDP_VERSION_ODIN ||
+	    dev_priv->version == PDP_VERSION_ORION_SOC) {
 #if !defined(SUPPORT_PLATO_DISPLAY)
 		tc_disable_interrupt(dev->dev->parent, dev_priv->pdp_interrupt);
 		tc_set_interrupt_handler(dev->dev->parent,
-					     dev_priv->pdp_interrupt,
-					     NULL,
-					     NULL);
+					 dev_priv->pdp_interrupt, NULL, NULL);
 #endif
 	}
 #if defined(SUPPORT_PLATO_DISPLAY)
 	else if (dev_priv->version == PDP_VERSION_PLATO) {
 		plato_disable_interrupt(dev->dev->parent, PLATO_INTERRUPT_PDP);
 		plato_set_interrupt_handler(dev->dev->parent,
-						PLATO_INTERRUPT_PDP,
-						NULL,
-						NULL);
+					    PLATO_INTERRUPT_PDP, NULL, NULL);
 	}
 #endif
 
 	pdp_modeset_late_cleanup(dev_priv);
 
 	if (dev_priv->version == PDP_VERSION_APOLLO ||
-		dev_priv->version == PDP_VERSION_ODIN) {
+	    dev_priv->version == PDP_VERSION_ODIN) {
 #if !defined(SUPPORT_PLATO_DISPLAY)
 		tc_disable(dev->dev->parent);
 #endif
@@ -384,7 +375,6 @@ static void pdp_late_unload(struct drm_device *dev)
 
 	kfree(dev_priv);
 }
-
 
 #if !defined(CONFIG_DRM_FBDEV_EMULATION)
 static inline void pdp_teardown_drm_config(struct drm_device *dev)
@@ -422,7 +412,7 @@ static int pdp_enable_vblank(struct drm_device *dev, unsigned int pipe)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
 	struct drm_device *dev = crtc->dev;
-	unsigned int pipe      = drm_crtc_index(crtc);
+	unsigned int pipe = drm_crtc_index(crtc);
 #endif
 	struct pdp_drm_private *dev_priv = dev->dev_private;
 
@@ -448,7 +438,7 @@ static void pdp_disable_vblank(struct drm_device *dev, unsigned int pipe)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
 	struct drm_device *dev = crtc->dev;
-	unsigned int pipe      = drm_crtc_index(crtc);
+	unsigned int pipe = drm_crtc_index(crtc);
 #endif
 	struct pdp_drm_private *dev_priv = dev->dev_private;
 
@@ -466,13 +456,12 @@ static void pdp_disable_vblank(struct drm_device *dev, unsigned int pipe)
 
 static const struct drm_ioctl_desc pdp_ioctls[] = {
 	DRM_IOCTL_DEF_DRV(PDP_GEM_CREATE, pdp_gem_object_create_ioctl,
-				DRM_AUTH | DRM_RENDER_ALLOW),
-	DRM_IOCTL_DEF_DRV(PDP_GEM_MMAP, pdp_gem_object_mmap_ioctl,
-				DRM_AUTH),
+			  DRM_AUTH | DRM_RENDER_ALLOW),
+	DRM_IOCTL_DEF_DRV(PDP_GEM_MMAP, pdp_gem_object_mmap_ioctl, DRM_AUTH),
 	DRM_IOCTL_DEF_DRV(PDP_GEM_CPU_PREP, pdp_gem_object_cpu_prep_ioctl,
-				DRM_AUTH),
+			  DRM_AUTH),
 	DRM_IOCTL_DEF_DRV(PDP_GEM_CPU_FINI, pdp_gem_object_cpu_fini_ioctl,
-				DRM_AUTH),
+			  DRM_AUTH),
 };
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
@@ -506,78 +495,76 @@ static int pdp_drm_release(struct inode *inode, struct file *filp)
 #endif
 
 static const struct file_operations pdp_driver_fops = {
-	.owner		= THIS_MODULE,
+	.owner = THIS_MODULE,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
-	.open		= pdp_drm_open,
-	.release	= pdp_drm_release,
+	.open = pdp_drm_open,
+	.release = pdp_drm_release,
 #else
-	.open		= drm_open,
-	.release	= drm_release,
+	.open = drm_open,
+	.release = drm_release,
 #endif
-	.unlocked_ioctl	= drm_ioctl,
-	.mmap		= drm_gem_mmap,
-	.poll		= drm_poll,
-	.read		= drm_read,
-	.llseek		= noop_llseek,
+	.unlocked_ioctl = drm_ioctl,
+	.mmap = drm_gem_mmap,
+	.poll = drm_poll,
+	.read = drm_read,
+	.llseek = noop_llseek,
 #ifdef CONFIG_COMPAT
-	.compat_ioctl	= drm_compat_ioctl,
+	.compat_ioctl = drm_compat_ioctl,
 #endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0))
-	.fop_flags	= FOP_UNSIGNED_OFFSET,
+	.fop_flags = FOP_UNSIGNED_OFFSET,
 #endif
 };
 
 static struct drm_driver pdp_drm_driver = {
-	.load				= NULL,
-	.unload				= NULL,
+	.load = NULL,
+	.unload = NULL,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0))
-	.lastclose			= pdp_lastclose,
+	.lastclose = pdp_lastclose,
 #endif
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 7, 0))
-	.enable_vblank			= pdp_enable_vblank,
-	.disable_vblank			= pdp_disable_vblank,
+	.enable_vblank = pdp_enable_vblank,
+	.disable_vblank = pdp_disable_vblank,
 #endif
 
-	.debugfs_init			= pdp_debugfs_init,
+	.debugfs_init = pdp_debugfs_init,
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0))
-	.gem_prime_export		= pdp_gem_prime_export,
-	.gem_free_object		= pdp_gem_object_free,
-	.gem_vm_ops			= &pdp_gem_vm_ops,
+	.gem_prime_export = pdp_gem_prime_export,
+	.gem_free_object = pdp_gem_object_free,
+	.gem_vm_ops = &pdp_gem_vm_ops,
 #endif
 
-	.gem_prime_import		= pdp_gem_prime_import,
+	.gem_prime_import = pdp_gem_prime_import,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0))
-	.prime_handle_to_fd		= drm_gem_prime_handle_to_fd,
-	.prime_fd_to_handle		= drm_gem_prime_fd_to_handle,
+	.prime_handle_to_fd = drm_gem_prime_handle_to_fd,
+	.prime_fd_to_handle = drm_gem_prime_fd_to_handle,
 #endif
-	.gem_prime_import_sg_table	= pdp_gem_prime_import_sg_table,
+	.gem_prime_import_sg_table = pdp_gem_prime_import_sg_table,
 
-    // Set dumb_create to NULL to avoid xorg owning the display (if xorg is running).
-	.dumb_create			= pdp_gem_dumb_create,
+	// Set dumb_create to NULL to avoid xorg owning the display (if xorg is running).
+	.dumb_create = pdp_gem_dumb_create,
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0))
 	PDP_FBDEV_DRIVER_OPS,
 #endif
 
-	.name				= DRIVER_NAME,
-	.desc				= DRIVER_DESC,
+	.name = DRIVER_NAME,
+	.desc = DRIVER_DESC,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))
-	.date				= DRIVER_DATE,
+	.date = DRIVER_DATE,
 #endif
-	.major				= PVRVERSION_MAJ,
-	.minor				= PVRVERSION_MIN,
-	.patchlevel			= PVRVERSION_BUILD,
+	.major = PVRVERSION_MAJ,
+	.minor = PVRVERSION_MIN,
+	.patchlevel = PVRVERSION_BUILD,
 
-	.driver_features		= DRIVER_GEM |
-					  DRIVER_MODESET |
-					  DRIVER_ATOMIC |
-					  PVR_DRIVER_PRIME,
-	.ioctls				= pdp_ioctls,
-	.num_ioctls			= ARRAY_SIZE(pdp_ioctls),
-	.fops				= &pdp_driver_fops,
+	.driver_features = DRIVER_GEM | DRIVER_MODESET | DRIVER_ATOMIC |
+			   PVR_DRIVER_PRIME,
+	.ioctls = pdp_ioctls,
+	.num_ioctls = ARRAY_SIZE(pdp_ioctls),
+	.fops = &pdp_driver_fops,
 };
 
 #if defined(SUPPORT_PLATO_DISPLAY)
@@ -633,7 +620,7 @@ err_drm_dev_late_unload:
 	pdp_late_unload(ddev);
 err_drm_dev_put:
 	drm_dev_put(ddev);
-	return	ret;
+	return ret;
 }
 
 static void pdp_component_unbind(struct device *dev)
@@ -650,10 +637,9 @@ static void pdp_component_unbind(struct device *dev)
 }
 
 static const struct component_master_ops pdp_component_ops = {
-	.bind	= pdp_component_bind,
+	.bind = pdp_component_bind,
 	.unbind = pdp_component_unbind,
 };
-
 
 static int pdp_probe(struct platform_device *pdev)
 {
@@ -713,7 +699,7 @@ err_drm_dev_late_unload:
 	pdp_late_unload(ddev);
 err_drm_dev_put:
 	drm_dev_put(ddev);
-	return	ret;
+	return ret;
 }
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0))
@@ -743,7 +729,7 @@ static void pdp_remove(struct platform_device *pdev)
 #endif
 }
 
-#endif  // SUPPORT_PLATO_DISPLAY
+#endif // SUPPORT_PLATO_DISPLAY
 
 static void pdp_shutdown(struct platform_device *pdev)
 {
@@ -767,8 +753,8 @@ static struct platform_device_id pdp_platform_device_id_table[] = {
 #else
 	{ .name = PLATO_DEVICE_NAME_PDP, .driver_data = PDP_VERSION_PLATO },
 #endif
-#endif  // SUPPORT_PLATO_DISPLAY
-	{ },
+#endif // SUPPORT_PLATO_DISPLAY
+	{},
 };
 
 static struct platform_driver pdp_platform_driver = {

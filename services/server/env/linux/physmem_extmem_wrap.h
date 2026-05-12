@@ -62,8 +62,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "img_types.h"
 #include "device.h"
 
-typedef enum _WRAP_EXT_MEM_TYPE_
-{
+typedef enum _WRAP_EXT_MEM_TYPE_ {
 	WRAP_TYPE_NULL = 0,
 	WRAP_TYPE_GET_USER_PAGES,
 #if defined(SUPPORT_LINUX_WRAP_EXTMEM_PAGE_TABLE_WALK)
@@ -71,8 +70,7 @@ typedef enum _WRAP_EXT_MEM_TYPE_
 #endif
 } WRAP_EXT_MEM_TYPE;
 
-typedef struct _PMR_WRAP_DATA_
-{
+typedef struct _PMR_WRAP_DATA_ {
 	/* Device for which this allocation has been made */
 	PVRSRV_DEVICE_NODE *psDevNode;
 

@@ -55,8 +55,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "img_types.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /**************************************************************************/ /*!
@@ -125,27 +124,30 @@ void DeviceMemCopyBytes(void *pvDst, const void *pvSrc, size_t ui32Size);
                 value otherwise
  */ /**************************************************************************/
 #if defined(__linux__) && defined(__KERNEL__) && !defined(DEBUG)
-static inline ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uDataSize)
+static inline ssize_t OSStringSafeCopy(IMG_CHAR *pszDest,
+				       const IMG_CHAR *pszSrc, size_t uDataSize)
 {
 	return strscpy(pszDest, pszSrc, uDataSize);
 }
 #else
-ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uDataSize);
+ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc,
+			 size_t uDataSize);
 #endif
 
-#if defined(__arm64__) || defined(__aarch64__) || defined(PVRSRV_DEVMEM_TEST_SAFE_MEMSETCPY)
+#if defined(__arm64__) || defined(__aarch64__) || \
+	defined(PVRSRV_DEVMEM_TEST_SAFE_MEMSETCPY)
 #if defined(__GNUC__)
 /* Workarounds for assumptions made that memory will not be mapped uncached
  * in kernel or user address spaces on arm64 platforms (or other testing).
  */
 
-#define OSDeviceMemSet(a,b,c)  DeviceMemSet((a), (b), (c))
-#define OSDeviceMemCopy(a,b,c) DeviceMemCopy((a), (b), (c))
+#define OSDeviceMemSet(a, b, c) DeviceMemSet((a), (b), (c))
+#define OSDeviceMemCopy(a, b, c) DeviceMemCopy((a), (b), (c))
 
 #else /* defined __GNUC__ */
 
-#define OSDeviceMemSet(a,b,c)  DeviceMemSetBytes((a), (b), (c))
-#define OSDeviceMemCopy(a,b,c) DeviceMemCopyBytes((a), (b), (c))
+#define OSDeviceMemSet(a, b, c) DeviceMemSetBytes((a), (b), (c))
+#define OSDeviceMemCopy(a, b, c) DeviceMemCopyBytes((a), (b), (c))
 
 #endif /* defined __GNUC__ */
 
@@ -164,16 +166,15 @@ ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uData
 @Return         Pointer to the destination memory.
  */ /**************************************************************************/
 #ifdef PVRSRV_ENABLE_READBACK_ON_WRITES
-#define OSDeviceMemSet(a,b,c) \
-	do { \
-		if ((c) != 0U) \
-		{ \
-			(void) memset((a), (b), (c)); \
-			(void) *(volatile IMG_UINT32*)((void*)(a)); \
-		} \
+#define OSDeviceMemSet(a, b, c)                                      \
+	do {                                                         \
+		if ((c) != 0U) {                                     \
+			(void)memset((a), (b), (c));                 \
+			(void)*(volatile IMG_UINT32 *)((void *)(a)); \
+		}                                                    \
 	} while (false)
 #else /* PVRSRV_ENABLE_READBACK_ON_WRITES */
-#define OSDeviceMemSet(a,b,c) memset((a), (b), (c))
+#define OSDeviceMemSet(a, b, c) memset((a), (b), (c))
 #endif /* PVRSRV_ENABLE_READBACK_ON_WRITES */
 
 /**************************************************************************/ /*!
@@ -188,16 +189,15 @@ ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uData
 @Return         Pointer to the destination memory.
  */ /**************************************************************************/
 #ifdef PVRSRV_ENABLE_READBACK_ON_WRITES
-#define OSDeviceMemCopy(a,b,c) \
-	do { \
-		if ((c) != 0U) \
-		{ \
-			memcpy((a), (b), (c)); \
-			(void) *(volatile IMG_UINT32*)((void*)(a)); \
-		} \
+#define OSDeviceMemCopy(a, b, c)                                     \
+	do {                                                         \
+		if ((c) != 0U) {                                     \
+			memcpy((a), (b), (c));                       \
+			(void)*(volatile IMG_UINT32 *)((void *)(a)); \
+		}                                                    \
 	} while (false)
 #else /* PVRSRV_ENABLE_READBACK_ON_WRITES */
-#define OSDeviceMemCopy(a,b,c) memcpy((a), (b), (c))
+#define OSDeviceMemCopy(a, b, c) memcpy((a), (b), (c))
 #endif /* PVRSRV_ENABLE_READBACK_ON_WRITES */
 
 #endif /* (defined(__arm64__) || defined(__aarch64__) || defined(PVRSRV_DEVMEM_TEST_SAFE_MEMSETCPY)) */
@@ -212,7 +212,7 @@ ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uData
 @Input          c     the number of bytes to be set to the given value
 @Return         Pointer to the destination memory.
  */ /**************************************************************************/
-#define OSCachedMemSet(a,b,c)  (void) memset((a), (b), (c))
+#define OSCachedMemSet(a, b, c) (void)memset((a), (b), (c))
 
 /**************************************************************************/ /*!
 @Function       OSCachedMemCopy
@@ -225,7 +225,7 @@ ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uData
 @Input          c     the number of bytes to be copied
 @Return         Pointer to the destination memory.
  */ /**************************************************************************/
-#define OSCachedMemCopy(a,b,c) memcpy((a), (b), (c))
+#define OSCachedMemCopy(a, b, c) memcpy((a), (b), (c))
 
 #if defined(__KERNEL__)
 
@@ -241,13 +241,12 @@ ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uData
 @Input          c     the number of bytes to be set to the given value
 @Return         Pointer to the destination memory.
  */ /**************************************************************************/
-#define OSCachedMemSetWMB(a,b,c) \
-	do { \
-		if ((c) != 0U) \
-		{ \
-			(void) memset((a), (b), (c)); \
-			OSWriteMemoryBarrier(a); \
-		} \
+#define OSCachedMemSetWMB(a, b, c)                   \
+	do {                                         \
+		if ((c) != 0U) {                     \
+			(void)memset((a), (b), (c)); \
+			OSWriteMemoryBarrier(a);     \
+		}                                    \
 	} while (false)
 /**************************************************************************/ /*!
 @Function       OSCachedMemCopy
@@ -261,13 +260,12 @@ ssize_t OSStringSafeCopy(IMG_CHAR *pszDest, const IMG_CHAR *pszSrc, size_t uData
 @Input          c     the number of bytes to be copied
 @Return         Pointer to the destination memory.
  */ /**************************************************************************/
-#define OSCachedMemCopyWMB(a,b,c) \
-	do { \
-		if ((c) != 0U) \
-		{ \
-			(void) memcpy((a), (b), (c)); \
-			OSWriteMemoryBarrier(a); \
-		} \
+#define OSCachedMemCopyWMB(a, b, c)                  \
+	do {                                         \
+		if ((c) != 0U) {                     \
+			(void)memcpy((a), (b), (c)); \
+			OSWriteMemoryBarrier(a);     \
+		}                                    \
 	} while (false)
 #endif /* defined(__KERNEL__) */
 

@@ -45,8 +45,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * Defines for FPGA System Bus Decode.
  */
 
-#define FPGA_RGX_TB_REG_PCI_BASENUM    2
-#define FPGA_RGX_TB_REG_SIZE           (16 * 1024)
+#define FPGA_RGX_TB_REG_PCI_BASENUM 2
+#define FPGA_RGX_TB_REG_SIZE (16 * 1024)
 
 /*
  * Interface to the Reset function
@@ -54,13 +54,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 PVRSRV_ERROR FPGA_Reset(struct resource *registers, IMG_BOOL bFullReset);
 
 #if 1
-#define DevReset(psSysData, flags)  FPGA_Reset((psSysData)->registers, flags)
+#define DevReset(psSysData, flags) FPGA_Reset((psSysData)->registers, flags)
 #else
-#define DevReset(psSysData, flags)  PVRSRV_OK
+#define DevReset(psSysData, flags) PVRSRV_OK
 #endif
 
 PVRSRV_ERROR FPGA_SysDebugInfo(struct resource *registers,
-                               DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
-                               void *pvDumpDebugFile);
+			       DUMPDEBUG_PRINTF_FUNC *pfnDumpDebugPrintf,
+			       void *pvDumpDebugFile);
 
 IMG_UINT64 FPGA_SystemTimerRead(struct resource *registers);

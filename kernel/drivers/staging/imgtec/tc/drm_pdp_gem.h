@@ -91,9 +91,8 @@ struct pdp_gem_object {
 int pdp_gem_init_devres(struct drm_device *dev);
 
 /* ioctl functions */
-int pdp_gem_object_create_ioctl(struct drm_device *dev,
-				     void *data,
-				     struct drm_file *file);
+int pdp_gem_object_create_ioctl(struct drm_device *dev, void *data,
+				struct drm_file *file);
 int pdp_gem_object_mmap_ioctl(struct drm_device *dev, void *data,
 			      struct drm_file *file);
 int pdp_gem_object_cpu_prep_ioctl(struct drm_device *dev, void *data,
@@ -103,17 +102,15 @@ int pdp_gem_object_cpu_fini_ioctl(struct drm_device *dev, void *data,
 
 /* drm driver functions */
 struct drm_gem_object *pdp_gem_object_create(struct drm_device *dev,
-					     size_t size,
-					     u32 flags);
+					     size_t size, u32 flags);
 
 void pdp_gem_object_free(struct drm_gem_object *obj);
 
 struct dma_buf *pdp_gem_prime_export(
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
-				     struct drm_device *dev,
+	struct drm_device *dev,
 #endif
-				     struct drm_gem_object *obj,
-				     int flags);
+	struct drm_gem_object *obj, int flags);
 
 struct drm_gem_object *pdp_gem_prime_import(struct drm_device *dev,
 					    struct dma_buf *dma_buf);
@@ -123,9 +120,8 @@ pdp_gem_prime_import_sg_table(struct drm_device *dev,
 			      struct dma_buf_attachment *attach,
 			      struct sg_table *sgt);
 
-int pdp_gem_dumb_create(struct drm_file *file,
-			     struct drm_device *dev,
-			     struct drm_mode_create_dumb *args);
+int pdp_gem_dumb_create(struct drm_file *file, struct drm_device *dev,
+			struct drm_mode_create_dumb *args);
 
 /* vm operation functions */
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0))

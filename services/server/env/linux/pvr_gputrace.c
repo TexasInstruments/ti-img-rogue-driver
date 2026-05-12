@@ -43,7 +43,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <linux/version.h>
 #include <linux/fs.h>
 #include <linux/trace_events.h>
-#if defined(__linux__) && (defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD) || defined(PVRSRV_TRACE_ROGUE_EVENTS))
+#if defined(__linux__) && (defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD) || \
+			   defined(PVRSRV_TRACE_ROGUE_EVENTS))
 #include <linux/sched/task.h>
 #endif
 
@@ -72,7 +73,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #if defined(SUPPORT_RGX)
 
-#define TRACE_CLK     RGXTIMECORR_CLOCK_SCHED
+#define TRACE_CLK RGXTIMECORR_CLOCK_SCHED
 #define TRACE_CLK_STR "local\n"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
@@ -113,14 +114,14 @@ typedef struct RGX_HWPERF_FTRACE_DATA {
 	/* This lock ensures the HWPerf TL stream reading resources are not destroyed
 	 * by one thread disabling it while another is reading from it. Keeps the
 	 * state and resource create/destroy atomic and consistent. */
-	POS_LOCK    hFTraceResourceLock;
+	POS_LOCK hFTraceResourceLock;
 
-	IMG_HANDLE  hGPUTraceCmdCompleteHandle;
-	IMG_HANDLE  hGPUFTraceTLStream;
-	IMG_UINT32  ui32FTraceLastOrdinal;
-	IMG_BOOL    bTrackOrdinals;
-	HASH_TABLE  *psTimestampHash;
-	HASH_TABLE  *psGPUWorkPeriodTimestampHash;
+	IMG_HANDLE hGPUTraceCmdCompleteHandle;
+	IMG_HANDLE hGPUFTraceTLStream;
+	IMG_UINT32 ui32FTraceLastOrdinal;
+	IMG_BOOL bTrackOrdinals;
+	HASH_TABLE *psTimestampHash;
+	HASH_TABLE *psGPUWorkPeriodTimestampHash;
 } RGX_HWPERF_FTRACE_DATA;
 
 /* This lock ensures state change of GPU_TRACING on/off is done atomically */
@@ -129,7 +130,7 @@ static IMG_BOOL gbFTraceGPUEventsEnabled = PVRSRV_APPHINT_ENABLEFTRACEGPU;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
 /* This is the FTrace clock source prior to driver initialisation */
-static IMG_CHAR gszLastClockSource[32] = {0};
+static IMG_CHAR gszLastClockSource[32] = { 0 };
 #endif
 
 /* This lock ensures that the reference counting operation on the FTrace UFO
@@ -156,39 +157,40 @@ static IMG_UINT guiUfoEventRef;
  */
 #if defined(PVRSRV_ANDROID_TRACE_GPU_FREQ)
 #define EMIT_FLAG_READY_TO_EMIT (0)
-#define EMIT_FLAG_HAS_CLKS_CHG  (1)
+#define EMIT_FLAG_HAS_CLKS_CHG (1)
 
-static IMG_UINT8  gui8EmitFlags;
+static IMG_UINT8 gui8EmitFlags;
 #endif /* defined(PVRSRV_ANDROID_TRACE_GPU_FREQ) */
 
 /******************************************************************************
  Module In-bound API
 ******************************************************************************/
 
-static PVRSRV_ERROR _GpuTraceDisable(
-	PVRSRV_RGXDEV_INFO *psRgxDevInfo,
-	IMG_BOOL bDeInit);
+static PVRSRV_ERROR _GpuTraceDisable(PVRSRV_RGXDEV_INFO *psRgxDevInfo,
+				     IMG_BOOL bDeInit);
 
 static void _GpuTraceCmdCompleteNotify(PVRSRV_CMDCOMP_HANDLE);
-static void _GpuTraceProcessPackets(PVRSRV_RGXDEV_INFO *psDevInfo, void *pBuffer,
-                                    IMG_UINT32 ui32ReadLen);
+static void _GpuTraceProcessPackets(PVRSRV_RGXDEV_INFO *psDevInfo,
+				    void *pBuffer, IMG_UINT32 ui32ReadLen);
 
 static void _FTrace_FWOnReaderOpenCB(void *pvArg)
 {
-	PVRSRV_RGXDEV_INFO* psRgxDevInfo = (PVRSRV_RGXDEV_INFO*) pvArg;
-	psRgxDevInfo->bSuspendHWPerfL2DataCopy[RGX_HWPERF_L2_STREAM_FTRACE] = IMG_FALSE;
+	PVRSRV_RGXDEV_INFO *psRgxDevInfo = (PVRSRV_RGXDEV_INFO *)pvArg;
+	psRgxDevInfo->bSuspendHWPerfL2DataCopy[RGX_HWPERF_L2_STREAM_FTRACE] =
+		IMG_FALSE;
 }
 
 static void _FTrace_FWOnReaderCloseCB(void *pvArg)
 {
-	PVRSRV_RGXDEV_INFO* psRgxDevInfo = (PVRSRV_RGXDEV_INFO*) pvArg;
-	psRgxDevInfo->bSuspendHWPerfL2DataCopy[RGX_HWPERF_L2_STREAM_FTRACE] = IMG_TRUE;
+	PVRSRV_RGXDEV_INFO *psRgxDevInfo = (PVRSRV_RGXDEV_INFO *)pvArg;
+	psRgxDevInfo->bSuspendHWPerfL2DataCopy[RGX_HWPERF_L2_STREAM_FTRACE] =
+		IMG_TRUE;
 }
 
 /* Currently supported by default */
 #if defined(SUPPORT_TL_PRODUCER_CALLBACK)
-static PVRSRV_ERROR GPUTraceTLCB(IMG_HANDLE hStream,
-                                  IMG_UINT32 ui32ReqOp, IMG_UINT32* ui32Resp, void* pvUser)
+static PVRSRV_ERROR GPUTraceTLCB(IMG_HANDLE hStream, IMG_UINT32 ui32ReqOp,
+				 IMG_UINT32 *ui32Resp, void *pvUser)
 {
 	/* IN DEV: Not required as the streams goal is to be a copy of HWPerf */
 	PVRSRV_ERROR eError = PVRSRV_OK;
@@ -225,10 +227,11 @@ static void PVRGpuTraceInitFTraceClockSource(void)
 	struct file *filep = filp_open(TRACE_FS_CLK, O_RDWR, 0);
 	PVR_LOG_RETURN_VOID_IF_FALSE(!IS_ERR(filep), "TraceFS not found");
 
-	PVR_LOG_VA(PVR_DBG_MESSAGE,
-	        "Writing %s to %s to enable parallel HWPerf and FTrace support",
-	        TRACE_CLK_STR, TRACE_FS_CLK);
-	ret = kernel_read(filep, str, sizeof(str)-1, &pos);
+	PVR_LOG_VA(
+		PVR_DBG_MESSAGE,
+		"Writing %s to %s to enable parallel HWPerf and FTrace support",
+		TRACE_CLK_STR, TRACE_FS_CLK);
+	ret = kernel_read(filep, str, sizeof(str) - 1, &pos);
 	PVR_LOG_RETURN_VOID_IF_FALSE((ret > 0), "TraceFS Read failed");
 	str[ret] = 0;
 	pos = 0;
@@ -236,18 +239,13 @@ static void PVRGpuTraceInitFTraceClockSource(void)
 	/* Determine clock value. trace_clock value is stored like [<clock_string>]
 	   File example: [local] global counter mono mono_raw x86-tsc
 	*/
-	for (i = 0, j = 0; i < sizeof(str) && j < sizeof(gszLastClockSource); i++)
-	{
-		if (str[i] == ']')
-		{
+	for (i = 0, j = 0; i < sizeof(str) && j < sizeof(gszLastClockSource);
+	     i++) {
+		if (str[i] == ']') {
 			break;
-		}
-		else if (str[i] == '[')
-		{
+		} else if (str[i] == '[') {
 			bFound = true;
-		}
-		else if (bFound)
-		{
+		} else if (bFound) {
 			gszLastClockSource[j] = str[i];
 			j++;
 		}
@@ -270,7 +268,8 @@ static void PVRGpuTraceDeinitFTraceClockSource(void)
 	PVR_LOG_RETURN_VOID_IF_FALSE(!IS_ERR(filep), "TraceFS not found");
 
 	/* FTraceFS write will ignore any writes to it that don't match a clock source */
-	ret = kernel_write(filep, gszLastClockSource, sizeof(gszLastClockSource), &pos);
+	ret = kernel_write(filep, gszLastClockSource,
+			   sizeof(gszLastClockSource), &pos);
 	PVR_LOG_IF_FALSE((ret >= 0), "Setting FTrace clock source failed");
 
 	filp_close(filep, NULL);
@@ -282,9 +281,9 @@ PVRSRV_ERROR PVRGpuTraceSupportInit(void)
 {
 	PVRSRV_ERROR eError;
 
-	if (ghLockFTraceEventLock != NULL)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "FTrace Support is already initialized"));
+	if (ghLockFTraceEventLock != NULL) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "FTrace Support is already initialized"));
 		return PVRSRV_OK;
 	}
 
@@ -293,7 +292,7 @@ PVRSRV_ERROR PVRGpuTraceSupportInit(void)
 	PVR_LOG_RETURN_IF_ERROR(eError, "OSLockCreate");
 
 	eError = OSLockCreate(&ghGPUTraceStateLock);
-	PVR_LOG_RETURN_IF_ERROR (eError, "OSLockCreate");
+	PVR_LOG_RETURN_IF_ERROR(eError, "OSLockCreate");
 
 #if defined(SUPPORT_RGX)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
@@ -312,13 +311,11 @@ void PVRGpuTraceSupportDeInit(void)
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0) */
 #endif /* defined(SUPPORT_RGX) */
 
-	if (ghGPUTraceStateLock)
-	{
+	if (ghGPUTraceStateLock) {
 		OSLockDestroy(ghGPUTraceStateLock);
 	}
 
-	if (ghLockFTraceEventLock)
-	{
+	if (ghLockFTraceEventLock) {
 		OSLockDestroy(ghLockFTraceEventLock);
 		ghLockFTraceEventLock = NULL;
 	}
@@ -336,29 +333,28 @@ PVRSRV_ERROR PVRGpuTraceInitStream(PVRSRV_RGXDEV_INFO *psDevInfo)
 
 	/* form the FTrace stream name, corresponding to this DevNode; which can make sense in the UM */
 	if (OSSNPrintf(pszFTraceStreamName, sizeof(pszFTraceStreamName), "%s%d",
-				   PVRSRV_TL_FTRACE_RGX_FW_STREAM,
-				   psDevInfo->psDeviceNode->sDevId.i32KernelDeviceID) < 0)
-	{
+		       PVRSRV_TL_FTRACE_RGX_FW_STREAM,
+		       psDevInfo->psDeviceNode->sDevId.i32KernelDeviceID) < 0) {
 		PVR_DPF((PVR_DBG_ERROR,
-				 "%s: Failed to form FTrace stream name for device %d",
-				__func__,
-				psDevInfo->psDeviceNode->sDevId.i32KernelDeviceID));
+			 "%s: Failed to form FTrace stream name for device %d",
+			 __func__,
+			 psDevInfo->psDeviceNode->sDevId.i32KernelDeviceID));
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
-	eError = TLStreamCreate(&hStream,
-							pszFTraceStreamName,
-							psDevInfo->ui32RGXL2HWPerfBufSize,
-							TL_OPMODE_DROP_NEWER | TL_FLAG_NO_SIGNAL_ON_COMMIT,
-							_FTrace_FWOnReaderOpenCB, psDevInfo,
-							_FTrace_FWOnReaderCloseCB, psDevInfo,
+	eError = TLStreamCreate(&hStream, pszFTraceStreamName,
+				psDevInfo->ui32RGXL2HWPerfBufSize,
+				TL_OPMODE_DROP_NEWER |
+					TL_FLAG_NO_SIGNAL_ON_COMMIT,
+				_FTrace_FWOnReaderOpenCB, psDevInfo,
+				_FTrace_FWOnReaderCloseCB, psDevInfo,
 #if !defined(SUPPORT_TL_PRODUCER_CALLBACK)
-							NULL, NULL
+				NULL, NULL
 #else
-							/* Not enabled by default */
-							GPUTraceTLCB, psDevInfo
+				/* Not enabled by default */
+				GPUTraceTLCB, psDevInfo
 #endif
-							);
+	);
 	PVR_RETURN_IF_ERROR(eError);
 
 	psDevInfo->hHWPerfStream[RGX_HWPERF_L2_STREAM_FTRACE] = hStream;
@@ -404,11 +400,9 @@ void PVRGpuTraceDeInitDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
 #if !defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
 	PVRSRV_VZ_RETN_IF_MODE(GUEST, DEVNODE, psDeviceNode);
 #endif
-	if (psData)
-	{
+	if (psData) {
 		/* first disable the tracing, to free up TL resources */
-		if (psData->hFTraceResourceLock)
-		{
+		if (psData->hFTraceResourceLock) {
 			OSLockAcquire(psData->hFTraceResourceLock);
 			_GpuTraceDisable(psDeviceNode->pvDevice, IMG_TRUE);
 			OSLockRelease(psData->hFTraceResourceLock);
@@ -428,15 +422,16 @@ static INLINE IMG_BOOL PVRGpuTraceIsEnabled(void)
 
 void PVRGpuTraceInitIfEnabled(PVRSRV_DEVICE_NODE *psDeviceNode)
 {
-	if (PVRGpuTraceIsEnabled())
-	{
+	if (PVRGpuTraceIsEnabled()) {
 		IMG_BOOL bEnable = IMG_FALSE;
 
-		PVRSRV_ERROR eError = PVRGpuTraceSetEnabled(psDeviceNode, IMG_TRUE);
-		if (eError != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "Failed to initialise GPU event tracing"
-					" (%s)", PVRSRVGetErrorString(eError)));
+		PVRSRV_ERROR eError =
+			PVRGpuTraceSetEnabled(psDeviceNode, IMG_TRUE);
+		if (eError != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "Failed to initialise GPU event tracing"
+				 " (%s)",
+				 PVRSRVGetErrorString(eError)));
 		}
 
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
@@ -450,32 +445,28 @@ void PVRGpuTraceInitIfEnabled(PVRSRV_DEVICE_NODE *psDeviceNode)
 		/* single events can be enabled by calling trace_set_clr_event()
 		 * with the event name, e.g.:
 		 * trace_set_clr_event("rogue", "rogue_ufo_update", 1) */
-		if (trace_set_clr_event("rogue", NULL, 1) != 0)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "Failed to enable \"rogue\" event"
-			        " group"));
-		}
-		else
-		{
+		if (trace_set_clr_event("rogue", NULL, 1) != 0) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "Failed to enable \"rogue\" event"
+				 " group"));
+		} else {
 			PVR_LOG(("FTrace events from \"rogue\" group enabled"));
 			bEnable = IMG_TRUE;
 		}
 #endif
 
 #if defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
-		if (trace_set_clr_event("power", "gpu_work_period", 1) != 0)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "Failed to enable \"gpu_work_period\" event"));
-		}
-		else
-		{
-			PVR_LOG(("FTrace event from \"gpu_work_period\" enabled"));
+		if (trace_set_clr_event("power", "gpu_work_period", 1) != 0) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "Failed to enable \"gpu_work_period\" event"));
+		} else {
+			PVR_LOG((
+				"FTrace event from \"gpu_work_period\" enabled"));
 			bEnable = IMG_TRUE;
 		}
 #endif
 
-		if (bEnable)
-		{
+		if (bEnable) {
 			/* this enables FTrace globally (if not enabled nothing will appear
 			 * in the FTrace buffer) */
 			TRACE_ON();
@@ -502,46 +493,46 @@ static PVRSRV_ERROR _GpuTraceEnable(PVRSRV_RGXDEV_INFO *psRgxDevInfo)
 	PVR_ASSERT(OSLockIsLocked(psFtraceData->hFTraceResourceLock));
 
 	/* return if already enabled */
-	if (psFtraceData->hGPUFTraceTLStream != NULL)
-	{
+	if (psFtraceData->hGPUFTraceTLStream != NULL) {
 		return PVRSRV_OK;
 	}
 
 	uiFilter =
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
-	    RGX_HWPERF_EVENT_MASK_HW_KICKFINISH | RGX_HWPERF_EVENT_MASK_FW_SED | RGX_HWPERF_EVENT_MASK_FW_UFO |
+		RGX_HWPERF_EVENT_MASK_HW_KICKFINISH |
+		RGX_HWPERF_EVENT_MASK_FW_SED | RGX_HWPERF_EVENT_MASK_FW_UFO |
 #endif
 #if defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
-            RGX_HWPERF_EVENT_MASK_VALUE(RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD) |
+		RGX_HWPERF_EVENT_MASK_VALUE(
+			RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD) |
 #endif
-	    0;
+		0;
 
 #if defined(SUPPORT_RGX) && !defined(NO_HARDWARE)
 	/* Signal FW to enable event generation */
-	if (psRgxDevInfo->bFirmwareInitialised)
-	{
+	if (psRgxDevInfo->bFirmwareInitialised) {
 		eError = PVRSRVRGXCtrlHWPerfFW(psRgxDevNode,
-		                               RGX_HWPERF_L2_STREAM_FTRACE,
-		                               uiFilter, HWPERF_FILTER_OPERATION_SET);
+					       RGX_HWPERF_L2_STREAM_FTRACE,
+					       uiFilter,
+					       HWPERF_FILTER_OPERATION_SET);
 		PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVRGXCtrlHWPerfFW", err_out);
-	}
-	else
+	} else
 #endif
 	{
 		/* only set filter and exit */
-		(void) RGXHWPerfFwSetEventFilter(psRgxDevInfo, RGX_HWPERF_L2_STREAM_FTRACE, uiFilter);
+		(void)RGXHWPerfFwSetEventFilter(
+			psRgxDevInfo, RGX_HWPERF_L2_STREAM_FTRACE, uiFilter);
 
 		return PVRSRV_OK;
 	}
 
 	/* form the FTrace stream name, corresponding to this DevNode; which can make sense in the UM */
 	if (OSSNPrintf(pszFTraceStreamName, sizeof(pszFTraceStreamName), "%s%d",
-					PVRSRV_TL_FTRACE_RGX_FW_STREAM, psRgxDevNode->sDevId.i32KernelDeviceID) < 0)
-	{
+		       PVRSRV_TL_FTRACE_RGX_FW_STREAM,
+		       psRgxDevNode->sDevId.i32KernelDeviceID) < 0) {
 		PVR_DPF((PVR_DBG_ERROR,
-		         "%s: Failed to form FTrace stream name for device %d",
-		         __func__,
-		         psRgxDevNode->sDevId.i32KernelDeviceID));
+			 "%s: Failed to form FTrace stream name for device %d",
+			 __func__, psRgxDevNode->sDevId.i32KernelDeviceID));
 		return PVRSRV_ERROR_INVALID_PARAMS;
 	}
 
@@ -551,15 +542,13 @@ static PVRSRV_ERROR _GpuTraceEnable(PVRSRV_RGXDEV_INFO *psRgxDevInfo)
 	TLStreamReset(psRgxDevInfo->hHWPerfStream[RGX_HWPERF_L2_STREAM_FTRACE]);
 
 	/* Open the TL Stream for FTrace data consumption */
-	eError = TLClientOpenStream(DIRECT_BRIDGE_HANDLE,
-								pszFTraceStreamName,
-								PVRSRV_STREAM_FLAG_ACQUIRE_NONBLOCKING,
-								&psFtraceData->hGPUFTraceTLStream);
+	eError = TLClientOpenStream(DIRECT_BRIDGE_HANDLE, pszFTraceStreamName,
+				    PVRSRV_STREAM_FLAG_ACQUIRE_NONBLOCKING,
+				    &psFtraceData->hGPUFTraceTLStream);
 	PVR_LOG_GOTO_IF_ERROR(eError, "TLClientOpenStream", err_out);
 
 #if defined(SUPPORT_RGX)
-	if (RGXTimeCorrGetClockSource(psRgxDevNode) != TRACE_CLK)
-	{
+	if (RGXTimeCorrGetClockSource(psRgxDevNode) != TRACE_CLK) {
 		/* Set clock source for timer correlation data to hwperf clock */
 		eError = RGXTimeCorrSetClockSource(psRgxDevNode, TRACE_CLK);
 		PVR_LOG_IF_ERROR(eError, "RGXTimeCorrSetClockSource");
@@ -576,42 +565,44 @@ static PVRSRV_ERROR _GpuTraceEnable(PVRSRV_RGXDEV_INFO *psRgxDevInfo)
 	 */
 	eError = PVRSRVRegisterCmdCompleteNotify(
 		&psFtraceData->hGPUTraceCmdCompleteHandle,
-		&_GpuTraceCmdCompleteNotify,
-		psRgxDevInfo);
-	PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVRegisterCmdCompleteNotify", err_close_stream);
+		&_GpuTraceCmdCompleteNotify, psRgxDevInfo);
+	PVR_LOG_GOTO_IF_ERROR(eError, "PVRSRVRegisterCmdCompleteNotify",
+			      err_close_stream);
 
 #if (!defined(PVR_ARCH_ROGUE) && defined(SUPPORT_SOC_TIMER))
-	if (RGX_IS_FEATURE_VALUE_SUPPORTED(psRgxDevInfo, PERF_COUNTER_VERSION) && RGX_GET_FEATURE_VALUE(psRgxDevInfo, PERF_COUNTER_VERSION) <= 2)
+	if (RGX_IS_FEATURE_VALUE_SUPPORTED(psRgxDevInfo,
+					   PERF_COUNTER_VERSION) &&
+	    RGX_GET_FEATURE_VALUE(psRgxDevInfo, PERF_COUNTER_VERSION) <= 2)
 #endif
 	{
 		psFtraceData->psGPUWorkPeriodTimestampHash = HASH_Create(50);
-		if (psFtraceData->psGPUWorkPeriodTimestampHash == NULL)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "GPU Work Period timestamp hash create failed."));
+		if (psFtraceData->psGPUWorkPeriodTimestampHash == NULL) {
+			PVR_DPF((
+				PVR_DBG_ERROR,
+				"GPU Work Period timestamp hash create failed."));
 		}
 	}
 
 	psFtraceData->psTimestampHash = HASH_Create(50);
-	if (psFtraceData->psTimestampHash == NULL)
-	{
-		PVR_DPF((PVR_DBG_ERROR, "HWPerf ftrace data hash create failed."));
+	if (psFtraceData->psTimestampHash == NULL) {
+		PVR_DPF((PVR_DBG_ERROR,
+			 "HWPerf ftrace data hash create failed."));
 	}
 
 err_out:
 	PVR_DPF_RETURN_RC(eError);
 err_close_stream:
 	TLClientCloseStream(DIRECT_BRIDGE_HANDLE,
-						psFtraceData->hGPUFTraceTLStream);
+			    psFtraceData->hGPUFTraceTLStream);
 	psFtraceData->hGPUFTraceTLStream = NULL;
 	goto err_out;
 }
 
-static PVRSRV_ERROR _DeleteHashEntries(uintptr_t k, uintptr_t v, void* pvPriv)
+static PVRSRV_ERROR _DeleteHashEntries(uintptr_t k, uintptr_t v, void *pvPriv)
 {
-	HASH_TABLE *psHash = (HASH_TABLE*)pvPriv;
-	void *pvPtr = (void*)v;
-	if (pvPtr != NULL)
-	{
+	HASH_TABLE *psHash = (HASH_TABLE *)pvPriv;
+	void *pvPtr = (void *)v;
+	if (pvPtr != NULL) {
 		OSFreeMem(pvPtr);
 	}
 	HASH_Remove(psHash, k);
@@ -620,7 +611,8 @@ static PVRSRV_ERROR _DeleteHashEntries(uintptr_t k, uintptr_t v, void* pvPriv)
 
 /* Caller must now hold hFTraceResourceLock before calling this method.
  */
-static PVRSRV_ERROR _GpuTraceDisable(PVRSRV_RGXDEV_INFO *psRgxDevInfo, IMG_BOOL bDeInit)
+static PVRSRV_ERROR _GpuTraceDisable(PVRSRV_RGXDEV_INFO *psRgxDevInfo,
+				     IMG_BOOL bDeInit)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	RGX_HWPERF_FTRACE_DATA *psFtraceData;
@@ -629,8 +621,7 @@ static PVRSRV_ERROR _GpuTraceDisable(PVRSRV_RGXDEV_INFO *psRgxDevInfo, IMG_BOOL 
 #endif
 
 #if !defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-	if (PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo))
-	{
+	if (PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo)) {
 		return PVRSRV_ERROR_NOT_IMPLEMENTED;
 	}
 #endif
@@ -644,54 +635,56 @@ static PVRSRV_ERROR _GpuTraceDisable(PVRSRV_RGXDEV_INFO *psRgxDevInfo, IMG_BOOL 
 	PVR_ASSERT(OSLockIsLocked(psFtraceData->hFTraceResourceLock));
 
 	/* if FW is not yet initialised, just set filter and exit */
-	if (!psRgxDevInfo->bFirmwareInitialised)
-	{
-		(void) RGXHWPerfFwSetEventFilter(psRgxDevInfo, RGX_HWPERF_L2_STREAM_FTRACE,
-		                                 RGX_HWPERF_EVENT_MASK_NONE);
+	if (!psRgxDevInfo->bFirmwareInitialised) {
+		(void)RGXHWPerfFwSetEventFilter(psRgxDevInfo,
+						RGX_HWPERF_L2_STREAM_FTRACE,
+						RGX_HWPERF_EVENT_MASK_NONE);
 		return PVRSRV_OK;
 	}
 
-	if (psFtraceData->hGPUFTraceTLStream == NULL)
-	{
+	if (psFtraceData->hGPUFTraceTLStream == NULL) {
 		/* Tracing already disabled, just return */
 		return PVRSRV_OK;
 	}
 
-	if (psFtraceData->psTimestampHash != NULL)
-	{
-		(void)HASH_Iterate(psFtraceData->psTimestampHash, (HASH_pfnCallback)_DeleteHashEntries, psFtraceData->psTimestampHash);
+	if (psFtraceData->psTimestampHash != NULL) {
+		(void)HASH_Iterate(psFtraceData->psTimestampHash,
+				   (HASH_pfnCallback)_DeleteHashEntries,
+				   psFtraceData->psTimestampHash);
 		HASH_Delete(psFtraceData->psTimestampHash);
 		psFtraceData->psTimestampHash = NULL;
 	}
 
 #if (!defined(PVR_ARCH_ROGUE) && defined(SUPPORT_SOC_TIMER))
-	if (RGX_IS_FEATURE_VALUE_SUPPORTED(psRgxDevInfo, PERF_COUNTER_VERSION) && RGX_GET_FEATURE_VALUE(psRgxDevInfo, PERF_COUNTER_VERSION) <= 2)
+	if (RGX_IS_FEATURE_VALUE_SUPPORTED(psRgxDevInfo,
+					   PERF_COUNTER_VERSION) &&
+	    RGX_GET_FEATURE_VALUE(psRgxDevInfo, PERF_COUNTER_VERSION) <= 2)
 #endif
 	{
-		if (psFtraceData->psGPUWorkPeriodTimestampHash != NULL)
-		{
-			(void)HASH_Iterate(psFtraceData->psGPUWorkPeriodTimestampHash, (HASH_pfnCallback)_DeleteHashEntries, psFtraceData->psGPUWorkPeriodTimestampHash);
+		if (psFtraceData->psGPUWorkPeriodTimestampHash != NULL) {
+			(void)HASH_Iterate(
+				psFtraceData->psGPUWorkPeriodTimestampHash,
+				(HASH_pfnCallback)_DeleteHashEntries,
+				psFtraceData->psGPUWorkPeriodTimestampHash);
 			HASH_Delete(psFtraceData->psGPUWorkPeriodTimestampHash);
 			psFtraceData->psGPUWorkPeriodTimestampHash = NULL;
 		}
 	}
 
 #if defined(SUPPORT_RGX)
-	if (!bDeInit)
-	{
+	if (!bDeInit) {
 		eError = PVRSRVRGXCtrlHWPerfFW(psRgxDevNode,
-		                               RGX_HWPERF_L2_STREAM_FTRACE,
-		                               RGX_HWPERF_EVENT_MASK_NONE,
-		                               HWPERF_FILTER_OPERATION_SET);
+					       RGX_HWPERF_L2_STREAM_FTRACE,
+					       RGX_HWPERF_EVENT_MASK_NONE,
+					       HWPERF_FILTER_OPERATION_SET);
 		PVR_LOG_IF_ERROR(eError, "PVRSRVRGXCtrlHWPerfFW");
 	}
 #endif
 
-	if (psFtraceData->hGPUTraceCmdCompleteHandle)
-	{
+	if (psFtraceData->hGPUTraceCmdCompleteHandle) {
 		/* Tracing is being turned off. Unregister the notifier. */
 		eError = PVRSRVUnregisterCmdCompleteNotify(
-				psFtraceData->hGPUTraceCmdCompleteHandle);
+			psFtraceData->hGPUTraceCmdCompleteHandle);
 		PVR_LOG_IF_ERROR(eError, "PVRSRVUnregisterCmdCompleteNotify");
 		psFtraceData->hGPUTraceCmdCompleteHandle = NULL;
 	}
@@ -699,15 +692,15 @@ static PVRSRV_ERROR _GpuTraceDisable(PVRSRV_RGXDEV_INFO *psRgxDevInfo, IMG_BOOL 
 	/* Let close stream perform the release data on the outstanding acquired
 	 * data */
 	eError = TLClientCloseStream(DIRECT_BRIDGE_HANDLE,
-	                             psFtraceData->hGPUFTraceTLStream);
+				     psFtraceData->hGPUFTraceTLStream);
 	PVR_LOG_IF_ERROR(eError, "TLClientCloseStream");
 
 	psFtraceData->hGPUFTraceTLStream = NULL;
 
 #if defined(SUPPORT_RGX)
-	if (psRgxDevInfo->ui32LastClockSource != TRACE_CLK)
-	{
-		RGXTimeCorrSetClockSource(psRgxDevNode, psRgxDevInfo->ui32LastClockSource);
+	if (psRgxDevInfo->ui32LastClockSource != TRACE_CLK) {
+		RGXTimeCorrSetClockSource(psRgxDevNode,
+					  psRgxDevInfo->ui32LastClockSource);
 	}
 #endif
 
@@ -715,14 +708,13 @@ static PVRSRV_ERROR _GpuTraceDisable(PVRSRV_RGXDEV_INFO *psRgxDevInfo, IMG_BOOL 
 }
 
 static PVRSRV_ERROR _GpuTraceSetEnabled(PVRSRV_RGXDEV_INFO *psRgxDevInfo,
-                                        IMG_BOOL bNewValue)
+					IMG_BOOL bNewValue)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	RGX_HWPERF_FTRACE_DATA *psFtraceData;
 
 #if !defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-	if (PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo))
-	{
+	if (PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo)) {
 		return PVRSRV_ERROR_NOT_IMPLEMENTED;
 	}
 #endif
@@ -737,8 +729,8 @@ static PVRSRV_ERROR _GpuTraceSetEnabled(PVRSRV_RGXDEV_INFO *psRgxDevInfo,
 	 */
 	OSLockAcquire(psFtraceData->hFTraceResourceLock);
 
-	eError = (bNewValue ? _GpuTraceEnable(psRgxDevInfo)
-					   : _GpuTraceDisable(psRgxDevInfo, IMG_FALSE));
+	eError = (bNewValue ? _GpuTraceEnable(psRgxDevInfo) :
+			      _GpuTraceDisable(psRgxDevInfo, IMG_FALSE));
 
 	OSLockRelease(psFtraceData->hFTraceResourceLock);
 
@@ -755,9 +747,9 @@ static PVRSRV_ERROR _GpuTraceSetEnabledForAllDevices(IMG_BOOL bNewValue)
 	psDeviceNode = psPVRSRVData->psDeviceNodeList;
 
 #if defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-	if (psDeviceNode && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, psDeviceNode))
-	{
-		PVRSRV_RGXDEV_INFO *psRgxDevInfo = (PVRSRV_RGXDEV_INFO*)psDeviceNode->pvDevice;
+	if (psDeviceNode && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, psDeviceNode)) {
+		PVRSRV_RGXDEV_INFO *psRgxDevInfo =
+			(PVRSRV_RGXDEV_INFO *)psDeviceNode->pvDevice;
 		PVRSRV_ERROR eError;
 
 		eError = _GpuTraceSetEnabled(psRgxDevInfo, bNewValue);
@@ -767,11 +759,12 @@ static PVRSRV_ERROR _GpuTraceSetEnabledForAllDevices(IMG_BOOL bNewValue)
 #endif
 
 	/* enable/disable GPU trace on all devices */
-	while (psDeviceNode)
-	{
-		PVRSRV_RGXDEV_INFO *psRgxDevInfo = (PVRSRV_RGXDEV_INFO*)psDeviceNode->pvDevice;
+	while (psDeviceNode) {
+		PVRSRV_RGXDEV_INFO *psRgxDevInfo =
+			(PVRSRV_RGXDEV_INFO *)psDeviceNode->pvDevice;
 
-#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && !defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
+#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && \
+	!defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
 		if (!PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo))
 #endif
 		{
@@ -789,7 +782,7 @@ static PVRSRV_ERROR _GpuTraceSetEnabledForAllDevices(IMG_BOOL bNewValue)
 }
 
 PVRSRV_ERROR PVRGpuTraceSetEnabled(PVRSRV_DEVICE_NODE *psDeviceNode,
-                                   IMG_BOOL bNewValue)
+				   IMG_BOOL bNewValue)
 {
 	return _GpuTraceSetEnabled(psDeviceNode->pvDevice, bNewValue);
 }
@@ -800,137 +793,169 @@ PVRSRV_ERROR PVRGpuTraceSetEnabled(PVRSRV_DEVICE_NODE *psDeviceNode,
 
 static const IMG_CHAR *_HWPerfKickTypeToStr(RGX_HWPERF_KICK_TYPE eKickType)
 {
-	static const IMG_CHAR *aszKickType[RGX_HWPERF_KICK_TYPE2_LAST+1] = {
+	static const IMG_CHAR *aszKickType[RGX_HWPERF_KICK_TYPE2_LAST + 1] = {
 		"TA3D", /* Deprecated */
 #if defined(RGX_FEATURE_HWPERF_VOLCANIC)
 		/* Volcanic deprecated kick types */
-		"CDM", "RS", "SHG", "TQTDM", "SYNC", "TA", "3D", "LAST",
+		"CDM",
+		"RS",
+		"SHG",
+		"TQTDM",
+		"SYNC",
+		"TA",
+		"3D",
+		"LAST",
 
-		"<UNKNOWN>", "<UNKNOWN>", "<UNKNOWN>", "<UNKNOWN>", "<UNKNOWN>",
-		"<UNKNOWN>", "<UNKNOWN>", "<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
 #else
 		/* Rogue deprecated kick types */
-		"TQ2D", "TQ3D", "CDM", "RS", "VRDM", "TQTDM", "SYNC", "TA", "3D", "LAST",
+		"TQ2D",
+		"TQ3D",
+		"CDM",
+		"RS",
+		"VRDM",
+		"TQTDM",
+		"SYNC",
+		"TA",
+		"3D",
+		"LAST",
 
-		"<UNKNOWN>", "<UNKNOWN>", "<UNKNOWN>", "<UNKNOWN>", "<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
+		"<UNKNOWN>",
 		"<UNKNOWN>",
 #endif
-		"TQ2D", "TQ3D", "TQTDM", "CDM", "GEOM", "3D", "SYNC", "RS", "LAST"
+		"TQ2D",
+		"TQ3D",
+		"TQTDM",
+		"CDM",
+		"GEOM",
+		"3D",
+		"SYNC",
+		"RS",
+		"LAST"
 	};
 
 	/* cast in case of negative value */
-	if (((IMG_UINT32) eKickType) >= RGX_HWPERF_KICK_TYPE2_LAST)
-	{
+	if (((IMG_UINT32)eKickType) >= RGX_HWPERF_KICK_TYPE2_LAST) {
 		return "<UNKNOWN>";
 	}
 
 	return aszKickType[eKickType];
 }
-void PVRGpuTraceEnqueueEvent(
-		PVRSRV_DEVICE_NODE *psDevNode,
-		IMG_UINT32 ui32FirmwareCtx,
-		IMG_UINT32 ui32ExtJobRef,
-		IMG_UINT32 ui32IntJobRef,
-		RGX_HWPERF_KICK_TYPE eKickType)
+void PVRGpuTraceEnqueueEvent(PVRSRV_DEVICE_NODE *psDevNode,
+			     IMG_UINT32 ui32FirmwareCtx,
+			     IMG_UINT32 ui32ExtJobRef, IMG_UINT32 ui32IntJobRef,
+			     RGX_HWPERF_KICK_TYPE eKickType)
 {
 	const IMG_CHAR *pszKickType = _HWPerfKickTypeToStr(eKickType);
 
-	PVR_DPF((PVR_DBG_MESSAGE, "PVRGpuTraceEnqueueEvent(%s): contextId %u, "
-	        "jobId %u", pszKickType, ui32FirmwareCtx, ui32IntJobRef));
+	PVR_DPF((PVR_DBG_MESSAGE,
+		 "PVRGpuTraceEnqueueEvent(%s): contextId %u, "
+		 "jobId %u",
+		 pszKickType, ui32FirmwareCtx, ui32IntJobRef));
 
-	if (PVRGpuTraceIsEnabled())
-	{
-		trace_rogue_job_enqueue(psDevNode->sDevId.ui32InternalID, ui32FirmwareCtx,
-		                        ui32IntJobRef, ui32ExtJobRef, pszKickType);
+	if (PVRGpuTraceIsEnabled()) {
+		trace_rogue_job_enqueue(psDevNode->sDevId.ui32InternalID,
+					ui32FirmwareCtx, ui32IntJobRef,
+					ui32ExtJobRef, pszKickType);
 	}
 }
 
-static void _GpuTraceWorkSwitch(
-		IMG_UINT64 ui64HWTimestampInOSTime,
-		IMG_UINT32 ui32GpuId,
-		IMG_UINT32 ui32CtxId,
-		IMG_UINT32 ui32CtxPriority,
-		IMG_UINT32 ui32ExtJobRef,
-		IMG_UINT32 ui32IntJobRef,
-		const IMG_CHAR* pszWorkType,
-		PVR_GPUTRACE_SWITCH_TYPE eSwType)
+static void _GpuTraceWorkSwitch(IMG_UINT64 ui64HWTimestampInOSTime,
+				IMG_UINT32 ui32GpuId, IMG_UINT32 ui32CtxId,
+				IMG_UINT32 ui32CtxPriority,
+				IMG_UINT32 ui32ExtJobRef,
+				IMG_UINT32 ui32IntJobRef,
+				const IMG_CHAR *pszWorkType,
+				PVR_GPUTRACE_SWITCH_TYPE eSwType)
 {
 	PVR_ASSERT(pszWorkType);
 	trace_rogue_sched_switch(pszWorkType, eSwType, ui64HWTimestampInOSTime,
-	                         ui32GpuId, ui32CtxId, 2-ui32CtxPriority, ui32IntJobRef,
-	                         ui32ExtJobRef);
+				 ui32GpuId, ui32CtxId, 2 - ui32CtxPriority,
+				 ui32IntJobRef, ui32ExtJobRef);
 }
 
-static void _GpuTraceUfo(
-		IMG_UINT64 ui64OSTimestamp,
-		const RGX_HWPERF_UFO_EV eEvType,
-		const IMG_UINT32 ui32GpuId,
-		const IMG_UINT32 ui32CtxId,
-		const IMG_UINT32 ui32ExtJobRef,
-		const IMG_UINT32 ui32IntJobRef,
-		const IMG_UINT32 ui32UFOCount,
-		const RGX_HWPERF_UFO_DATA_ELEMENT *puData)
+static void _GpuTraceUfo(IMG_UINT64 ui64OSTimestamp,
+			 const RGX_HWPERF_UFO_EV eEvType,
+			 const IMG_UINT32 ui32GpuId, const IMG_UINT32 ui32CtxId,
+			 const IMG_UINT32 ui32ExtJobRef,
+			 const IMG_UINT32 ui32IntJobRef,
+			 const IMG_UINT32 ui32UFOCount,
+			 const RGX_HWPERF_UFO_DATA_ELEMENT *puData)
 {
 	switch (eEvType) {
-		case RGX_HWPERF_UFO_EV_UPDATE:
-			trace_rogue_ufo_updates(ui64OSTimestamp, ui32GpuId, ui32CtxId,
-					ui32ExtJobRef, ui32IntJobRef, ui32UFOCount, puData);
-			break;
-		case RGX_HWPERF_UFO_EV_CHECK_SUCCESS:
-			trace_rogue_ufo_checks_success(ui64OSTimestamp, ui32GpuId, ui32CtxId,
-					ui32ExtJobRef, ui32IntJobRef, IMG_FALSE, ui32UFOCount,
-					puData);
-			break;
-		case RGX_HWPERF_UFO_EV_PRCHECK_SUCCESS:
-			trace_rogue_ufo_checks_success(ui64OSTimestamp, ui32GpuId, ui32CtxId,
-					ui32ExtJobRef, ui32IntJobRef, IMG_TRUE, ui32UFOCount,
-					puData);
-			break;
-		case RGX_HWPERF_UFO_EV_CHECK_FAIL:
-			trace_rogue_ufo_checks_fail(ui64OSTimestamp, ui32GpuId, ui32CtxId,
-					ui32ExtJobRef, ui32IntJobRef, IMG_FALSE, ui32UFOCount,
-					puData);
-			break;
-		case RGX_HWPERF_UFO_EV_PRCHECK_FAIL:
-			trace_rogue_ufo_checks_fail(ui64OSTimestamp, ui32GpuId, ui32CtxId,
-					ui32ExtJobRef, ui32IntJobRef, IMG_TRUE, ui32UFOCount,
-					puData);
-			break;
-		default:
-			break;
+	case RGX_HWPERF_UFO_EV_UPDATE:
+		trace_rogue_ufo_updates(ui64OSTimestamp, ui32GpuId, ui32CtxId,
+					ui32ExtJobRef, ui32IntJobRef,
+					ui32UFOCount, puData);
+		break;
+	case RGX_HWPERF_UFO_EV_CHECK_SUCCESS:
+		trace_rogue_ufo_checks_success(ui64OSTimestamp, ui32GpuId,
+					       ui32CtxId, ui32ExtJobRef,
+					       ui32IntJobRef, IMG_FALSE,
+					       ui32UFOCount, puData);
+		break;
+	case RGX_HWPERF_UFO_EV_PRCHECK_SUCCESS:
+		trace_rogue_ufo_checks_success(ui64OSTimestamp, ui32GpuId,
+					       ui32CtxId, ui32ExtJobRef,
+					       ui32IntJobRef, IMG_TRUE,
+					       ui32UFOCount, puData);
+		break;
+	case RGX_HWPERF_UFO_EV_CHECK_FAIL:
+		trace_rogue_ufo_checks_fail(ui64OSTimestamp, ui32GpuId,
+					    ui32CtxId, ui32ExtJobRef,
+					    ui32IntJobRef, IMG_FALSE,
+					    ui32UFOCount, puData);
+		break;
+	case RGX_HWPERF_UFO_EV_PRCHECK_FAIL:
+		trace_rogue_ufo_checks_fail(ui64OSTimestamp, ui32GpuId,
+					    ui32CtxId, ui32ExtJobRef,
+					    ui32IntJobRef, IMG_TRUE,
+					    ui32UFOCount, puData);
+		break;
+	default:
+		break;
 	}
 }
 
-static void _GpuTraceFirmware(
-		IMG_UINT64 ui64HWTimestampInOSTime,
-		IMG_UINT32 ui32GpuId,
-		const IMG_CHAR* pszWorkType,
-		PVR_GPUTRACE_SWITCH_TYPE eSwType)
+static void _GpuTraceFirmware(IMG_UINT64 ui64HWTimestampInOSTime,
+			      IMG_UINT32 ui32GpuId, const IMG_CHAR *pszWorkType,
+			      PVR_GPUTRACE_SWITCH_TYPE eSwType)
 {
-	trace_rogue_firmware_activity(ui64HWTimestampInOSTime, ui32GpuId, pszWorkType, eSwType);
+	trace_rogue_firmware_activity(ui64HWTimestampInOSTime, ui32GpuId,
+				      pszWorkType, eSwType);
 }
 
-static void _GpuTraceEventsLost(
-		const RGX_HWPERF_STREAM_ID eStreamId,
-		IMG_UINT32 ui32GpuId,
-		const IMG_UINT32 ui32LastOrdinal,
-		const IMG_UINT32 ui32CurrOrdinal)
+static void _GpuTraceEventsLost(const RGX_HWPERF_STREAM_ID eStreamId,
+				IMG_UINT32 ui32GpuId,
+				const IMG_UINT32 ui32LastOrdinal,
+				const IMG_UINT32 ui32CurrOrdinal)
 {
-	trace_rogue_events_lost(eStreamId, ui32GpuId, ui32LastOrdinal, ui32CurrOrdinal);
+	trace_rogue_events_lost(eStreamId, ui32GpuId, ui32LastOrdinal,
+				ui32CurrOrdinal);
 }
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) */
 
-#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
+#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || \
+	defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
 
 /* Calculate the OS timestamp given an RGX timestamp in the HWPerf event. */
-static uint64_t CalculateEventTimestamp(
-	PVRSRV_RGXDEV_INFO *psDevInfo,
-	uint32_t ui32TimeCorrIndex,
-	RGX_HWPERF_EVENT_TYPE eType,
-	uint64_t ui64EventTimestamp,
-	uint32_t ui32UID,
-	uint32_t ui32Ordinal,
-	bool     bApplyTimestampCheck)
+static uint64_t CalculateEventTimestamp(PVRSRV_RGXDEV_INFO *psDevInfo,
+					uint32_t ui32TimeCorrIndex,
+					RGX_HWPERF_EVENT_TYPE eType,
+					uint64_t ui64EventTimestamp,
+					uint32_t ui32UID, uint32_t ui32Ordinal,
+					bool bApplyTimestampCheck)
 {
 	RGXFWIF_GPU_UTIL_FW *psGpuUtilFW = psDevInfo->psRGXFWIfGpuUtilFW;
 	RGX_HWPERF_FTRACE_DATA *psFtraceData = psDevInfo->pvGpuFtraceData;
@@ -943,30 +968,26 @@ static uint64_t CalculateEventTimestamp(
 
 	ui64Key = ((uint64_t)ui32UID << 32);
 
-	if (HWPERF_PACKET_IS_HW_TYPE(eType))
-	{
+	if (HWPERF_PACKET_IS_HW_TYPE(eType)) {
 		ui64Key |= 0;
-	}
-	else if (eType == RGX_HWPERF_UFO)
-	{
+	} else if (eType == RGX_HWPERF_UFO) {
 		ui64Key |= 1;
-	}
-	else if (HWPERF_PACKET_IS_FW_TYPE(eType))
-	{
+	} else if (HWPERF_PACKET_IS_FW_TYPE(eType)) {
 		ui64Key |= 2;
-	}
-	else if (eType == RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD)
-	{
+	} else if (eType == RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD) {
 		ui64Key |= 3;
-	}
-	else
-	{
+	} else {
 		ui32UID = UID_INVALID;
-		PVR_DPF((PVR_DBG_ERROR, "%s can't handle hwperf packet type %d", __func__, eType));
+		PVR_DPF((PVR_DBG_ERROR, "%s can't handle hwperf packet type %d",
+			 __func__, eType));
 	}
 
-	RGXFwSharedMemCacheOpValue(psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(ui32TimeCorrIndex)], INVALIDATE);
-	psTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(ui32TimeCorrIndex)];
+	RGXFwSharedMemCacheOpValue(
+		psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+			ui32TimeCorrIndex)],
+		INVALIDATE);
+	psTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+		ui32TimeCorrIndex)];
 
 	ui64CRTimeStamp = psTimeCorr->ui64CRTimeStamp;
 	/* This is configurable using the AppHint 'SecondaryTimerCorrOSClockSource'
@@ -974,8 +995,8 @@ static uint64_t CalculateEventTimestamp(
 	ui64OSTimeStamp = psTimeCorr->ui64OSTimeStamp;
 	ui64CRDeltaToOSDeltaKNs = psTimeCorr->ui64CRDeltaToOSDeltaKNs;
 
-	if (ui32UID != UID_INVALID && psFtraceData->psTimestampHash != NULL && bApplyTimestampCheck)
-	{
+	if (ui32UID != UID_INVALID && psFtraceData->psTimestampHash != NULL &&
+	    bApplyTimestampCheck) {
 		typedef struct {
 			IMG_UINT64 ui64OSTimestamp;
 			IMG_UINT32 ui32Ordinal;
@@ -983,20 +1004,18 @@ static uint64_t CalculateEventTimestamp(
 			IMG_UINT16 ui16Type;
 		} sTimestampHashEntry;
 		sTimestampHashEntry *psTmp;
-		psTmp = (sTimestampHashEntry*)HASH_Remove(psFtraceData->psTimestampHash, ui64Key);
-		if (psTmp == NULL)
-		{
+		psTmp = (sTimestampHashEntry *)HASH_Remove(
+			psFtraceData->psTimestampHash, ui64Key);
+		if (psTmp == NULL) {
 			psTmp = OSAllocZMem(sizeof(sTimestampHashEntry));
-			if (unlikely(psTmp == NULL))
-			{
-				PVR_DPF((PVR_DBG_ERROR, "Failed to allocate timestamp hash"));
+			if (unlikely(psTmp == NULL)) {
+				PVR_DPF((PVR_DBG_ERROR,
+					 "Failed to allocate timestamp hash"));
 			}
-		}
-		else
-		{
-			if (psTmp->ui64OSTimestamp > ui64OSTimeStamp)
-			{
-				RGXFWIF_TIME_CORR *psTimeCorr0, *psTimeCorr1, *psTimeCorr2;
+		} else {
+			if (psTmp->ui64OSTimestamp > ui64OSTimeStamp) {
+				RGXFWIF_TIME_CORR *psTimeCorr0, *psTimeCorr1,
+					*psTimeCorr2;
 
 				/* The previous packet had a time reference (time correlation data) more
 				 * recent than the one in the current packet, it means the timer
@@ -1004,56 +1023,87 @@ static uint64_t CalculateEventTimestamp(
 				 * previous call to _GpuTraceUfoEvent we read one of the
 				 * newest timer correlations rather than one of the oldest ones.
 				 */
-				PVR_DPF((PVR_DBG_ERROR, "%s: The timestamps computed so far could be "
+				PVR_DPF((
+					PVR_DBG_ERROR,
+					"%s: The timestamps computed so far could be "
 					"wrong! The time correlation array size should be increased "
-					"to avoid this. OSTimestamps (%llu:%llu) Packet Type (%u:%u) Ordinals (%u:%u) TimeCorrelationIndices (%u:%u)", __func__,
-					psTmp->ui64OSTimestamp, ui64OSTimeStamp,
-					psTmp->ui16Type, eType,
+					"to avoid this. OSTimestamps (%llu:%llu) Packet Type (%u:%u) Ordinals (%u:%u) TimeCorrelationIndices (%u:%u)",
+					__func__, psTmp->ui64OSTimestamp,
+					ui64OSTimeStamp, psTmp->ui16Type, eType,
 					psTmp->ui32Ordinal, ui32Ordinal,
 					psTmp->ui16Index, ui32TimeCorrIndex));
 
-				psTimeCorr0 = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psTmp->ui16Index)];
-				psTimeCorr1 = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(ui32TimeCorrIndex)];
-				psTimeCorr2 = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psGpuUtilFW->ui32TimeCorrSeqCount)];
+				psTimeCorr0 =
+					&psGpuUtilFW->sTimeCorr
+						 [RGXFWIF_TIME_CORR_CURR_INDEX(
+							 psTmp->ui16Index)];
+				psTimeCorr1 =
+					&psGpuUtilFW->sTimeCorr
+						 [RGXFWIF_TIME_CORR_CURR_INDEX(
+							 ui32TimeCorrIndex)];
+				psTimeCorr2 =
+					&psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psGpuUtilFW
+							->ui32TimeCorrSeqCount)];
 
-				PVR_DPF((PVR_DBG_ERROR, "%s: LastCorrelationIndex         (%u) OSTimestamp (%llu) CRTimestamp (%llu)", __func__, psTmp->ui16Index, psTimeCorr0->ui64OSTimeStamp, psTimeCorr0->ui64CRTimeStamp));
-				PVR_DPF((PVR_DBG_ERROR, "%s: CurrentCorrelationIndex      (%u) OSTimestamp (%llu) CRTimestamp (%llu)", __func__, ui32TimeCorrIndex, psTimeCorr1->ui64OSTimeStamp, psTimeCorr1->ui64CRTimeStamp));
-				PVR_DPF((PVR_DBG_ERROR, "%s: CurrentCorrelationTableEntry (%u) OSTimestamp (%llu) CRTimestamp (%llu)", __func__, psGpuUtilFW->ui32TimeCorrSeqCount, psTimeCorr2->ui64OSTimeStamp, psTimeCorr2->ui64CRTimeStamp));
+				PVR_DPF((
+					PVR_DBG_ERROR,
+					"%s: LastCorrelationIndex         (%u) OSTimestamp (%llu) CRTimestamp (%llu)",
+					__func__, psTmp->ui16Index,
+					psTimeCorr0->ui64OSTimeStamp,
+					psTimeCorr0->ui64CRTimeStamp));
+				PVR_DPF((
+					PVR_DBG_ERROR,
+					"%s: CurrentCorrelationIndex      (%u) OSTimestamp (%llu) CRTimestamp (%llu)",
+					__func__, ui32TimeCorrIndex,
+					psTimeCorr1->ui64OSTimeStamp,
+					psTimeCorr1->ui64CRTimeStamp));
+				PVR_DPF((
+					PVR_DBG_ERROR,
+					"%s: CurrentCorrelationTableEntry (%u) OSTimestamp (%llu) CRTimestamp (%llu)",
+					__func__,
+					psGpuUtilFW->ui32TimeCorrSeqCount,
+					psTimeCorr2->ui64OSTimeStamp,
+					psTimeCorr2->ui64CRTimeStamp));
 			}
 		}
 
-		if (psTmp)
-		{
+		if (psTmp) {
 			psTmp->ui64OSTimestamp = ui64OSTimeStamp;
 			psTmp->ui32Ordinal = ui32Ordinal;
 			psTmp->ui16Index = ui32TimeCorrIndex;
 			psTmp->ui16Type = eType;
-			HASH_Insert(psFtraceData->psTimestampHash, ui64Key, (uintptr_t)psTmp);
+			HASH_Insert(psFtraceData->psTimestampHash, ui64Key,
+				    (uintptr_t)psTmp);
 		}
 	}
 
 	/* RGX CR timer ticks delta */
 	deltaRgxTimer = ui64EventTimestamp - ui64CRTimeStamp;
 	/* RGX time delta in nanoseconds */
-	delta_ns = RGXFWIF_GET_DELTA_OSTIME_NS(deltaRgxTimer, ui64CRDeltaToOSDeltaKNs);
+	delta_ns = RGXFWIF_GET_DELTA_OSTIME_NS(deltaRgxTimer,
+					       ui64CRDeltaToOSDeltaKNs);
 	/* Calculate OS time of HWPerf event */
 	ui64EventOSTimestamp = ui64OSTimeStamp + delta_ns;
 
-	PVR_DPF((PVR_DBG_VERBOSE, "%s: psCurrentDvfs RGX %llu, OS %llu, DVFSCLK %u",
-			 __func__, ui64CRTimeStamp, ui64OSTimeStamp,
-			 psTimeCorr->ui32CoreClockSpeed));
+	PVR_DPF((PVR_DBG_VERBOSE,
+		 "%s: psCurrentDvfs RGX %llu, OS %llu, DVFSCLK %u", __func__,
+		 ui64CRTimeStamp, ui64OSTimeStamp,
+		 psTimeCorr->ui32CoreClockSpeed));
 
 	return ui64EventOSTimestamp;
 }
 
 static void _GpuTraceSwitchEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
-		RGX_HWPERF_V2_PACKET_HDR* psHWPerfPkt, const IMG_CHAR* pszWorkName,
-		PVR_GPUTRACE_SWITCH_TYPE eSwType)
+				 RGX_HWPERF_V2_PACKET_HDR *psHWPerfPkt,
+				 const IMG_CHAR *pszWorkName,
+				 PVR_GPUTRACE_SWITCH_TYPE eSwType)
 {
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
-	IMG_UINT64	    ui64Timestamp;
+	IMG_UINT64 ui64Timestamp;
 #endif
-#if ((defined(PVRSRV_NEED_PVR_DPF) && defined(DEBUG)) || defined(DOXYGEN)) || defined(PVRSRV_TRACE_ROGUE_EVENTS)
+#if ((defined(PVRSRV_NEED_PVR_DPF) && defined(DEBUG)) || defined(DOXYGEN)) || \
+	defined(PVRSRV_TRACE_ROGUE_EVENTS)
 	RGX_HWPERF_HW_DATA *psHWPerfPktData;
 #endif
 
@@ -1062,33 +1112,38 @@ static void _GpuTraceSwitchEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 	PVR_ASSERT(psHWPerfPkt);
 	PVR_ASSERT(pszWorkName);
 
-#if ((defined(PVRSRV_NEED_PVR_DPF) && defined(DEBUG)) || defined(DOXYGEN)) || defined(PVRSRV_TRACE_ROGUE_EVENTS)
+#if ((defined(PVRSRV_NEED_PVR_DPF) && defined(DEBUG)) || defined(DOXYGEN)) || \
+	defined(PVRSRV_TRACE_ROGUE_EVENTS)
 	psHWPerfPktData = RGX_HWPERF_GET_PACKET_DATA_BYTES(psHWPerfPkt);
 #endif
 
-	PVR_DPF((PVR_DBG_VERBOSE, "_GpuTraceSwitchEvent: %s ui32ExtJobRef=%d, ui32IntJobRef=%d, eSwType=%d",
-			 pszWorkName != NULL ? pszWorkName : "?", psHWPerfPktData->ui32DMContext,
-			 psHWPerfPktData->ui32IntJobRef, eSwType));
+	PVR_DPF((
+		PVR_DBG_VERBOSE,
+		"_GpuTraceSwitchEvent: %s ui32ExtJobRef=%d, ui32IntJobRef=%d, eSwType=%d",
+		pszWorkName != NULL ? pszWorkName : "?",
+		psHWPerfPktData->ui32DMContext, psHWPerfPktData->ui32IntJobRef,
+		eSwType));
 
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
 	{
 		IMG_UINT32 ui32UID;
 
-		if (OSGetUID(psHWPerfPktData->ui32PID, &ui32UID) != PVRSRV_OK)
-		{
+		if (OSGetUID(psHWPerfPktData->ui32PID, &ui32UID) != PVRSRV_OK) {
 			ui32UID = UID_INVALID;
 		}
 
-		ui64Timestamp = CalculateEventTimestamp(psDevInfo, psHWPerfPktData->ui32TimeCorrIndex, RGX_HWPERF_GET_TYPE(psHWPerfPkt),
-											psHWPerfPkt->ui64Timestamp, ui32UID, psHWPerfPkt->ui32Ordinal, true);
-		_GpuTraceWorkSwitch(ui64Timestamp,
-	                    psDevInfo->psDeviceNode->sDevId.ui32InternalID,
-	                    psHWPerfPktData->ui32DMContext,
-	                    psHWPerfPktData->ui32CtxPriority,
-	                    psHWPerfPktData->ui32ExtJobRef,
-	                    psHWPerfPktData->ui32IntJobRef,
-	                    pszWorkName,
-	                    eSwType);
+		ui64Timestamp = CalculateEventTimestamp(
+			psDevInfo, psHWPerfPktData->ui32TimeCorrIndex,
+			RGX_HWPERF_GET_TYPE(psHWPerfPkt),
+			psHWPerfPkt->ui64Timestamp, ui32UID,
+			psHWPerfPkt->ui32Ordinal, true);
+		_GpuTraceWorkSwitch(
+			ui64Timestamp,
+			psDevInfo->psDeviceNode->sDevId.ui32InternalID,
+			psHWPerfPktData->ui32DMContext,
+			psHWPerfPktData->ui32CtxPriority,
+			psHWPerfPktData->ui32ExtJobRef,
+			psHWPerfPktData->ui32IntJobRef, pszWorkName, eSwType);
 	}
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) */
 
@@ -1098,7 +1153,7 @@ static void _GpuTraceSwitchEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
 static void _GpuTraceUfoEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
-                              RGX_HWPERF_V2_PACKET_HDR* psHWPerfPkt)
+			      RGX_HWPERF_V2_PACKET_HDR *psHWPerfPkt)
 {
 	IMG_UINT64 ui64Timestamp;
 	RGX_HWPERF_UFO_DATA *psHWPerfPktData;
@@ -1108,41 +1163,52 @@ static void _GpuTraceUfoEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 	psHWPerfPktData = RGX_HWPERF_GET_PACKET_DATA_BYTES(psHWPerfPkt);
 
-	ui32UFOCount = RGX_HWPERF_GET_UFO_STREAMSIZE(psHWPerfPktData->ui32StreamInfo);
-	puData = (RGX_HWPERF_UFO_DATA_ELEMENT *) IMG_OFFSET_ADDR(psHWPerfPktData, RGX_HWPERF_GET_UFO_STREAMOFFSET(psHWPerfPktData->ui32StreamInfo));
+	ui32UFOCount =
+		RGX_HWPERF_GET_UFO_STREAMSIZE(psHWPerfPktData->ui32StreamInfo);
+	puData = (RGX_HWPERF_UFO_DATA_ELEMENT *)IMG_OFFSET_ADDR(
+		psHWPerfPktData, RGX_HWPERF_GET_UFO_STREAMOFFSET(
+					 psHWPerfPktData->ui32StreamInfo));
 
-
-	if (OSGetUID(psHWPerfPktData->ui32PID, &ui32UID) != PVRSRV_OK)
-	{
+	if (OSGetUID(psHWPerfPktData->ui32PID, &ui32UID) != PVRSRV_OK) {
 		ui32UID = UID_INVALID;
 	}
 
-	ui64Timestamp = CalculateEventTimestamp(psDevInfo, psHWPerfPktData->ui32TimeCorrIndex, RGX_HWPERF_GET_TYPE(psHWPerfPkt),
-											psHWPerfPkt->ui64Timestamp, ui32UID, psHWPerfPkt->ui32Ordinal, true);
+	ui64Timestamp = CalculateEventTimestamp(
+		psDevInfo, psHWPerfPktData->ui32TimeCorrIndex,
+		RGX_HWPERF_GET_TYPE(psHWPerfPkt), psHWPerfPkt->ui64Timestamp,
+		ui32UID, psHWPerfPkt->ui32Ordinal, true);
 
-	PVR_DPF((PVR_DBG_VERBOSE, "_GpuTraceUfoEvent: ui32ExtJobRef=%d, "
-	        "ui32IntJobRef=%d", psHWPerfPktData->ui32ExtJobRef,
-	        psHWPerfPktData->ui32IntJobRef));
+	PVR_DPF((PVR_DBG_VERBOSE,
+		 "_GpuTraceUfoEvent: ui32ExtJobRef=%d, "
+		 "ui32IntJobRef=%d",
+		 psHWPerfPktData->ui32ExtJobRef,
+		 psHWPerfPktData->ui32IntJobRef));
 
 	_GpuTraceUfo(ui64Timestamp, psHWPerfPktData->eEvType,
-	             psDevInfo->psDeviceNode->sDevId.ui32InternalID,
-	             psHWPerfPktData->ui32DMContext, psHWPerfPktData->ui32ExtJobRef,
-	             psHWPerfPktData->ui32IntJobRef, ui32UFOCount, puData);
+		     psDevInfo->psDeviceNode->sDevId.ui32InternalID,
+		     psHWPerfPktData->ui32DMContext,
+		     psHWPerfPktData->ui32ExtJobRef,
+		     psHWPerfPktData->ui32IntJobRef, ui32UFOCount, puData);
 }
 
 static void _GpuTraceFirmwareEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
-		RGX_HWPERF_V2_PACKET_HDR* psHWPerfPkt, const IMG_CHAR* pszWorkName,
-		PVR_GPUTRACE_SWITCH_TYPE eSwType)
+				   RGX_HWPERF_V2_PACKET_HDR *psHWPerfPkt,
+				   const IMG_CHAR *pszWorkName,
+				   PVR_GPUTRACE_SWITCH_TYPE eSwType)
 
 {
 	uint64_t ui64Timestamp;
-	RGX_HWPERF_FW_DATA *psHWPerfPktData = RGX_HWPERF_GET_PACKET_DATA_BYTES(psHWPerfPkt);
+	RGX_HWPERF_FW_DATA *psHWPerfPktData =
+		RGX_HWPERF_GET_PACKET_DATA_BYTES(psHWPerfPkt);
 
-	ui64Timestamp = CalculateEventTimestamp(psDevInfo, psHWPerfPktData->ui32TimeCorrIndex, RGX_HWPERF_GET_TYPE(psHWPerfPkt),
-											psHWPerfPkt->ui64Timestamp, UID_INVALID, psHWPerfPkt->ui32Ordinal, true);
+	ui64Timestamp = CalculateEventTimestamp(
+		psDevInfo, psHWPerfPktData->ui32TimeCorrIndex,
+		RGX_HWPERF_GET_TYPE(psHWPerfPkt), psHWPerfPkt->ui64Timestamp,
+		UID_INVALID, psHWPerfPkt->ui32Ordinal, true);
 
-	_GpuTraceFirmware(ui64Timestamp, psDevInfo->psDeviceNode->sDevId.ui32InternalID, pszWorkName,
-	                  eSwType);
+	_GpuTraceFirmware(ui64Timestamp,
+			  psDevInfo->psDeviceNode->sDevId.ui32InternalID,
+			  pszWorkName, eSwType);
 }
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) */
 
@@ -1150,16 +1216,16 @@ static void _GpuTraceFirmwareEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 static void _GpuTraceEmitDefaultFrequency(PVRSRV_RGXDEV_INFO *psDevInfo)
 {
 	RGX_DATA *psRGXData =
-		(RGX_DATA*)psDevInfo->psDeviceNode->psDevConfig->hDevData;
+		(RGX_DATA *)psDevInfo->psDeviceNode->psDevConfig->hDevData;
 	IMG_UINT32 ui32CoreClockSpeed =
 		psRGXData->psRGXTimingInfo->ui32CoreClockSpeed;
 
 	OSLockAcquire(ghLockFTraceEventLock);
 
 	if (BIT_ISSET(gui8EmitFlags, EMIT_FLAG_READY_TO_EMIT) &&
-		!BIT_ISSET(gui8EmitFlags, EMIT_FLAG_HAS_CLKS_CHG))
-	{
-		trace_gpu_frequency(ui32CoreClockSpeed,
+	    !BIT_ISSET(gui8EmitFlags, EMIT_FLAG_HAS_CLKS_CHG)) {
+		trace_gpu_frequency(
+			ui32CoreClockSpeed,
 			psDevInfo->psDeviceNode->sDevId.ui32InternalID);
 	}
 
@@ -1167,29 +1233,28 @@ static void _GpuTraceEmitDefaultFrequency(PVRSRV_RGXDEV_INFO *psDevInfo)
 }
 
 static void _GpuTraceClockChangeEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
-		RGX_HWPERF_V2_PACKET_HDR* psHWPerfPkt)
+				      RGX_HWPERF_V2_PACKET_HDR *psHWPerfPkt)
 {
 	RGX_HWPERF_CLKS_CHG_DATA *psHWPerfPktData;
 
 	OSLockAcquire(ghLockFTraceEventLock);
 
-	if (!BIT_ISSET(gui8EmitFlags, EMIT_FLAG_READY_TO_EMIT))
-	{
+	if (!BIT_ISSET(gui8EmitFlags, EMIT_FLAG_READY_TO_EMIT)) {
 		goto unlock;
 	}
 
 	psHWPerfPktData = RGX_HWPERF_GET_PACKET_DATA_BYTES(psHWPerfPkt);
-	switch (psHWPerfPktData->eClockName)
-	{
-		case RGX_HWPERF_CLKS_CHG_NAME_CORE:
-		{
-			trace_gpu_frequency(psHWPerfPktData->ui64NewClockSpeed,
-				psDevInfo->psDeviceNode->sDevId.ui32InternalID);
+	switch (psHWPerfPktData->eClockName) {
+	case RGX_HWPERF_CLKS_CHG_NAME_CORE: {
+		trace_gpu_frequency(
+			psHWPerfPktData->ui64NewClockSpeed,
+			psDevInfo->psDeviceNode->sDevId.ui32InternalID);
 
-			BIT_SET(gui8EmitFlags, EMIT_FLAG_HAS_CLKS_CHG);
-			break;
-		}
-		default: break;
+		BIT_SET(gui8EmitFlags, EMIT_FLAG_HAS_CLKS_CHG);
+		break;
+	}
+	default:
+		break;
 	}
 
 unlock:
@@ -1198,72 +1263,78 @@ unlock:
 #endif /* defined(PVRSRV_ANDROID_TRACE_GPU_FREQ) */
 
 static IMG_BOOL ValidAndEmitFTraceEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
-		RGX_HWPERF_V2_PACKET_HDR* psHWPerfPkt)
+					RGX_HWPERF_V2_PACKET_HDR *psHWPerfPkt)
 {
 	RGX_HWPERF_EVENT_TYPE eType;
 	RGX_HWPERF_FTRACE_DATA *psFtraceData = psDevInfo->pvGpuFtraceData;
-#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
+#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || \
+	defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
 	IMG_UINT32 ui32HwEventTypeIndex;
 	static const struct {
-		IMG_CHAR* pszName;
+		IMG_CHAR *pszName;
 		PVR_GPUTRACE_SWITCH_TYPE eSwType;
 	} aszHwEventTypeMap[] = {
 #define _T(T) PVR_GPUTRACE_SWITCH_TYPE_##T
-		{ "BG",             _T(BEGIN)  }, /* RGX_HWPERF_FW_BGSTART */
-		{ "BG",             _T(END)    }, /* RGX_HWPERF_FW_BGEND */
-		{ "IRQ",            _T(BEGIN)  }, /* RGX_HWPERF_FW_IRQSTART */
-		{ "IRQ",            _T(END)    }, /* RGX_HWPERF_FW_IRQEND */
-		{ "DBG",            _T(BEGIN)  }, /* RGX_HWPERF_FW_DBGSTART */
-		{ "DBG",            _T(END)    }, /* RGX_HWPERF_FW_DBGEND */
-		{ "PMOOM_TAPAUSE",  _T(END)    }, /* RGX_HWPERF_HW_PMOOM_TAPAUSE */
-		{ "TA",             _T(BEGIN)  }, /* RGX_HWPERF_HW_TAKICK */
-		{ "TA",             _T(END)    }, /* RGX_HWPERF_HW_TAFINISHED */
-		{ "TQ3D",           _T(BEGIN)  }, /* RGX_HWPERF_HW_3DTQKICK */
-		{ "3D",             _T(BEGIN)  }, /* RGX_HWPERF_HW_3DKICK */
-		{ "3D",             _T(END)    }, /* RGX_HWPERF_HW_3DFINISHED */
-		{ "CDM",            _T(BEGIN)  }, /* RGX_HWPERF_HW_CDMKICK */
-		{ "CDM",            _T(END)    }, /* RGX_HWPERF_HW_CDMFINISHED */
-		{ "TQ2D",           _T(BEGIN)  }, /* RGX_HWPERF_HW_TLAKICK */
-		{ "TQ2D",           _T(END)    }, /* RGX_HWPERF_HW_TLAFINISHED */
-		{ "3DSPM",          _T(BEGIN)  }, /* RGX_HWPERF_HW_3DSPMKICK */
-		{ NULL,             0          }, /* RGX_HWPERF_HW_PERIODIC (unsupported) */
-		{ "RTU",            _T(BEGIN)  }, /* RGX_HWPERF_HW_RTUKICK */
-		{ "RTU",            _T(END)    }, /* RGX_HWPERF_HW_RTUFINISHED */
-		{ "SHG",            _T(BEGIN)  }, /* RGX_HWPERF_HW_SHGKICK */
-		{ "SHG",            _T(END)    }, /* RGX_HWPERF_HW_SHGFINISHED */
-		{ "TQ3D",           _T(END)    }, /* RGX_HWPERF_HW_3DTQFINISHED */
-		{ "3DSPM",          _T(END)    }, /* RGX_HWPERF_HW_3DSPMFINISHED */
-		{ "PMOOM_TARESUME", _T(BEGIN)  }, /* RGX_HWPERF_HW_PMOOM_TARESUME */
-		{ "TDM",            _T(BEGIN)  }, /* RGX_HWPERF_HW_TDMKICK */
-		{ "TDM",            _T(END)    }, /* RGX_HWPERF_HW_TDMFINISHED */
-		{ "NULL",           _T(SINGLE) }, /* RGX_HWPERF_HW_NULLKICK */
-		{ "GPU_WORK_PERIOD",_T(SINGLE) }, /* RGX_HWPERF_HW_GPU_WORK_PERIOD */
+		{ "BG", _T(BEGIN) }, /* RGX_HWPERF_FW_BGSTART */
+		{ "BG", _T(END) }, /* RGX_HWPERF_FW_BGEND */
+		{ "IRQ", _T(BEGIN) }, /* RGX_HWPERF_FW_IRQSTART */
+		{ "IRQ", _T(END) }, /* RGX_HWPERF_FW_IRQEND */
+		{ "DBG", _T(BEGIN) }, /* RGX_HWPERF_FW_DBGSTART */
+		{ "DBG", _T(END) }, /* RGX_HWPERF_FW_DBGEND */
+		{ "PMOOM_TAPAUSE", _T(END) }, /* RGX_HWPERF_HW_PMOOM_TAPAUSE */
+		{ "TA", _T(BEGIN) }, /* RGX_HWPERF_HW_TAKICK */
+		{ "TA", _T(END) }, /* RGX_HWPERF_HW_TAFINISHED */
+		{ "TQ3D", _T(BEGIN) }, /* RGX_HWPERF_HW_3DTQKICK */
+		{ "3D", _T(BEGIN) }, /* RGX_HWPERF_HW_3DKICK */
+		{ "3D", _T(END) }, /* RGX_HWPERF_HW_3DFINISHED */
+		{ "CDM", _T(BEGIN) }, /* RGX_HWPERF_HW_CDMKICK */
+		{ "CDM", _T(END) }, /* RGX_HWPERF_HW_CDMFINISHED */
+		{ "TQ2D", _T(BEGIN) }, /* RGX_HWPERF_HW_TLAKICK */
+		{ "TQ2D", _T(END) }, /* RGX_HWPERF_HW_TLAFINISHED */
+		{ "3DSPM", _T(BEGIN) }, /* RGX_HWPERF_HW_3DSPMKICK */
+		{ NULL, 0 }, /* RGX_HWPERF_HW_PERIODIC (unsupported) */
+		{ "RTU", _T(BEGIN) }, /* RGX_HWPERF_HW_RTUKICK */
+		{ "RTU", _T(END) }, /* RGX_HWPERF_HW_RTUFINISHED */
+		{ "SHG", _T(BEGIN) }, /* RGX_HWPERF_HW_SHGKICK */
+		{ "SHG", _T(END) }, /* RGX_HWPERF_HW_SHGFINISHED */
+		{ "TQ3D", _T(END) }, /* RGX_HWPERF_HW_3DTQFINISHED */
+		{ "3DSPM", _T(END) }, /* RGX_HWPERF_HW_3DSPMFINISHED */
+		{ "PMOOM_TARESUME",
+		  _T(BEGIN) }, /* RGX_HWPERF_HW_PMOOM_TARESUME */
+		{ "TDM", _T(BEGIN) }, /* RGX_HWPERF_HW_TDMKICK */
+		{ "TDM", _T(END) }, /* RGX_HWPERF_HW_TDMFINISHED */
+		{ "NULL", _T(SINGLE) }, /* RGX_HWPERF_HW_NULLKICK */
+		{ "GPU_WORK_PERIOD",
+		  _T(SINGLE) }, /* RGX_HWPERF_HW_GPU_WORK_PERIOD */
 #undef _T
 	};
-	static_assert(RGX_HWPERF_HW_EVENT_RANGE0_FIRST_TYPE == RGX_HWPERF_FW_EVENT_RANGE_LAST_TYPE + 1,
-				  "FW and HW events are not contiguous in RGX_HWPERF_EVENT_TYPE");
+	static_assert(
+		RGX_HWPERF_HW_EVENT_RANGE0_FIRST_TYPE ==
+			RGX_HWPERF_FW_EVENT_RANGE_LAST_TYPE + 1,
+		"FW and HW events are not contiguous in RGX_HWPERF_EVENT_TYPE");
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) || defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD) */
 
 	PVR_ASSERT(psHWPerfPkt);
 	eType = RGX_HWPERF_GET_TYPE(psHWPerfPkt);
 
-	if (psFtraceData->bTrackOrdinals)
-	{
-		if (psFtraceData->ui32FTraceLastOrdinal != psHWPerfPkt->ui32Ordinal - 1)
-		{
+	if (psFtraceData->bTrackOrdinals) {
+		if (psFtraceData->ui32FTraceLastOrdinal !=
+		    psHWPerfPkt->ui32Ordinal - 1) {
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
-			_GpuTraceEventsLost(RGX_HWPERF_GET_STREAM_ID(psHWPerfPkt),
-			                    psDevInfo->psDeviceNode->sDevId.ui32InternalID,
-			                    psFtraceData->ui32FTraceLastOrdinal,
-			                    psHWPerfPkt->ui32Ordinal);
+			_GpuTraceEventsLost(
+				RGX_HWPERF_GET_STREAM_ID(psHWPerfPkt),
+				psDevInfo->psDeviceNode->sDevId.ui32InternalID,
+				psFtraceData->ui32FTraceLastOrdinal,
+				psHWPerfPkt->ui32Ordinal);
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) */
-			PVR_DPF((PVR_DBG_WARNING, "FTrace events lost (stream_id = %u, ordinal: last = %u, current = %u)",
-			         RGX_HWPERF_GET_STREAM_ID(psHWPerfPkt), psFtraceData->ui32FTraceLastOrdinal,
-			         psHWPerfPkt->ui32Ordinal));
+			PVR_DPF((
+				PVR_DBG_WARNING,
+				"FTrace events lost (stream_id = %u, ordinal: last = %u, current = %u)",
+				RGX_HWPERF_GET_STREAM_ID(psHWPerfPkt),
+				psFtraceData->ui32FTraceLastOrdinal,
+				psHWPerfPkt->ui32Ordinal));
 		}
-	}
-	else
-	{
+	} else {
 		psFtraceData->bTrackOrdinals = IMG_TRUE;
 	}
 
@@ -1271,214 +1342,311 @@ static IMG_BOOL ValidAndEmitFTraceEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
 	/* Process UFO packets */
-	if (eType == RGX_HWPERF_UFO)
-	{
+	if (eType == RGX_HWPERF_UFO) {
 		_GpuTraceUfoEvent(psDevInfo, psHWPerfPkt);
 		return IMG_TRUE;
 	}
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) */
 
-#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
-	if (eType <= RGX_HWPERF_HW_EVENT_RANGE0_LAST_TYPE)
-	{
+#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || \
+	defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
+	if (eType <= RGX_HWPERF_HW_EVENT_RANGE0_LAST_TYPE) {
 		/* this ID belongs to range 0, so index directly in range 0 */
-		ui32HwEventTypeIndex = eType - RGX_HWPERF_FW_EVENT_RANGE_FIRST_TYPE;
-	}
-	else
-	{
+		ui32HwEventTypeIndex =
+			eType - RGX_HWPERF_FW_EVENT_RANGE_FIRST_TYPE;
+	} else {
 		/* this ID belongs to range 1, so first index in range 1 and skip number of slots used up for range 0 */
-		ui32HwEventTypeIndex = (eType - RGX_HWPERF_HW_EVENT_RANGE1_FIRST_TYPE) +
-		                       (RGX_HWPERF_HW_EVENT_RANGE0_LAST_TYPE - RGX_HWPERF_FW_EVENT_RANGE_FIRST_TYPE + 1);
+		ui32HwEventTypeIndex =
+			(eType - RGX_HWPERF_HW_EVENT_RANGE1_FIRST_TYPE) +
+			(RGX_HWPERF_HW_EVENT_RANGE0_LAST_TYPE -
+			 RGX_HWPERF_FW_EVENT_RANGE_FIRST_TYPE + 1);
 	}
 
-	if (ui32HwEventTypeIndex >= ARRAY_SIZE(aszHwEventTypeMap))
-	{
+	if (ui32HwEventTypeIndex >= ARRAY_SIZE(aszHwEventTypeMap)) {
 		goto err_unsupported;
 	}
 
-	if (aszHwEventTypeMap[ui32HwEventTypeIndex].pszName == NULL)
-	{
+	if (aszHwEventTypeMap[ui32HwEventTypeIndex].pszName == NULL) {
 		/* Not supported map entry, ignore event */
 		goto err_unsupported;
 	}
 
-	if (HWPERF_PACKET_IS_HW_TYPE(eType))
-	{
-		if (aszHwEventTypeMap[ui32HwEventTypeIndex].eSwType == PVR_GPUTRACE_SWITCH_TYPE_SINGLE)
-		{
-			_GpuTraceSwitchEvent(psDevInfo, psHWPerfPkt,
-			                     aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
-			                     PVR_GPUTRACE_SWITCH_TYPE_BEGIN);
-			_GpuTraceSwitchEvent(psDevInfo, psHWPerfPkt,
-			                     aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
-			                     PVR_GPUTRACE_SWITCH_TYPE_END);
-		}
-		else
-		{
-			_GpuTraceSwitchEvent(psDevInfo, psHWPerfPkt,
-			                     aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
-			                     aszHwEventTypeMap[ui32HwEventTypeIndex].eSwType);
+	if (HWPERF_PACKET_IS_HW_TYPE(eType)) {
+		if (aszHwEventTypeMap[ui32HwEventTypeIndex].eSwType ==
+		    PVR_GPUTRACE_SWITCH_TYPE_SINGLE) {
+			_GpuTraceSwitchEvent(
+				psDevInfo, psHWPerfPkt,
+				aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
+				PVR_GPUTRACE_SWITCH_TYPE_BEGIN);
+			_GpuTraceSwitchEvent(
+				psDevInfo, psHWPerfPkt,
+				aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
+				PVR_GPUTRACE_SWITCH_TYPE_END);
+		} else {
+			_GpuTraceSwitchEvent(
+				psDevInfo, psHWPerfPkt,
+				aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
+				aszHwEventTypeMap[ui32HwEventTypeIndex].eSwType);
 		}
 
 		return IMG_TRUE;
 	}
 #if defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
-#define ONE_SEC_IN_NSECS	(1000000000ULL)
+#define ONE_SEC_IN_NSECS (1000000000ULL)
 	if (psDevInfo->psDeviceNode->bGPUWorkPeriodFTraceEnabled &&
-	    eType == RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD)
-	{
+	    eType == RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD) {
 		RGX_HWPERF_GPU_WORK_PERIOD_DATA *psHWPerfPktData;
 		IMG_UINT64 ui64StartTimestamp, ui64EndTimestamp;
-		RGX_HWPERF_FTRACE_DATA *psFtraceData = psDevInfo->pvGpuFtraceData;
+		RGX_HWPERF_FTRACE_DATA *psFtraceData =
+			psDevInfo->pvGpuFtraceData;
 		RGXFWIF_TIME_CORR *psStartTimeCorr, *psEndTimeCorr;
 		RGXFWIF_GPU_UTIL_FW *psGpuUtilFW;
-		IMG_UINT64 ui64StartTimestampAdj = psDevInfo->psDeviceNode->ui64LastDeviceOffHostTimestampNs;
-		IMG_UINT64 ui64EndTimestampAdj = psDevInfo->psDeviceNode->ui64LastDeviceOffHostTimestampNs;
+		IMG_UINT64 ui64StartTimestampAdj =
+			psDevInfo->psDeviceNode
+				->ui64LastDeviceOffHostTimestampNs;
+		IMG_UINT64 ui64EndTimestampAdj =
+			psDevInfo->psDeviceNode
+				->ui64LastDeviceOffHostTimestampNs;
 
 		psHWPerfPktData = RGX_HWPERF_GET_PACKET_DATA_BYTES(psHWPerfPkt);
 
 #if (!defined(PVR_ARCH_ROGUE) && defined(SUPPORT_SOC_TIMER))
-		if (RGX_IS_FEATURE_VALUE_SUPPORTED(psDevInfo, PERF_COUNTER_VERSION) && RGX_GET_FEATURE_VALUE(psDevInfo, PERF_COUNTER_VERSION) > 2)
-		{
-			RGX_DATA *psRGXData = (RGX_DATA*)psDevInfo->psDeviceNode->psDevConfig->hDevData;
+		if (RGX_IS_FEATURE_VALUE_SUPPORTED(psDevInfo,
+						   PERF_COUNTER_VERSION) &&
+		    RGX_GET_FEATURE_VALUE(psDevInfo, PERF_COUNTER_VERSION) >
+			    2) {
+			RGX_DATA *psRGXData =
+				(RGX_DATA *)psDevInfo->psDeviceNode->psDevConfig
+					->hDevData;
 
-			ui64StartTimestamp = psHWPerfPktData->ui64GPUWorkPeriodStartTime * (ONE_SEC_IN_NSECS / psRGXData->psRGXTimingInfo->ui32SOCClockSpeed);
-			ui64EndTimestamp = psHWPerfPkt->ui64Timestamp * (ONE_SEC_IN_NSECS / psRGXData->psRGXTimingInfo->ui32SOCClockSpeed);
-		}
-		else
+			ui64StartTimestamp =
+				psHWPerfPktData->ui64GPUWorkPeriodStartTime *
+				(ONE_SEC_IN_NSECS /
+				 psRGXData->psRGXTimingInfo->ui32SOCClockSpeed);
+			ui64EndTimestamp =
+				psHWPerfPkt->ui64Timestamp *
+				(ONE_SEC_IN_NSECS /
+				 psRGXData->psRGXTimingInfo->ui32SOCClockSpeed);
+		} else
 #endif
 		{
 			psGpuUtilFW = psDevInfo->psRGXFWIfGpuUtilFW;
 
-			psStartTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32StartTimeCorrIndex)];
-			if (psStartTimeCorr->ui64CRTimeStamp > psHWPerfPktData->ui64GPUWorkPeriodStartTime)
-			{
-				psStartTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32StartTimeCorrIndex + RGXFWIF_TIME_CORR_ARRAY_SIZE - 1)];
-				if (psStartTimeCorr->ui64CRTimeStamp != 0 && psStartTimeCorr->ui64CRTimeStamp <= psHWPerfPktData->ui64GPUWorkPeriodStartTime)
-				{
-					psHWPerfPktData->ui32StartTimeCorrIndex = RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32StartTimeCorrIndex + RGXFWIF_TIME_CORR_ARRAY_SIZE - 1);
-				}
-				else
-				{
-					psStartTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32StartTimeCorrIndex)];
-					psHWPerfPktData->ui64GPUWorkPeriodStartTime = psStartTimeCorr->ui64CRTimeStamp;
+			psStartTimeCorr =
+				&psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+					psHWPerfPktData->ui32StartTimeCorrIndex)];
+			if (psStartTimeCorr->ui64CRTimeStamp >
+			    psHWPerfPktData->ui64GPUWorkPeriodStartTime) {
+				psStartTimeCorr =
+					&psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psHWPerfPktData
+							->ui32StartTimeCorrIndex +
+						RGXFWIF_TIME_CORR_ARRAY_SIZE -
+						1)];
+				if (psStartTimeCorr->ui64CRTimeStamp != 0 &&
+				    psStartTimeCorr->ui64CRTimeStamp <=
+					    psHWPerfPktData
+						    ->ui64GPUWorkPeriodStartTime) {
+					psHWPerfPktData->ui32StartTimeCorrIndex =
+						RGXFWIF_TIME_CORR_CURR_INDEX(
+							psHWPerfPktData
+								->ui32StartTimeCorrIndex +
+							RGXFWIF_TIME_CORR_ARRAY_SIZE -
+							1);
+				} else {
+					psStartTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psHWPerfPktData
+							->ui32StartTimeCorrIndex)];
+					psHWPerfPktData
+						->ui64GPUWorkPeriodStartTime =
+						psStartTimeCorr->ui64CRTimeStamp;
 				}
 			}
-			ui64StartTimestamp = CalculateEventTimestamp(psDevInfo,
-					psHWPerfPktData->ui32StartTimeCorrIndex,
-					RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
-					psHWPerfPktData->ui64GPUWorkPeriodStartTime,
-					psHWPerfPktData->ui32UID, psHWPerfPkt->ui32Ordinal, false);
+			ui64StartTimestamp = CalculateEventTimestamp(
+				psDevInfo,
+				psHWPerfPktData->ui32StartTimeCorrIndex,
+				RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
+				psHWPerfPktData->ui64GPUWorkPeriodStartTime,
+				psHWPerfPktData->ui32UID,
+				psHWPerfPkt->ui32Ordinal, false);
 
-			psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32TimeCorrIndex)];
-			if (psEndTimeCorr->ui64CRTimeStamp > psHWPerfPkt->ui64Timestamp)
-			{
-				psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32TimeCorrIndex + RGXFWIF_TIME_CORR_ARRAY_SIZE - 1)];
-				if (psEndTimeCorr->ui64CRTimeStamp != 0 && psEndTimeCorr->ui64CRTimeStamp <= psHWPerfPkt->ui64Timestamp)
-				{
-					psHWPerfPktData->ui32TimeCorrIndex = RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32TimeCorrIndex + RGXFWIF_TIME_CORR_ARRAY_SIZE - 1);
-				}
-				else
-				{
-					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32TimeCorrIndex)];
-					psHWPerfPkt->ui64Timestamp = psEndTimeCorr->ui64CRTimeStamp;
+			psEndTimeCorr =
+				&psGpuUtilFW
+					 ->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						 psHWPerfPktData
+							 ->ui32TimeCorrIndex)];
+			if (psEndTimeCorr->ui64CRTimeStamp >
+			    psHWPerfPkt->ui64Timestamp) {
+				psEndTimeCorr =
+					&psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psHWPerfPktData
+							->ui32TimeCorrIndex +
+						RGXFWIF_TIME_CORR_ARRAY_SIZE -
+						1)];
+				if (psEndTimeCorr->ui64CRTimeStamp != 0 &&
+				    psEndTimeCorr->ui64CRTimeStamp <=
+					    psHWPerfPkt->ui64Timestamp) {
+					psHWPerfPktData->ui32TimeCorrIndex =
+						RGXFWIF_TIME_CORR_CURR_INDEX(
+							psHWPerfPktData
+								->ui32TimeCorrIndex +
+							RGXFWIF_TIME_CORR_ARRAY_SIZE -
+							1);
+				} else {
+					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psHWPerfPktData
+							->ui32TimeCorrIndex)];
+					psHWPerfPkt->ui64Timestamp =
+						psEndTimeCorr->ui64CRTimeStamp;
 				}
 			}
-			ui64EndTimestamp = CalculateEventTimestamp(psDevInfo,
-					psHWPerfPktData->ui32TimeCorrIndex,
-					RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
-					psHWPerfPkt->ui64Timestamp,
-					psHWPerfPktData->ui32UID, psHWPerfPkt->ui32Ordinal, false);
+			ui64EndTimestamp = CalculateEventTimestamp(
+				psDevInfo, psHWPerfPktData->ui32TimeCorrIndex,
+				RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
+				psHWPerfPkt->ui64Timestamp,
+				psHWPerfPktData->ui32UID,
+				psHWPerfPkt->ui32Ordinal, false);
 
 			ui64StartTimestamp += ui64StartTimestampAdj;
 			ui64EndTimestamp += ui64EndTimestampAdj;
 
-			if (ui64EndTimestamp > ui64StartTimestamp)
-			{
-				if (ui64EndTimestamp - ui64StartTimestamp >= ONE_SEC_IN_NSECS &&
-				    psHWPerfPktData->ui32StartTimeCorrIndex != psHWPerfPktData->ui32TimeCorrIndex)
-				{
-					PVR_DPF((PVR_DBG_VERBOSE, "End timestamp adjustment for frequency drift causing gpu_work_period larger than 1sec ! (%llu:%llu)", ui64StartTimestamp, ui64EndTimestamp));
-					psHWPerfPktData->ui32TimeCorrIndex = psHWPerfPktData->ui32StartTimeCorrIndex;
-					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32TimeCorrIndex)];
-					ui64EndTimestamp = CalculateEventTimestamp(psDevInfo,
-						psHWPerfPktData->ui32TimeCorrIndex,
+			if (ui64EndTimestamp > ui64StartTimestamp) {
+				if (ui64EndTimestamp - ui64StartTimestamp >=
+					    ONE_SEC_IN_NSECS &&
+				    psHWPerfPktData->ui32StartTimeCorrIndex !=
+					    psHWPerfPktData->ui32TimeCorrIndex) {
+					PVR_DPF((
+						PVR_DBG_VERBOSE,
+						"End timestamp adjustment for frequency drift causing gpu_work_period larger than 1sec ! (%llu:%llu)",
+						ui64StartTimestamp,
+						ui64EndTimestamp));
+					psHWPerfPktData->ui32TimeCorrIndex =
+						psHWPerfPktData
+							->ui32StartTimeCorrIndex;
+					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psHWPerfPktData
+							->ui32TimeCorrIndex)];
+					ui64EndTimestamp = CalculateEventTimestamp(
+						psDevInfo,
+						psHWPerfPktData
+							->ui32TimeCorrIndex,
 						RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
 						psHWPerfPkt->ui64Timestamp,
-						psHWPerfPktData->ui32UID, psHWPerfPkt->ui32Ordinal, false);
+						psHWPerfPktData->ui32UID,
+						psHWPerfPkt->ui32Ordinal,
+						false);
 					ui64EndTimestamp += ui64EndTimestampAdj;
 				}
-			}
-			else
-			{
-				if (psHWPerfPktData->ui64GPUWorkPeriodStartTime > psHWPerfPkt->ui64Timestamp ||
-				    psStartTimeCorr->ui64CRTimeStamp > psEndTimeCorr->ui64CRTimeStamp)
-				{
+			} else {
+				if (psHWPerfPktData->ui64GPUWorkPeriodStartTime >
+					    psHWPerfPkt->ui64Timestamp ||
+				    psStartTimeCorr->ui64CRTimeStamp >
+					    psEndTimeCorr->ui64CRTimeStamp) {
 					/* APM in the middle of a workload is not expected */
-					PVR_DPF((PVR_DBG_ERROR, "APM is detected in the middle of a workload!"));
-					psHWPerfPktData->ui32TimeCorrIndex = psHWPerfPktData->ui32StartTimeCorrIndex;
-					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32TimeCorrIndex)];
-					psHWPerfPkt->ui64Timestamp += psDevInfo->psDeviceNode->ui64LastDeviceOffTimestamp;
-					ui64EndTimestamp = CalculateEventTimestamp(psDevInfo,
-						psHWPerfPktData->ui32TimeCorrIndex,
+					PVR_DPF((
+						PVR_DBG_ERROR,
+						"APM is detected in the middle of a workload!"));
+					psHWPerfPktData->ui32TimeCorrIndex =
+						psHWPerfPktData
+							->ui32StartTimeCorrIndex;
+					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psHWPerfPktData
+							->ui32TimeCorrIndex)];
+					psHWPerfPkt->ui64Timestamp +=
+						psDevInfo->psDeviceNode
+							->ui64LastDeviceOffTimestamp;
+					ui64EndTimestamp = CalculateEventTimestamp(
+						psDevInfo,
+						psHWPerfPktData
+							->ui32TimeCorrIndex,
 						RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
 						psHWPerfPkt->ui64Timestamp,
-						psHWPerfPktData->ui32UID, psHWPerfPkt->ui32Ordinal, false);
+						psHWPerfPktData->ui32UID,
+						psHWPerfPkt->ui32Ordinal,
+						false);
 					ui64EndTimestampAdj = 0;
-				}
-				else if (psHWPerfPktData->ui32StartTimeCorrIndex != psHWPerfPktData->ui32TimeCorrIndex)
-				{
-					PVR_DPF((PVR_DBG_VERBOSE, "End timestamp adjustment for frequency drift !"));
+				} else if (psHWPerfPktData
+						   ->ui32StartTimeCorrIndex !=
+					   psHWPerfPktData->ui32TimeCorrIndex) {
+					PVR_DPF((
+						PVR_DBG_VERBOSE,
+						"End timestamp adjustment for frequency drift !"));
 					/* Adjustment for DVFS in the middle of a workload */
-					psHWPerfPktData->ui32TimeCorrIndex = psHWPerfPktData->ui32StartTimeCorrIndex;
-					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32TimeCorrIndex)];
-					ui64EndTimestamp = CalculateEventTimestamp(psDevInfo,
-						psHWPerfPktData->ui32TimeCorrIndex,
+					psHWPerfPktData->ui32TimeCorrIndex =
+						psHWPerfPktData
+							->ui32StartTimeCorrIndex;
+					psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+						psHWPerfPktData
+							->ui32TimeCorrIndex)];
+					ui64EndTimestamp = CalculateEventTimestamp(
+						psDevInfo,
+						psHWPerfPktData
+							->ui32TimeCorrIndex,
 						RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
 						psHWPerfPkt->ui64Timestamp,
-						psHWPerfPktData->ui32UID, psHWPerfPkt->ui32Ordinal, false);
+						psHWPerfPktData->ui32UID,
+						psHWPerfPkt->ui32Ordinal,
+						false);
 					ui64EndTimestamp += ui64EndTimestampAdj;
-				}
-				else
-				{
-					PVR_DPF((PVR_DBG_ERROR, "Unexpected non monotonic timestamps"));
+				} else {
+					PVR_DPF((
+						PVR_DBG_ERROR,
+						"Unexpected non monotonic timestamps"));
 				}
 
-				if (ui64EndTimestamp < ui64StartTimestamp)
-				{
-					PVR_DPF((PVR_DBG_ERROR,
+				if (ui64EndTimestamp < ui64StartTimestamp) {
+					PVR_DPF((
+						PVR_DBG_ERROR,
 						"Non monotonic gpu_work_period."
-						" (OSTimestamp(%" IMG_UINT64_FMTSPEC ":%" IMG_UINT64_FMTSPEC ")"
-						" CRTimsstamp(%" IMG_UINT64_FMTSPEC " %" IMG_UINT64_FMTSPEC "))"
+						" (OSTimestamp(%" IMG_UINT64_FMTSPEC
+						":%" IMG_UINT64_FMTSPEC ")"
+						" CRTimsstamp(%" IMG_UINT64_FMTSPEC
+						" %" IMG_UINT64_FMTSPEC "))"
 						" (Correlation entries Index:(%d:%d)"
-						" OSTimeStamp:(%" IMG_UINT64_FMTSPEC " %" IMG_UINT64_FMTSPEC ")"
-						" CRTimestamp:(%" IMG_UINT64_FMTSPEC " %" IMG_UINT64_FMTSPEC ")"
+						" OSTimeStamp:(%" IMG_UINT64_FMTSPEC
+						" %" IMG_UINT64_FMTSPEC ")"
+						" CRTimestamp:(%" IMG_UINT64_FMTSPEC
+						" %" IMG_UINT64_FMTSPEC ")"
 						" Clks:(%u:%u))",
-						ui64StartTimestamp, ui64EndTimestamp,
-						psHWPerfPktData->ui64GPUWorkPeriodStartTime, psHWPerfPkt->ui64Timestamp,
-						psHWPerfPktData->ui32StartTimeCorrIndex, psHWPerfPktData->ui32TimeCorrIndex,
-						psStartTimeCorr->ui64OSTimeStamp, psEndTimeCorr->ui64OSTimeStamp,
-						psStartTimeCorr->ui64CRTimeStamp, psEndTimeCorr->ui64CRTimeStamp,
-						psStartTimeCorr->ui32CoreClockSpeed, psEndTimeCorr->ui32CoreClockSpeed));
+						ui64StartTimestamp,
+						ui64EndTimestamp,
+						psHWPerfPktData
+							->ui64GPUWorkPeriodStartTime,
+						psHWPerfPkt->ui64Timestamp,
+						psHWPerfPktData
+							->ui32StartTimeCorrIndex,
+						psHWPerfPktData
+							->ui32TimeCorrIndex,
+						psStartTimeCorr->ui64OSTimeStamp,
+						psEndTimeCorr->ui64OSTimeStamp,
+						psStartTimeCorr->ui64CRTimeStamp,
+						psEndTimeCorr->ui64CRTimeStamp,
+						psStartTimeCorr
+							->ui32CoreClockSpeed,
+						psEndTimeCorr
+							->ui32CoreClockSpeed));
 				}
 			}
 
-			ui64StartTimestamp = CalculateEventTimestamp(psDevInfo,
-					psHWPerfPktData->ui32StartTimeCorrIndex,
-					RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
-					psHWPerfPktData->ui64GPUWorkPeriodStartTime,
-					psHWPerfPktData->ui32UID, psHWPerfPkt->ui32Ordinal, true);
-			ui64EndTimestamp = CalculateEventTimestamp(psDevInfo,
-					psHWPerfPktData->ui32TimeCorrIndex,
-					RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
-					psHWPerfPkt->ui64Timestamp,
-					psHWPerfPktData->ui32UID, psHWPerfPkt->ui32Ordinal, true);
+			ui64StartTimestamp = CalculateEventTimestamp(
+				psDevInfo,
+				psHWPerfPktData->ui32StartTimeCorrIndex,
+				RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
+				psHWPerfPktData->ui64GPUWorkPeriodStartTime,
+				psHWPerfPktData->ui32UID,
+				psHWPerfPkt->ui32Ordinal, true);
+			ui64EndTimestamp = CalculateEventTimestamp(
+				psDevInfo, psHWPerfPktData->ui32TimeCorrIndex,
+				RGX_HWPERF_TRACE_EVENT_GPU_WORK_PERIOD,
+				psHWPerfPkt->ui64Timestamp,
+				psHWPerfPktData->ui32UID,
+				psHWPerfPkt->ui32Ordinal, true);
 
 			ui64StartTimestamp += ui64StartTimestampAdj;
 			ui64EndTimestamp += ui64EndTimestampAdj;
 
-			if (psFtraceData->psGPUWorkPeriodTimestampHash != NULL)
-			{
+			if (psFtraceData->psGPUWorkPeriodTimestampHash !=
+			    NULL) {
 				typedef struct {
 					IMG_UINT64 ui64LastEndOSTimestamp;
 					IMG_UINT64 ui64LastEndCRTimestamp;
@@ -1489,63 +1657,116 @@ static IMG_BOOL ValidAndEmitFTraceEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 				sGPUWorkPeriodHash *psTmp;
 
 				ui64Key = psHWPerfPktData->ui32UID;
-				psTmp = (sGPUWorkPeriodHash *)HASH_Remove(psFtraceData->psGPUWorkPeriodTimestampHash, ui64Key);
-				if (psTmp == NULL)
-				{
-					psTmp = OSAllocZMem(sizeof(sGPUWorkPeriodHash));
-					if (unlikely(psTmp == NULL))
-					{
-						PVR_DPF((PVR_DBG_ERROR, "Failed to allocate hash"));
+				psTmp = (sGPUWorkPeriodHash *)HASH_Remove(
+					psFtraceData
+						->psGPUWorkPeriodTimestampHash,
+					ui64Key);
+				if (psTmp == NULL) {
+					psTmp = OSAllocZMem(
+						sizeof(sGPUWorkPeriodHash));
+					if (unlikely(psTmp == NULL)) {
+						PVR_DPF((
+							PVR_DBG_ERROR,
+							"Failed to allocate hash"));
 						return IMG_FALSE;
 					}
-				}
-				else
-				{
-					if (psTmp->ui64LastEndOSTimestamp > ui64StartTimestamp)
-					{
-						psStartTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psHWPerfPktData->ui32StartTimeCorrIndex)];
-						psEndTimeCorr = &psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(psTmp->ui32Index)];
+				} else {
+					if (psTmp->ui64LastEndOSTimestamp >
+					    ui64StartTimestamp) {
+						psStartTimeCorr =
+							&psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+								psHWPerfPktData
+									->ui32StartTimeCorrIndex)];
+						psEndTimeCorr =
+							&psGpuUtilFW->sTimeCorr[RGXFWIF_TIME_CORR_CURR_INDEX(
+								psTmp->ui32Index)];
 
 						/* Adjustment for DVFS and APM between two workloads */
-						if (psStartTimeCorr->ui32CoreClockSpeed != psEndTimeCorr->ui32CoreClockSpeed ||
-						    psHWPerfPktData->ui32StartTimeCorrIndex != psTmp->ui32Index ||
-						    psTmp->ui64LastEndCRTimestamp > psHWPerfPktData->ui64GPUWorkPeriodStartTime ||
-						    psEndTimeCorr->ui64CRTimeStamp > psStartTimeCorr->ui64CRTimeStamp)
-						{
-							IMG_UINT64 ui64Adj = psTmp->ui64LastEndOSTimestamp - ui64StartTimestamp + 1;
-							PVR_DPF((PVR_DBG_VERBOSE, "APM/DVFS is detected between workloads"));
-							psDevInfo->psDeviceNode->ui64LastDeviceOffHostTimestampNs += ui64Adj;
-							ui64StartTimestamp += ui64Adj;
-							ui64EndTimestamp += ui64Adj;
+						if (psStartTimeCorr->ui32CoreClockSpeed !=
+							    psEndTimeCorr
+								    ->ui32CoreClockSpeed ||
+						    psHWPerfPktData->ui32StartTimeCorrIndex !=
+							    psTmp->ui32Index ||
+						    psTmp->ui64LastEndCRTimestamp >
+							    psHWPerfPktData
+								    ->ui64GPUWorkPeriodStartTime ||
+						    psEndTimeCorr->ui64CRTimeStamp >
+							    psStartTimeCorr
+								    ->ui64CRTimeStamp) {
+							IMG_UINT64 ui64Adj =
+								psTmp->ui64LastEndOSTimestamp -
+								ui64StartTimestamp +
+								1;
+							PVR_DPF((
+								PVR_DBG_VERBOSE,
+								"APM/DVFS is detected between workloads"));
+							psDevInfo->psDeviceNode
+								->ui64LastDeviceOffHostTimestampNs +=
+								ui64Adj;
+							ui64StartTimestamp +=
+								ui64Adj;
+							ui64EndTimestamp +=
+								ui64Adj;
 						}
 
-						if (psTmp->ui64LastEndOSTimestamp > ui64StartTimestamp)
-						{
-							PVR_DPF((PVR_DBG_ERROR,
+						if (psTmp->ui64LastEndOSTimestamp >
+						    ui64StartTimestamp) {
+							PVR_DPF((
+								PVR_DBG_ERROR,
 								"Last end timestamp > Current start timestamp for UID %u "
-								"(OSTimestamp(%" IMG_UINT64_FMTSPEC ":%" IMG_UINT64_FMTSPEC ")"
-								" CRTimsstamp(%" IMG_UINT64_FMTSPEC " %" IMG_UINT64_FMTSPEC "))"
+								"(OSTimestamp(%" IMG_UINT64_FMTSPEC
+								":%" IMG_UINT64_FMTSPEC
+								")"
+								" CRTimsstamp(%" IMG_UINT64_FMTSPEC
+								" %" IMG_UINT64_FMTSPEC
+								"))"
 								" (Correlation entries Index:(%d:%d)"
-								" OSTimeStamp:(%" IMG_UINT64_FMTSPEC " %" IMG_UINT64_FMTSPEC ")"
-								" CRTimestamp:(%" IMG_UINT64_FMTSPEC " %" IMG_UINT64_FMTSPEC ")"
+								" OSTimeStamp:(%" IMG_UINT64_FMTSPEC
+								" %" IMG_UINT64_FMTSPEC
+								")"
+								" CRTimestamp:(%" IMG_UINT64_FMTSPEC
+								" %" IMG_UINT64_FMTSPEC
+								")"
 								" Clks:(%u:%u))",
-								psHWPerfPktData->ui32UID,
-								psTmp->ui64LastEndOSTimestamp, ui64StartTimestamp,
-								psTmp->ui64LastEndCRTimestamp, psHWPerfPktData->ui64GPUWorkPeriodStartTime,
-								psTmp->ui32Index, psHWPerfPktData->ui32StartTimeCorrIndex,
-								psEndTimeCorr->ui64OSTimeStamp, psStartTimeCorr->ui64OSTimeStamp,
-								psEndTimeCorr->ui64CRTimeStamp, psStartTimeCorr->ui64CRTimeStamp,
-								psEndTimeCorr->ui32CoreClockSpeed, psStartTimeCorr->ui32CoreClockSpeed));
+								psHWPerfPktData
+									->ui32UID,
+								psTmp->ui64LastEndOSTimestamp,
+								ui64StartTimestamp,
+								psTmp->ui64LastEndCRTimestamp,
+								psHWPerfPktData
+									->ui64GPUWorkPeriodStartTime,
+								psTmp->ui32Index,
+								psHWPerfPktData
+									->ui32StartTimeCorrIndex,
+								psEndTimeCorr
+									->ui64OSTimeStamp,
+								psStartTimeCorr
+									->ui64OSTimeStamp,
+								psEndTimeCorr
+									->ui64CRTimeStamp,
+								psStartTimeCorr
+									->ui64CRTimeStamp,
+								psEndTimeCorr
+									->ui32CoreClockSpeed,
+								psStartTimeCorr
+									->ui32CoreClockSpeed));
 						}
 					}
 				}
 
-				psTmp->ui32Index = psHWPerfPktData->ui32TimeCorrIndex;
-				psTmp->ui64LastEndOSTimestamp = ui64EndTimestamp;
-				psTmp->ui64LastEndCRTimestamp = psHWPerfPkt->ui64Timestamp;
-				if (unlikely(!HASH_Insert(psFtraceData->psGPUWorkPeriodTimestampHash, ui64Key, (uintptr_t)psTmp)))
-				{
-					PVR_DPF((PVR_DBG_ERROR, "Failed to insert psGPUWorkPeriodTimestampHash"));
+				psTmp->ui32Index =
+					psHWPerfPktData->ui32TimeCorrIndex;
+				psTmp->ui64LastEndOSTimestamp =
+					ui64EndTimestamp;
+				psTmp->ui64LastEndCRTimestamp =
+					psHWPerfPkt->ui64Timestamp;
+				if (unlikely(!HASH_Insert(
+					    psFtraceData
+						    ->psGPUWorkPeriodTimestampHash,
+					    ui64Key, (uintptr_t)psTmp))) {
+					PVR_DPF((
+						PVR_DBG_ERROR,
+						"Failed to insert psGPUWorkPeriodTimestampHash"));
 					/*
 					 * At this stage either we have freshly allocated the hash
 					 * struct, or we've retrieved and removed the hash struct
@@ -1557,16 +1778,19 @@ static IMG_BOOL ValidAndEmitFTraceEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 		}
 
 		if (ui64StartTimestamp != 0 && ui64EndTimestamp != 0 &&
-			ui64StartTimestamp < ui64EndTimestamp)
-		{
+		    ui64StartTimestamp < ui64EndTimestamp) {
 			do {
 				const IMG_UINT64 ui64RemainingTimestamp =
 					ui64EndTimestamp - ui64StartTimestamp;
 				const IMG_UINT64 ui64ActiveDuration =
-					ui64RemainingTimestamp > ONE_SEC_IN_NSECS ?
-						ONE_SEC_IN_NSECS : ui64RemainingTimestamp;
+					ui64RemainingTimestamp >
+							ONE_SEC_IN_NSECS ?
+						ONE_SEC_IN_NSECS :
+						ui64RemainingTimestamp;
 
-				trace_gpu_work_period(psDevInfo->psDeviceNode->sDevId.ui32InternalID,
+				trace_gpu_work_period(
+					psDevInfo->psDeviceNode->sDevId
+						.ui32InternalID,
 					psHWPerfPktData->ui32UID,
 					ui64StartTimestamp,
 					ui64StartTimestamp + ui64ActiveDuration,
@@ -1574,12 +1798,11 @@ static IMG_BOOL ValidAndEmitFTraceEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 
 				ui64StartTimestamp += ui64ActiveDuration;
 			} while (ui64StartTimestamp < ui64EndTimestamp);
-		}
-		else
-		{
-			PVR_DPF((PVR_DBG_ERROR, "Invalid start %" IMG_UINT64_FMTSPEC
-				", end %" IMG_UINT64_FMTSPEC " timestamps",
-				ui64StartTimestamp, ui64EndTimestamp));
+		} else {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "Invalid start %" IMG_UINT64_FMTSPEC
+				 ", end %" IMG_UINT64_FMTSPEC " timestamps",
+				 ui64StartTimestamp, ui64EndTimestamp));
 		}
 
 #if defined(PVRSRV_ANDROID_TRACE_GPU_FREQ)
@@ -1598,39 +1821,40 @@ static IMG_BOOL ValidAndEmitFTraceEvent(PVRSRV_RGXDEV_INFO *psDevInfo,
 #endif
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) || defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD) */
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
-	if (HWPERF_PACKET_IS_FW_TYPE(eType))
-	{
-		_GpuTraceFirmwareEvent(psDevInfo, psHWPerfPkt,
-										aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
-										aszHwEventTypeMap[ui32HwEventTypeIndex].eSwType);
+	if (HWPERF_PACKET_IS_FW_TYPE(eType)) {
+		_GpuTraceFirmwareEvent(
+			psDevInfo, psHWPerfPkt,
+			aszHwEventTypeMap[ui32HwEventTypeIndex].pszName,
+			aszHwEventTypeMap[ui32HwEventTypeIndex].eSwType);
 
 		return IMG_TRUE;
 	}
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) */
 
 #if defined(PVRSRV_ANDROID_TRACE_GPU_FREQ)
-	if (eType == RGX_HWPERF_CLKS_CHG)
-	{
+	if (eType == RGX_HWPERF_CLKS_CHG) {
 		_GpuTraceClockChangeEvent(psDevInfo, psHWPerfPkt);
 	}
 #endif /* defined(PVRSRV_ANDROID_TRACE_GPU_FREQ) */
 
-#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
+#if defined(PVRSRV_TRACE_ROGUE_EVENTS) || \
+	defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
 err_unsupported:
 #endif /* defined(PVRSRV_TRACE_ROGUE_EVENTS) || defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD) */
-	PVR_DPF((PVR_DBG_VERBOSE, "%s: Unsupported event type %d", __func__, eType));
+	PVR_DPF((PVR_DBG_VERBOSE, "%s: Unsupported event type %d", __func__,
+		 eType));
 	return IMG_FALSE;
 }
 
-static void _GpuTraceProcessPackets(PVRSRV_RGXDEV_INFO *psDevInfo, void *pBuffer,
-                                    IMG_UINT32 ui32ReadLen)
+static void _GpuTraceProcessPackets(PVRSRV_RGXDEV_INFO *psDevInfo,
+				    void *pBuffer, IMG_UINT32 ui32ReadLen)
 {
 #if (defined(PVRSRV_NEED_PVR_DPF) && defined(DEBUG)) || defined(DOXYGEN)
-	IMG_UINT32	    ui32TlPackets = 0;
-	IMG_UINT32	    ui32HWPerfPackets = 0;
-	IMG_UINT32	    ui32HWPerfPacketsSent = 0;
+	IMG_UINT32 ui32TlPackets = 0;
+	IMG_UINT32 ui32HWPerfPackets = 0;
+	IMG_UINT32 ui32HWPerfPacketsSent = 0;
 #endif
-	void		   *pBufferEnd;
+	void *pBufferEnd;
 	PVRSRVTL_PPACKETHDR psHDRptr;
 	PVRSRVTL_PACKETTYPE ui16TlType;
 
@@ -1644,28 +1868,28 @@ static void _GpuTraceProcessPackets(PVRSRV_RGXDEV_INFO *psDevInfo, void *pBuffer
 	 */
 	pBufferEnd = IMG_OFFSET_ADDR(pBuffer, ui32ReadLen);
 	psHDRptr = GET_PACKET_HDR(pBuffer);
-	while ( psHDRptr < (PVRSRVTL_PPACKETHDR)pBufferEnd )
-	{
+	while (psHDRptr < (PVRSRVTL_PPACKETHDR)pBufferEnd) {
 		ui16TlType = GET_PACKET_TYPE(psHDRptr);
-		if (ui16TlType == PVRSRVTL_PACKETTYPE_DATA)
-		{
+		if (ui16TlType == PVRSRVTL_PACKETTYPE_DATA) {
 			IMG_UINT16 ui16DataLen = GET_PACKET_DATA_LEN(psHDRptr);
-			if (0 == ui16DataLen)
-			{
-				PVR_DPF((PVR_DBG_ERROR, "_GpuTraceProcessPackets: ZERO Data in TL data packet: %p", psHDRptr));
-			}
-			else
-			{
-				RGX_HWPERF_V2_PACKET_HDR* psHWPerfPkt;
-				RGX_HWPERF_V2_PACKET_HDR* psHWPerfEnd;
+			if (0 == ui16DataLen) {
+				PVR_DPF((
+					PVR_DBG_ERROR,
+					"_GpuTraceProcessPackets: ZERO Data in TL data packet: %p",
+					psHDRptr));
+			} else {
+				RGX_HWPERF_V2_PACKET_HDR *psHWPerfPkt;
+				RGX_HWPERF_V2_PACKET_HDR *psHWPerfEnd;
 
 				/* Check for lost hwperf data packets */
-				psHWPerfEnd = RGX_HWPERF_GET_PACKET(GET_PACKET_DATA_PTR(psHDRptr)+ui16DataLen);
-				psHWPerfPkt = RGX_HWPERF_GET_PACKET(GET_PACKET_DATA_PTR(psHDRptr));
-				do
-				{
-					if (ValidAndEmitFTraceEvent(psDevInfo, psHWPerfPkt))
-					{
+				psHWPerfEnd = RGX_HWPERF_GET_PACKET(
+					GET_PACKET_DATA_PTR(psHDRptr) +
+					ui16DataLen);
+				psHWPerfPkt = RGX_HWPERF_GET_PACKET(
+					GET_PACKET_DATA_PTR(psHDRptr));
+				do {
+					if (ValidAndEmitFTraceEvent(
+						    psDevInfo, psHWPerfPkt)) {
 #if (defined(PVRSRV_NEED_PVR_DPF) && defined(DEBUG)) || defined(DOXYGEN)
 						ui32HWPerfPacketsSent++;
 #endif
@@ -1673,19 +1897,22 @@ static void _GpuTraceProcessPackets(PVRSRV_RGXDEV_INFO *psDevInfo, void *pBuffer
 #if (defined(PVRSRV_NEED_PVR_DPF) && defined(DEBUG)) || defined(DOXYGEN)
 					ui32HWPerfPackets++;
 #endif
-					psHWPerfPkt = RGX_HWPERF_GET_NEXT_PACKET(psHWPerfPkt);
-				}
-				while (psHWPerfPkt < psHWPerfEnd);
+					psHWPerfPkt =
+						RGX_HWPERF_GET_NEXT_PACKET(
+							psHWPerfPkt);
+				} while (psHWPerfPkt < psHWPerfEnd);
 			}
-		}
-		else if (ui16TlType == PVRSRVTL_PACKETTYPE_MOST_RECENT_WRITE_FAILED)
-		{
-			PVR_DPF((PVR_DBG_MESSAGE, "_GpuTraceProcessPackets: Indication that the transport buffer was full"));
-		}
-		else
-		{
+		} else if (ui16TlType ==
+			   PVRSRVTL_PACKETTYPE_MOST_RECENT_WRITE_FAILED) {
+			PVR_DPF((
+				PVR_DBG_MESSAGE,
+				"_GpuTraceProcessPackets: Indication that the transport buffer was full"));
+		} else {
 			/* else Ignore padding packet type and others */
-			PVR_DPF((PVR_DBG_MESSAGE, "_GpuTraceProcessPackets: Ignoring TL packet, type %d", ui16TlType ));
+			PVR_DPF((
+				PVR_DBG_MESSAGE,
+				"_GpuTraceProcessPackets: Ignoring TL packet, type %d",
+				ui16TlType));
 		}
 
 		psHDRptr = GET_NEXT_PACKET_ADDR(psHDRptr);
@@ -1694,9 +1921,10 @@ static void _GpuTraceProcessPackets(PVRSRV_RGXDEV_INFO *psDevInfo, void *pBuffer
 #endif
 	}
 
-	PVR_DPF((PVR_DBG_VERBOSE, "_GpuTraceProcessPackets: TL "
-			"Packets processed %03d, HWPerf packets %03d, sent %03d",
-			ui32TlPackets, ui32HWPerfPackets, ui32HWPerfPacketsSent));
+	PVR_DPF((PVR_DBG_VERBOSE,
+		 "_GpuTraceProcessPackets: TL "
+		 "Packets processed %03d, HWPerf packets %03d, sent %03d",
+		 ui32TlPackets, ui32HWPerfPackets, ui32HWPerfPacketsSent));
 
 	PVR_DPF_RETURN;
 }
@@ -1719,8 +1947,7 @@ static void _GpuTraceCmdCompleteNotify(PVRSRV_CMDCOMP_HANDLE hCmdCompHandle)
 	 * just bail out and let the previous call finish.
 	 * This is ok because we can process the queued packets on the next call.
 	 */
-	if (!OSTryLockAcquire(psFtraceData->hFTraceResourceLock))
-	{
+	if (!OSTryLockAcquire(psFtraceData->hFTraceResourceLock)) {
 		PVR_DPF_RETURN;
 	}
 
@@ -1733,12 +1960,10 @@ static void _GpuTraceCmdCompleteNotify(PVRSRV_CMDCOMP_HANDLE hCmdCompHandle)
 
 	/* If we have a valid stream attempt to acquire some data */
 	eError = TLClientAcquireData(DIRECT_BRIDGE_HANDLE,
-	                             psFtraceData->hGPUFTraceTLStream,
-	                             &pBuffer, &ui32ReadLen);
-	if (eError != PVRSRV_OK)
-	{
-		if (eError != PVRSRV_ERROR_TIMEOUT)
-		{
+				     psFtraceData->hGPUFTraceTLStream, &pBuffer,
+				     &ui32ReadLen);
+	if (eError != PVRSRV_OK) {
+		if (eError != PVRSRV_ERROR_TIMEOUT) {
 			PVR_LOG_ERROR(eError, "TLClientAcquireData");
 		}
 
@@ -1746,18 +1971,17 @@ static void _GpuTraceCmdCompleteNotify(PVRSRV_CMDCOMP_HANDLE hCmdCompHandle)
 	}
 
 	/* Process the HWPerf packets and release the data */
-	if (ui32ReadLen > 0)
-	{
-		PVR_DPF((PVR_DBG_VERBOSE, "%s: DATA AVAILABLE offset=%p, length=%d",
-		        __func__, pBuffer, ui32ReadLen));
+	if (ui32ReadLen > 0) {
+		PVR_DPF((PVR_DBG_VERBOSE,
+			 "%s: DATA AVAILABLE offset=%p, length=%d", __func__,
+			 pBuffer, ui32ReadLen));
 
 		/* Process the transport layer data for HWPerf packets... */
 		_GpuTraceProcessPackets(psDeviceInfo, pBuffer, ui32ReadLen);
 
 		eError = TLClientReleaseData(DIRECT_BRIDGE_HANDLE,
-		                             psFtraceData->hGPUFTraceTLStream);
-		if (eError != PVRSRV_OK)
-		{
+					     psFtraceData->hGPUFTraceTLStream);
+		if (eError != PVRSRV_OK) {
 			PVR_LOG_ERROR(eError, "TLClientReleaseData");
 
 			/* Serious error, disable FTrace GPU events */
@@ -1773,37 +1997,35 @@ unlock:
 
 /* ----- AppHint interface -------------------------------------------------- */
 
-static PVRSRV_ERROR _GpuTraceIsEnabledCallback(
-	const PVRSRV_DEVICE_NODE *device,
-	const void *private_data,
-	IMG_BOOL *value)
+static PVRSRV_ERROR _GpuTraceIsEnabledCallback(const PVRSRV_DEVICE_NODE *device,
+					       const void *private_data,
+					       IMG_BOOL *value)
 {
 	PVR_UNREFERENCED_PARAMETER(private_data);
 
 #if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1)
-	if (device && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, device))
-	{
-#if defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD) || defined(PVRSRV_ANDROID_TRACE_GPU_FREQ)
+	if (device && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, device)) {
+#if defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD) || \
+	defined(PVRSRV_ANDROID_TRACE_GPU_FREQ)
 		*value = gbFTraceGPUEventsEnabled;
 #else
 		*value = IMG_FALSE;
 #endif
 
 		return PVRSRV_OK;
-	}
-	else
+	} else
 #endif
 	{
 #if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1)
 		PVRSRV_DATA *psPVRSRVData = PVRSRVGetPVRSRVData();
-		PVRSRV_DEVICE_NODE *psDeviceNode = psPVRSRVData ? psPVRSRVData->psDeviceNodeList : NULL;
+		PVRSRV_DEVICE_NODE *psDeviceNode =
+			psPVRSRVData ? psPVRSRVData->psDeviceNodeList : NULL;
 
-		while (psDeviceNode)
-		{
-			PVRSRV_RGXDEV_INFO *psRgxDevInfo = (PVRSRV_RGXDEV_INFO*)psDeviceNode->pvDevice;
+		while (psDeviceNode) {
+			PVRSRV_RGXDEV_INFO *psRgxDevInfo =
+				(PVRSRV_RGXDEV_INFO *)psDeviceNode->pvDevice;
 
-			if (!PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo))
-			{
+			if (!PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo)) {
 				*value = gbFTraceGPUEventsEnabled;
 				return PVRSRV_OK;
 			}
@@ -1822,14 +2044,13 @@ static PVRSRV_ERROR _GpuTraceIsEnabledCallback(
 	}
 }
 
-static PVRSRV_ERROR _GpuTraceSetEnabledCallback(
-	const PVRSRV_DEVICE_NODE *device,
-	const void *private_data,
-	IMG_BOOL value)
+static PVRSRV_ERROR
+_GpuTraceSetEnabledCallback(const PVRSRV_DEVICE_NODE *device,
+			    const void *private_data, IMG_BOOL value)
 {
-#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && !defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-	if (device && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, device))
-	{
+#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && \
+	!defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
+	if (device && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, device)) {
 		return PVRSRV_ERROR_NOT_IMPLEMENTED;
 	}
 #endif
@@ -1837,8 +2058,7 @@ static PVRSRV_ERROR _GpuTraceSetEnabledCallback(
 	/* Lock down the state to avoid concurrent writes */
 	OSLockAcquire(ghGPUTraceStateLock);
 
-	if (value != gbFTraceGPUEventsEnabled)
-	{
+	if (value != gbFTraceGPUEventsEnabled) {
 #if defined(PVRSRV_NEED_PVR_DPF)
 		const IMG_CHAR *pszOperation = value ? "enable" : "disable";
 		/* in case MESSAGE level is compiled out */
@@ -1846,35 +2066,33 @@ static PVRSRV_ERROR _GpuTraceSetEnabledCallback(
 #endif
 
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
-		if (trace_set_clr_event("rogue", NULL, (int) value) != 0)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "FAILED to %s GPU FTrace event group",
-			        pszOperation));
+		if (trace_set_clr_event("rogue", NULL, (int)value) != 0) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "FAILED to %s GPU FTrace event group",
+				 pszOperation));
 			goto err_restore_state;
-		}
-		else
-		{
-			PVR_DPF((PVR_DBG_MESSAGE, "FTrace events from \"rogue\" group %sd",
-			        pszOperation));
+		} else {
+			PVR_DPF((PVR_DBG_MESSAGE,
+				 "FTrace events from \"rogue\" group %sd",
+				 pszOperation));
 		}
 #endif
 
 #if defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
-		if (trace_set_clr_event("power", "gpu_work_period", (int) value) != 0)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "FAILED to %s gpu_work_period GPU FTrace event",
-			        pszOperation));
+		if (trace_set_clr_event("power", "gpu_work_period",
+					(int)value) != 0) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "FAILED to %s gpu_work_period GPU FTrace event",
+				 pszOperation));
 			goto err_restore_state;
-		}
-		else
-		{
-			PVR_DPF((PVR_DBG_MESSAGE, "FTrace event from \"gpu_work_period\" %sd",
-			        pszOperation));
+		} else {
+			PVR_DPF((PVR_DBG_MESSAGE,
+				 "FTrace event from \"gpu_work_period\" %sd",
+				 pszOperation));
 		}
 #endif
 
-		if (value)
-		{
+		if (value) {
 			/* this enables FTrace globally (if not enabled nothing will appear
 			 * in the FTrace buffer) */
 			TRACE_ON();
@@ -1883,20 +2101,19 @@ static PVRSRV_ERROR _GpuTraceSetEnabledCallback(
 		/* The HWPerf supplier is activated here,
 		   The FTrace consumer is activated above,
 		   The consumer should be active before the supplier */
-		if (_GpuTraceSetEnabledForAllDevices(value) != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "FAILED to %s GPU FTrace for all devices",
-			        pszOperation));
+		if (_GpuTraceSetEnabledForAllDevices(value) != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "FAILED to %s GPU FTrace for all devices",
+				 pszOperation));
 			goto err_restore_state;
 		}
 
-		PVR_DPF((PVR_DBG_MESSAGE, "%s GPU FTrace", value ? "ENABLED" : "DISABLED"));
+		PVR_DPF((PVR_DBG_MESSAGE, "%s GPU FTrace",
+			 value ? "ENABLED" : "DISABLED"));
 		gbFTraceGPUEventsEnabled = value;
-	}
-	else
-	{
+	} else {
 		PVR_DPF((PVR_DBG_MESSAGE, "GPU FTrace already %s!",
-		        value ? "enabled" : "disabled"));
+			 value ? "enabled" : "disabled"));
 	}
 
 	OSLockRelease(ghGPUTraceStateLock);
@@ -1906,15 +2123,14 @@ static PVRSRV_ERROR _GpuTraceSetEnabledCallback(
 err_restore_state:
 	/* On failure, partial enable/disable might have resulted. Try best to
 	 * restore to previous state. Ignore error */
-	(void) _GpuTraceSetEnabledForAllDevices(gbFTraceGPUEventsEnabled);
+	(void)_GpuTraceSetEnabledForAllDevices(gbFTraceGPUEventsEnabled);
 
 #if defined(PVRSRV_TRACE_ROGUE_EVENTS)
-	(void) trace_set_clr_event("rogue", NULL,
-	                           (int) gbFTraceGPUEventsEnabled);
+	(void)trace_set_clr_event("rogue", NULL, (int)gbFTraceGPUEventsEnabled);
 #endif
 #if defined(PVRSRV_ANDROID_TRACE_GPU_WORK_PERIOD)
-	(void) trace_set_clr_event("power", "gpu_work_period",
-	                           (int) gbFTraceGPUEventsEnabled);
+	(void)trace_set_clr_event("power", "gpu_work_period",
+				  (int)gbFTraceGPUEventsEnabled);
 #endif
 
 	OSLockRelease(ghGPUTraceStateLock);
@@ -1925,9 +2141,9 @@ err_restore_state:
 void PVRGpuTraceInitAppHintCallbacks(const PVRSRV_DEVICE_NODE *psDeviceNode)
 {
 	PVRSRVAppHintRegisterHandlersBOOL(APPHINT_ID_EnableFTraceGPU,
-	                                  _GpuTraceIsEnabledCallback,
-	                                  _GpuTraceSetEnabledCallback,
-	                                  psDeviceNode, NULL);
+					  _GpuTraceIsEnabledCallback,
+					  _GpuTraceSetEnabledCallback,
+					  psDeviceNode, NULL);
 }
 
 /* ----- FTrace event callbacks -------------------------------------------- */
@@ -1939,32 +2155,31 @@ void PVRGpuTraceEnableUfoCallback(void)
 
 	/* Lock down events state, for consistent value of guiUfoEventRef */
 	OSLockAcquire(ghLockFTraceEventLock);
-	if (guiUfoEventRef++ == 0)
-	{
+	if (guiUfoEventRef++ == 0) {
 		OSWRLockAcquireRead(psPVRSRVData->hDeviceNodeListLock);
 		psDeviceNode = psPVRSRVData->psDeviceNodeList;
 
 		/* make sure UFO events are enabled on all rogue devices */
-		while (psDeviceNode)
-		{
+		while (psDeviceNode) {
 #if defined(SUPPORT_RGX)
 			PVRSRV_ERROR eError;
 
 			/* Small chance exists that ui64HWPerfFilter can be changed here and
 			 * the newest filter value will be changed to the old one + UFO event.
 			 * This is not a critical problem. */
-			eError = PVRSRVRGXCtrlHWPerfFW(psDeviceNode, RGX_HWPERF_L2_STREAM_FTRACE,
-			                               RGX_HWPERF_EVENT_MASK_VALUE(RGX_HWPERF_UFO),
-			                               HWPERF_FILTER_OPERATION_BIT_OR);
-			if (eError == PVRSRV_ERROR_NOT_INITIALISED)
-			{
+			eError = PVRSRVRGXCtrlHWPerfFW(
+				psDeviceNode, RGX_HWPERF_L2_STREAM_FTRACE,
+				RGX_HWPERF_EVENT_MASK_VALUE(RGX_HWPERF_UFO),
+				HWPERF_FILTER_OPERATION_BIT_OR);
+			if (eError == PVRSRV_ERROR_NOT_INITIALISED) {
 				/* If we land here that means that the FW is not initialised yet.
 				 * We stored the filter and it will be passed to the firmware
 				 * during its initialisation phase. So ignore. */
-			}
-			else if (eError != PVRSRV_OK)
-			{
-				PVR_DPF((PVR_DBG_ERROR, "Could not enable UFO HWPerf events on device %d", psDeviceNode->sDevId.i32KernelDeviceID));
+			} else if (eError != PVRSRV_OK) {
+				PVR_DPF((
+					PVR_DBG_ERROR,
+					"Could not enable UFO HWPerf events on device %d",
+					psDeviceNode->sDevId.i32KernelDeviceID));
 			}
 #endif
 			psDeviceNode = psDeviceNode->psNext;
@@ -1991,33 +2206,31 @@ void PVRGpuTraceDisableUfoCallback(void)
 
 	/* Lock down events state, for consistent value of guiUfoEventRef */
 	OSLockAcquire(ghLockFTraceEventLock);
-	if (--guiUfoEventRef == 0)
-	{
+	if (--guiUfoEventRef == 0) {
 		OSWRLockAcquireRead(psPVRSRVData->hDeviceNodeListLock);
 		psDeviceNode = psPVRSRVData->psDeviceNodeList;
 
 		/* make sure UFO events are disabled on all rogue devices */
-		while (psDeviceNode)
-		{
+		while (psDeviceNode) {
 #if defined(SUPPORT_RGX)
 			PVRSRV_ERROR eError;
 
 			/* Small chance exists that ui64HWPerfFilter can be changed here and
 			 * the newest filter value will be changed to the old one + UFO event.
 			 * This is not a critical problem. */
-			eError = PVRSRVRGXCtrlHWPerfFW(psDeviceNode, RGX_HWPERF_L2_STREAM_FTRACE,
-			                               RGX_HWPERF_EVENT_MASK_VALUE(RGX_HWPERF_UFO),
-			                               HWPERF_FILTER_OPERATION_BIT_CLR);
-			if (eError == PVRSRV_ERROR_NOT_INITIALISED)
-			{
+			eError = PVRSRVRGXCtrlHWPerfFW(
+				psDeviceNode, RGX_HWPERF_L2_STREAM_FTRACE,
+				RGX_HWPERF_EVENT_MASK_VALUE(RGX_HWPERF_UFO),
+				HWPERF_FILTER_OPERATION_BIT_CLR);
+			if (eError == PVRSRV_ERROR_NOT_INITIALISED) {
 				/* If we land here that means that the FW is not initialised yet.
 				 * We stored the filter and it will be passed to the firmware
 				 * during its initialisation phase. So ignore. */
-			}
-			else if (eError != PVRSRV_OK)
-			{
-				PVR_DPF((PVR_DBG_ERROR, "Could not disable UFO HWPerf events on device %d",
-				        psDeviceNode->sDevId.i32KernelDeviceID));
+			} else if (eError != PVRSRV_OK) {
+				PVR_DPF((
+					PVR_DBG_ERROR,
+					"Could not disable UFO HWPerf events on device %d",
+					psDeviceNode->sDevId.i32KernelDeviceID));
 			}
 #endif
 
@@ -2038,8 +2251,7 @@ void PVRGpuTraceEnableFirmwareActivityCallback(void)
 	int i;
 
 	for (i = RGX_HWPERF_FW_EVENT_RANGE_FIRST_TYPE;
-		 i <= RGX_HWPERF_FW_EVENT_RANGE_LAST_TYPE; i++)
-	{
+	     i <= RGX_HWPERF_FW_EVENT_RANGE_LAST_TYPE; i++) {
 		uiFilter |= RGX_HWPERF_EVENT_MASK_VALUE(i);
 	}
 
@@ -2048,16 +2260,18 @@ void PVRGpuTraceEnableFirmwareActivityCallback(void)
 	OSWRLockAcquireRead(psPVRSRVData->hDeviceNodeListLock);
 	psDeviceNode = psPVRSRVData->psDeviceNodeList;
 	/* Enable all FW events on all the devices */
-	while (psDeviceNode)
-	{
+	while (psDeviceNode) {
 		PVRSRV_ERROR eError;
 
-		eError = PVRSRVRGXCtrlHWPerfFW(psDeviceNode, RGX_HWPERF_L2_STREAM_FTRACE,
-		                               uiFilter, HWPERF_FILTER_OPERATION_BIT_OR);
-		if (eError != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "Could not enable HWPerf event for firmware"
-			        " task timings (%s).", PVRSRVGetErrorString(eError)));
+		eError = PVRSRVRGXCtrlHWPerfFW(psDeviceNode,
+					       RGX_HWPERF_L2_STREAM_FTRACE,
+					       uiFilter,
+					       HWPERF_FILTER_OPERATION_BIT_OR);
+		if (eError != PVRSRV_OK) {
+			PVR_DPF((PVR_DBG_ERROR,
+				 "Could not enable HWPerf event for firmware"
+				 " task timings (%s).",
+				 PVRSRVGetErrorString(eError)));
 		}
 
 		psDeviceNode = psDeviceNode->psNext;
@@ -2092,18 +2306,18 @@ void PVRGpuTraceDisableFirmwareActivityCallback(void)
 	psDeviceNode = psPVRSRVData->psDeviceNodeList;
 
 	for (i = RGX_HWPERF_FW_EVENT_RANGE_FIRST_TYPE;
-		 i <= RGX_HWPERF_FW_EVENT_RANGE_LAST_TYPE; i++)
-	{
+	     i <= RGX_HWPERF_FW_EVENT_RANGE_LAST_TYPE; i++) {
 		uiFilter |= RGX_HWPERF_EVENT_MASK_VALUE(i);
 	}
 
 	/* Disable all FW events on all the devices */
-	while (psDeviceNode)
-	{
-		if (PVRSRVRGXCtrlHWPerfFW(psDeviceNode, RGX_HWPERF_L2_STREAM_FTRACE,
-		                          uiFilter, HWPERF_FILTER_OPERATION_BIT_CLR) != PVRSRV_OK)
-		{
-			PVR_DPF((PVR_DBG_ERROR, "Could not disable HWPerf event for firmware task timings."));
+	while (psDeviceNode) {
+		if (PVRSRVRGXCtrlHWPerfFW(
+			    psDeviceNode, RGX_HWPERF_L2_STREAM_FTRACE, uiFilter,
+			    HWPERF_FILTER_OPERATION_BIT_CLR) != PVRSRV_OK) {
+			PVR_DPF((
+				PVR_DBG_ERROR,
+				"Could not disable HWPerf event for firmware task timings."));
 		}
 		psDeviceNode = psDeviceNode->psNext;
 	}
@@ -2125,8 +2339,7 @@ int PVRGpuTraceEnableWorkPeriodCallback(void)
 	psDeviceNode = psPVRSRVData->psDeviceNodeList;
 
 #if defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-	if (psDeviceNode && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, psDeviceNode))
-	{
+	if (psDeviceNode && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, psDeviceNode)) {
 		psDeviceNode->bGPUWorkPeriodFTraceEnabled = true;
 		OSWRLockReleaseRead(psPVRSRVData->hDeviceNodeListLock);
 		return 0;
@@ -2134,10 +2347,11 @@ int PVRGpuTraceEnableWorkPeriodCallback(void)
 #endif
 
 	/* enable/disable GPU trace on all devices */
-	while (psDeviceNode)
-	{
-#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && !defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-		PVRSRV_RGXDEV_INFO *psRgxDevInfo = (PVRSRV_RGXDEV_INFO*)psDeviceNode->pvDevice;
+	while (psDeviceNode) {
+#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && \
+	!defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
+		PVRSRV_RGXDEV_INFO *psRgxDevInfo =
+			(PVRSRV_RGXDEV_INFO *)psDeviceNode->pvDevice;
 
 		if (!PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo))
 #endif
@@ -2168,18 +2382,18 @@ void PVRGpuTraceDisableWorkPeriodCallback(void)
 	psDeviceNode = psPVRSRVData->psDeviceNodeList;
 
 #if defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-	if (psDeviceNode && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, psDeviceNode))
-	{
+	if (psDeviceNode && PVRSRV_VZ_MODE_IS(GUEST, DEVNODE, psDeviceNode)) {
 		psDeviceNode->bGPUWorkPeriodFTraceEnabled = false;
 		OSWRLockReleaseRead(psPVRSRVData->hDeviceNodeListLock);
 		return;
 	}
 #endif
 
-	while (psDeviceNode)
-	{
-#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && !defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
-		PVRSRV_RGXDEV_INFO *psRgxDevInfo = (PVRSRV_RGXDEV_INFO*)psDeviceNode->pvDevice;
+	while (psDeviceNode) {
+#if defined(RGX_NUM_DRIVERS_SUPPORTED) && (RGX_NUM_DRIVERS_SUPPORTED > 1) && \
+	!defined(RGX_GUEST_MANAGED_GPU_WORK_PERIOD)
+		PVRSRV_RGXDEV_INFO *psRgxDevInfo =
+			(PVRSRV_RGXDEV_INFO *)psDeviceNode->pvDevice;
 
 		if (!PVRSRV_VZ_MODE_IS(GUEST, DEVINFO, psRgxDevInfo))
 #endif

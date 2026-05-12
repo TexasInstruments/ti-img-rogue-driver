@@ -201,7 +201,6 @@ ServerBridgeInit(void)
 	PVR_LOG_IF_ERROR(eError, "InitVALIDATIONBridge");
 #endif
 
-
 	eError = InitDEVICEMEMHISTORYBridge();
 	PVR_LOG_IF_ERROR(eError, "InitDEVICEMEMHISTORYBridge");
 
@@ -223,7 +222,7 @@ ServerBridgeInit(void)
 	eError = InitRGXTA3DBridge();
 	PVR_LOG_IF_ERROR(eError, "InitRGXTA3DBridge");
 
-	#if defined(SUPPORT_USC_BREAKPOINT)
+#if defined(SUPPORT_USC_BREAKPOINT)
 	eError = InitRGXBREAKPOINTBridge();
 	PVR_LOG_IF_ERROR(eError, "InitRGXBREAKPOINTBridge");
 #endif
@@ -306,7 +305,6 @@ void ServerBridgeDeInit(void)
 
 	DeinitPDUMPBridge();
 #endif
-
 
 #if defined(SUPPORT_DISPLAY_CLASS)
 	DeinitDCBridge();

@@ -71,17 +71,23 @@ extern "C" {
 */
 #ifndef PVRSRV_DEV_MEM_TYPEDEFS
 #define PVRSRV_DEV_MEM_TYPEDEFS
-typedef struct PVRSRV_DEVMEMCTX_TAG *PVRSRV_DEVMEMCTX;       /*!< Device-Mem Client-Side Interface: Typedef for Context Ptr */
-typedef DEVMEM_HEAP *PVRSRV_HEAP;               /*!< Device-Mem Client-Side Interface: Typedef for Heap Ptr */
-typedef DEVMEM_MEMDESC *PVRSRV_MEMDESC;         /*!< Device-Mem Client-Side Interface: Typedef for Memory Descriptor Ptr */
+typedef struct PVRSRV_DEVMEMCTX_TAG *
+	PVRSRV_DEVMEMCTX; /*!< Device-Mem Client-Side Interface: Typedef for Context Ptr */
+typedef DEVMEM_HEAP *
+	PVRSRV_HEAP; /*!< Device-Mem Client-Side Interface: Typedef for Heap Ptr */
+typedef DEVMEM_MEMDESC *
+	PVRSRV_MEMDESC; /*!< Device-Mem Client-Side Interface: Typedef for Memory Descriptor Ptr */
 #endif
-typedef DEVMEM_EXPORTCOOKIE PVRSRV_DEVMEM_EXPORTCOOKIE;     /*!< Device-Mem Client-Side Interface: Typedef for Export Cookie */
-typedef IMG_HANDLE PVRSRV_REMOTE_DEVMEMCTX;                 /*!< Type to use with context export import */
+typedef DEVMEM_EXPORTCOOKIE
+	PVRSRV_DEVMEM_EXPORTCOOKIE; /*!< Device-Mem Client-Side Interface: Typedef for Export Cookie */
+typedef IMG_HANDLE
+	PVRSRV_REMOTE_DEVMEMCTX; /*!< Type to use with context export import */
 typedef struct PVRSRV_EXPORT_DEVMEMCTX_TAG *PVRSRV_EXPORT_DEVMEMCTX;
 
 /* To use with PVRSRVSubAllocDeviceMem() as the default factor if no
  * over-allocation is desired. */
-#define PVRSRV_DEVMEM_PRE_ALLOC_MULTIPLIER_NONE     DEVMEM_NO_PRE_ALLOCATE_MULTIPLIER
+#define PVRSRV_DEVMEM_PRE_ALLOC_MULTIPLIER_NONE \
+	DEVMEM_NO_PRE_ALLOCATE_MULTIPLIER
 
 /* N.B.  Flags are now defined in pvrsrv_memallocflags.h as they need
          to be omnipresent. */
@@ -133,9 +139,8 @@ typedef struct PVRSRV_EXPORT_DEVMEMCTX_TAG *PVRSRV_EXPORT_DEVMEMCTX;
 @Return         PVRSRV_ERROR:   PVRSRV_OK on success. Otherwise, a PVRSRV_
                                 error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVCreateDeviceMemContext(PVRSRV_DEV_CONNECTION *psDevConnection,
-                             PVRSRV_DEVMEMCTX *phCtxOut);
+IMG_EXPORT PVRSRV_ERROR PVRSRVCreateDeviceMemContext(
+	PVRSRV_DEV_CONNECTION *psDevConnection, PVRSRV_DEVMEMCTX *phCtxOut);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -146,8 +151,7 @@ PVRSRVCreateDeviceMemContext(PVRSRV_DEV_CONNECTION *psDevConnection,
 @Input          hCtx            Handle to a DevMem Context
 @Return         None
 */ /**************************************************************************/
-IMG_EXPORT void
-PVRSRVReleaseDeviceMemContext(PVRSRV_DEVMEMCTX hCtx);
+IMG_EXPORT void PVRSRVReleaseDeviceMemContext(PVRSRV_DEVMEMCTX hCtx);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -172,10 +176,9 @@ PVRSRVReleaseDeviceMemContext(PVRSRV_DEVMEMCTX hCtx);
 @Return         PVRSRV_ERROR:   PVRSRV_OK on success. Otherwise, a PVRSRV_
                                 error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVFindHeapByName(PVRSRV_DEVMEMCTX hCtx,
-                     const IMG_CHAR *pszHeapName,
-                     PVRSRV_HEAP *phHeapOut);
+IMG_EXPORT PVRSRV_ERROR PVRSRVFindHeapByName(PVRSRV_DEVMEMCTX hCtx,
+					     const IMG_CHAR *pszHeapName,
+					     PVRSRV_HEAP *phHeapOut);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -188,8 +191,7 @@ PVRSRVFindHeapByName(PVRSRV_DEVMEMCTX hCtx,
                                 error code
 */ /**************************************************************************/
 IMG_EXPORT PVRSRV_ERROR
-PVRSRVDevmemGetHeapBaseDevVAddr(PVRSRV_HEAP hHeap,
-                                IMG_DEV_VIRTADDR *pDevVAddr);
+PVRSRVDevmemGetHeapBaseDevVAddr(PVRSRV_HEAP hHeap, IMG_DEV_VIRTADDR *pDevVAddr);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -198,8 +200,7 @@ PVRSRVDevmemGetHeapBaseDevVAddr(PVRSRV_HEAP hHeap,
 @Input          hHeap           Handle to a Heap
 @Return         The size of the heap.
 */ /**************************************************************************/
-IMG_EXPORT DEVMEM_SIZE_T
-PVRSRVDevmemGetHeapSize(PVRSRV_HEAP hHeap);
+IMG_EXPORT DEVMEM_SIZE_T PVRSRVDevmemGetHeapSize(PVRSRV_HEAP hHeap);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -234,17 +235,15 @@ PVRSRVDevmemGetHeapSize(PVRSRV_HEAP hHeap);
 @Output         phMemDescOut          On success, the resulting memory descriptor
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV_ error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVSubAllocDeviceMem(IMG_UINT8 uiPreAllocMultiplier,
-                        PVRSRV_HEAP hHeap,
-                        IMG_DEVMEM_SIZE_T uiSize,
-                        IMG_DEVMEM_LOG2ALIGN_T uiLog2Align,
-                        PVRSRV_MEMALLOCFLAGS_T uiMemAllocFlags,
-                        const IMG_CHAR *pszText,
-                        PVRSRV_MEMDESC *phMemDescOut);
+IMG_EXPORT PVRSRV_ERROR PVRSRVSubAllocDeviceMem(
+	IMG_UINT8 uiPreAllocMultiplier, PVRSRV_HEAP hHeap,
+	IMG_DEVMEM_SIZE_T uiSize, IMG_DEVMEM_LOG2ALIGN_T uiLog2Align,
+	PVRSRV_MEMALLOCFLAGS_T uiMemAllocFlags, const IMG_CHAR *pszText,
+	PVRSRV_MEMDESC *phMemDescOut);
 
-#define PVRSRVAllocDeviceMem(...) \
-    PVRSRVSubAllocDeviceMem(PVRSRV_DEVMEM_PRE_ALLOC_MULTIPLIER_NONE, __VA_ARGS__)
+#define PVRSRVAllocDeviceMem(...)                                        \
+	PVRSRVSubAllocDeviceMem(PVRSRV_DEVMEM_PRE_ALLOC_MULTIPLIER_NONE, \
+				__VA_ARGS__)
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -257,9 +256,8 @@ PVRSRVSubAllocDeviceMem(IMG_UINT8 uiPreAllocMultiplier,
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV_
                 error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVGetDefaultPhysicalHeap(PVRSRV_DEV_CONNECTION *psConnection,
-                             PVRSRV_PHYS_HEAP *peHeap);
+IMG_EXPORT PVRSRV_ERROR PVRSRVGetDefaultPhysicalHeap(
+	PVRSRV_DEV_CONNECTION *psConnection, PVRSRV_PHYS_HEAP *peHeap);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -277,11 +275,10 @@ PVRSRVGetDefaultPhysicalHeap(PVRSRV_DEV_CONNECTION *psConnection,
 @Return         eError   PVRSRV_OK on success. Otherwise, a PVRSRV_
                          error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVPhysHeapGetMemInfo(PVRSRV_DEV_CONNECTION *psConnection,
-                         IMG_UINT32 ui32PhysHeapCount,
-                         PVRSRV_PHYS_HEAP *paePhysHeapID,
-                         PHYS_HEAP_MEM_STATS *paPhysHeapMemStats);
+IMG_EXPORT PVRSRV_ERROR PVRSRVPhysHeapGetMemInfo(
+	PVRSRV_DEV_CONNECTION *psConnection, IMG_UINT32 ui32PhysHeapCount,
+	PVRSRV_PHYS_HEAP *paePhysHeapID,
+	PHYS_HEAP_MEM_STATS *paPhysHeapMemStats);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -304,8 +301,7 @@ PVRSRVDevmemGetMaxPhysBufferSizes(PVRSRV_DEV_CONNECTION *psConnection);
                                     to be freed
 @Return         None
 */ /**************************************************************************/
-IMG_EXPORT void
-PVRSRVFreeDeviceMem(PVRSRV_MEMDESC hMemDesc);
+IMG_EXPORT void PVRSRVFreeDeviceMem(PVRSRV_MEMDESC hMemDesc);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -325,9 +321,8 @@ PVRSRVFreeDeviceMem(PVRSRV_MEMDESC hMemDesc);
 @Return         PVRSRV_ERROR:       PVRSRV_OK on success. Otherwise, a PVRSRV_
                                     error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVAcquireCPUMapping(PVRSRV_MEMDESC hMemDesc,
-                        void **ppvCpuVirtAddrOut);
+IMG_EXPORT PVRSRV_ERROR PVRSRVAcquireCPUMapping(PVRSRV_MEMDESC hMemDesc,
+						void **ppvCpuVirtAddrOut);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -337,9 +332,7 @@ PVRSRVAcquireCPUMapping(PVRSRV_MEMDESC hMemDesc,
 @Input          hMemDesc            Handle of the memory descriptor
 @Return         None
 */ /**************************************************************************/
-IMG_EXPORT void
-PVRSRVReleaseCPUMapping(PVRSRV_MEMDESC hMemDesc);
-
+IMG_EXPORT void PVRSRVReleaseCPUMapping(PVRSRV_MEMDESC hMemDesc);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -357,10 +350,9 @@ PVRSRVReleaseCPUMapping(PVRSRV_MEMDESC hMemDesc);
 @Return         PVRSRV_ERROR:       PVRSRV_OK on success. Otherwise, a PVRSRV_
                                     error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVMapToDevice(PVRSRV_MEMDESC hMemDesc,
-                  PVRSRV_HEAP hHeap,
-                  IMG_DEV_VIRTADDR *psDevVirtAddrOut);
+IMG_EXPORT PVRSRV_ERROR PVRSRVMapToDevice(PVRSRV_MEMDESC hMemDesc,
+					  PVRSRV_HEAP hHeap,
+					  IMG_DEV_VIRTADDR *psDevVirtAddrOut);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -381,10 +373,9 @@ PVRSRVMapToDevice(PVRSRV_MEMDESC hMemDesc,
 @Return         PVRSRV_ERROR        PVRSRV_OK on success. Otherwise, a PVRSRV_
                                     error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVMapToDeviceAddress(DEVMEM_MEMDESC *psMemDesc,
-                         DEVMEM_HEAP *psHeap,
-                         IMG_DEV_VIRTADDR sDevVirtAddr);
+IMG_EXPORT PVRSRV_ERROR PVRSRVMapToDeviceAddress(DEVMEM_MEMDESC *psMemDesc,
+						 DEVMEM_HEAP *psHeap,
+						 IMG_DEV_VIRTADDR sDevVirtAddr);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -404,10 +395,9 @@ PVRSRVMapToDeviceAddress(DEVMEM_MEMDESC *psMemDesc,
 @Return         PVRSRV_ERROR        PVRSRV_OK on success. Otherwise, a PVRSRV_
                                     error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVMapToDeviceAsCPUReflection(DEVMEM_MEMDESC *psMemDesc,
-                                 PVRSRV_HEAP psSVMHeap,
-                                 IMG_CPU_VIRTADDR pvCPUVirtAddr);
+IMG_EXPORT PVRSRV_ERROR PVRSRVMapToDeviceAsCPUReflection(
+	DEVMEM_MEMDESC *psMemDesc, PVRSRV_HEAP psSVMHeap,
+	IMG_CPU_VIRTADDR pvCPUVirtAddr);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -444,9 +434,8 @@ PVRSRVGetDeviceVirtualAddress(DEVMEM_MEMDESC *psMemDesc);
 @Return         PVRSRV_ERROR:       PVRSRV_OK on success. Otherwise, a PVRSRV_
                                     error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVAcquireDeviceMapping(PVRSRV_MEMDESC hMemDesc,
-                           IMG_DEV_VIRTADDR *psDevVirtAddrOut);
+IMG_EXPORT PVRSRV_ERROR PVRSRVAcquireDeviceMapping(
+	PVRSRV_MEMDESC hMemDesc, IMG_DEV_VIRTADDR *psDevVirtAddrOut);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -457,8 +446,7 @@ PVRSRVAcquireDeviceMapping(PVRSRV_MEMDESC hMemDesc,
 @Input          hMemDesc            Handle of the memory descriptor
 @Return         None
 */ /**************************************************************************/
-IMG_EXPORT void
-PVRSRVReleaseDeviceMapping(PVRSRV_MEMDESC hMemDesc);
+IMG_EXPORT void PVRSRVReleaseDeviceMapping(PVRSRV_MEMDESC hMemDesc);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -492,13 +480,10 @@ PVRSRVReleaseDeviceMapping(PVRSRV_MEMDESC hMemDesc);
 @Return         PVRSRV_OK is successful
 */
 /*****************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVDevmemLocalImport(const PVRSRV_DEV_CONNECTION *psDevConnection,
-                                     IMG_HANDLE hExtHandle,
-                                     PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                                     PVRSRV_MEMDESC *phMemDescPtr,
-                                     IMG_DEVMEM_SIZE_T *puiSizePtr,
-                                     const IMG_CHAR *pszAnnotation);
+IMG_EXPORT PVRSRV_ERROR PVRSRVDevmemLocalImport(
+	const PVRSRV_DEV_CONNECTION *psDevConnection, IMG_HANDLE hExtHandle,
+	PVRSRV_MEMALLOCFLAGS_T uiFlags, PVRSRV_MEMDESC *phMemDescPtr,
+	IMG_DEVMEM_SIZE_T *puiSizePtr, const IMG_CHAR *pszAnnotation);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -514,7 +499,7 @@ PVRSRVDevmemLocalImport(const PVRSRV_DEV_CONNECTION *psDevConnection,
 */
 /*****************************************************************************/
 IMG_EXPORT PVRSRV_ERROR PVRSRVDevmemGetImportUID(PVRSRV_MEMDESC hMemDesc,
-                                      IMG_UINT64 *pui64UID);
+						 IMG_UINT64 *pui64UID);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -544,14 +529,11 @@ IMG_EXPORT PVRSRV_ERROR PVRSRVDevmemGetImportUID(PVRSRV_MEMDESC hMemDesc,
 @Output         hMemDesc
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV_ error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVAllocExportableDevMem(const PVRSRV_DEV_CONNECTION *psDevConnection,
-                            IMG_DEVMEM_SIZE_T uiSize,
-                            IMG_DEVMEM_LOG2ALIGN_T uiLog2Align,
-                            IMG_UINT32 uiLog2HeapPageSize,
-                            PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                            const IMG_CHAR *pszText,
-                            PVRSRV_MEMDESC *hMemDesc);
+IMG_EXPORT PVRSRV_ERROR PVRSRVAllocExportableDevMem(
+	const PVRSRV_DEV_CONNECTION *psDevConnection, IMG_DEVMEM_SIZE_T uiSize,
+	IMG_DEVMEM_LOG2ALIGN_T uiLog2Align, IMG_UINT32 uiLog2HeapPageSize,
+	PVRSRV_MEMALLOCFLAGS_T uiFlags, const IMG_CHAR *pszText,
+	PVRSRV_MEMDESC *hMemDesc);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVChangeSparseGrowMem
@@ -572,10 +554,9 @@ PVRSRVAllocExportableDevMem(const PVRSRV_DEV_CONNECTION *psDevConnection,
                 PVRSRV_ERROR_DEVICEMEM_ALREADY_MAPPED when a value in pai32AllocIndices
                     has already been allocated.
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVChangeSparseGrowMem(PVRSRV_MEMDESC psMemDesc,
-                          IMG_UINT32 ui32PageCount,
-                          IMG_UINT32 *pai32Indices);
+IMG_EXPORT PVRSRV_ERROR PVRSRVChangeSparseGrowMem(PVRSRV_MEMDESC psMemDesc,
+						  IMG_UINT32 ui32PageCount,
+						  IMG_UINT32 *pai32Indices);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVChangeSparseShrinkMem
@@ -595,10 +576,9 @@ PVRSRVChangeSparseGrowMem(PVRSRV_MEMDESC psMemDesc,
                 PVRSRV_ERROR_DEVICEMEM_ALREADY_MAPPED when a value in pai32AllocIndices
                     has already been allocated.
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVChangeSparseShrinkMem(PVRSRV_MEMDESC psMemDesc,
-                            IMG_UINT32 ui32PageCount,
-                            IMG_UINT32 *pai32Indices);
+IMG_EXPORT PVRSRV_ERROR PVRSRVChangeSparseShrinkMem(PVRSRV_MEMDESC psMemDesc,
+						    IMG_UINT32 ui32PageCount,
+						    IMG_UINT32 *pai32Indices);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVAllocSparseDevMem
@@ -636,17 +616,12 @@ PVRSRVChangeSparseShrinkMem(PVRSRV_MEMDESC psMemDesc,
 @Output         hMemDesc
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV_ error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVAllocSparseDevMem(const PVRSRV_DEVMEMCTX psDevMemCtx,
-                         IMG_DEVMEM_SIZE_T uiSize,
-                         IMG_UINT32 ui32NumPhysChunks,
-                         IMG_UINT32 ui32NumVirtChunks,
-                         IMG_UINT32 *pui32MappingTable,
-                         IMG_DEVMEM_LOG2ALIGN_T uiLog2Align,
-                         IMG_UINT32 uiLog2HeapPageSize,
-                         PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                         const IMG_CHAR *pszText,
-                         PVRSRV_MEMDESC *hMemDesc);
+IMG_EXPORT PVRSRV_ERROR PVRSRVAllocSparseDevMem(
+	const PVRSRV_DEVMEMCTX psDevMemCtx, IMG_DEVMEM_SIZE_T uiSize,
+	IMG_UINT32 ui32NumPhysChunks, IMG_UINT32 ui32NumVirtChunks,
+	IMG_UINT32 *pui32MappingTable, IMG_DEVMEM_LOG2ALIGN_T uiLog2Align,
+	IMG_UINT32 uiLog2HeapPageSize, PVRSRV_MEMALLOCFLAGS_T uiFlags,
+	const IMG_CHAR *pszText, PVRSRV_MEMDESC *hMemDesc);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -658,8 +633,8 @@ PVRSRVAllocSparseDevMem(const PVRSRV_DEVMEMCTX psDevMemCtx,
 
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVGetMemAllocFlags(PVRSRV_MEMDESC hMemDesc, PVRSRV_MEMALLOCFLAGS_T *puiFlags);
+IMG_EXPORT PVRSRV_ERROR PVRSRVGetMemAllocFlags(
+	PVRSRV_MEMDESC hMemDesc, PVRSRV_MEMALLOCFLAGS_T *puiFlags);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -672,7 +647,6 @@ PVRSRVGetMemAllocFlags(PVRSRV_MEMDESC hMemDesc, PVRSRV_MEMALLOCFLAGS_T *puiFlags
 */ /**************************************************************************/
 
 IMG_EXPORT IMG_UINT32 PVRSRVGetOSPageSize(void);
-
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -696,8 +670,8 @@ IMG_EXPORT IMG_UINT32 PVRSRVGetOSPageShift(void);
 
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVGetHeapLog2PageSize(PVRSRV_HEAP hHeap, IMG_UINT32* puiLog2PageSize);
+IMG_EXPORT PVRSRV_ERROR PVRSRVGetHeapLog2PageSize(PVRSRV_HEAP hHeap,
+						  IMG_UINT32 *puiLog2PageSize);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -709,8 +683,8 @@ PVRSRVGetHeapLog2PageSize(PVRSRV_HEAP hHeap, IMG_UINT32* puiLog2PageSize);
 
 @Return         PVRSRV_OK on success. Otherwise, a PVRSRV error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVGetHeapReservedSize(PVRSRV_HEAP hHeap, IMG_DEVMEM_SIZE_T* puiSize);
+IMG_EXPORT PVRSRV_ERROR PVRSRVGetHeapReservedSize(PVRSRV_HEAP hHeap,
+						  IMG_DEVMEM_SIZE_T *puiSize);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -726,10 +700,9 @@ PVRSRVGetHeapReservedSize(PVRSRV_HEAP hHeap, IMG_DEVMEM_SIZE_T* puiSize);
 @Return         PVRSRV_ERROR:       PVRSRV_OK on success. Otherwise, a PVRSRV_
                                     error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVMakeLocalImportHandle(const PVRSRV_DEV_CONNECTION *psConnection,
-                            IMG_HANDLE hServerHandle,
-                            IMG_HANDLE *hLocalImportHandle);
+IMG_EXPORT PVRSRV_ERROR PVRSRVMakeLocalImportHandle(
+	const PVRSRV_DEV_CONNECTION *psConnection, IMG_HANDLE hServerHandle,
+	IMG_HANDLE *hLocalImportHandle);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -743,7 +716,7 @@ PVRSRVMakeLocalImportHandle(const PVRSRV_DEV_CONNECTION *psConnection,
 */ /**************************************************************************/
 IMG_EXPORT PVRSRV_ERROR
 PVRSRVUnmakeLocalImportHandle(const PVRSRV_DEV_CONNECTION *psConnection,
-                              IMG_HANDLE hLocalImportHandle);
+			      IMG_HANDLE hLocalImportHandle);
 
 #if defined(SUPPORT_INSECURE_EXPORT)
 /*************************************************************************/ /*!
@@ -765,8 +738,8 @@ PVRSRVUnmakeLocalImportHandle(const PVRSRV_DEV_CONNECTION *psConnection,
 @Return         PVRSRV_ERROR:   PVRSRV_OK on success. Otherwise, a PVRSRV_
                                 error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR PVRSRVExportDevMem(PVRSRV_MEMDESC hMemDesc,
-                                PVRSRV_DEVMEM_EXPORTCOOKIE *phExportCookie);
+IMG_EXPORT PVRSRV_ERROR PVRSRVExportDevMem(
+	PVRSRV_MEMDESC hMemDesc, PVRSRV_DEVMEM_EXPORTCOOKIE *phExportCookie);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -782,8 +755,8 @@ IMG_EXPORT PVRSRV_ERROR PVRSRVExportDevMem(PVRSRV_MEMDESC hMemDesc,
 @Return         PVRSRV_ERROR:   PVRSRV_OK on success. Otherwise, a PVRSRV_
                                 error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR PVRSRVUnexportDevMem(PVRSRV_MEMDESC hMemDesc,
-                                  PVRSRV_DEVMEM_EXPORTCOOKIE *phExportCookie);
+IMG_EXPORT PVRSRV_ERROR PVRSRVUnexportDevMem(
+	PVRSRV_MEMDESC hMemDesc, PVRSRV_DEVMEM_EXPORTCOOKIE *phExportCookie);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -804,10 +777,10 @@ IMG_EXPORT PVRSRV_ERROR PVRSRVUnexportDevMem(PVRSRV_MEMDESC hMemDesc,
 @Return         PVRSRV_ERROR:   PVRSRV_OK on success. Otherwise, a PVRSRV_
                                 error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR PVRSRVImportDevMem(const PVRSRV_DEV_CONNECTION *psConnection,
-                                PVRSRV_DEVMEM_EXPORTCOOKIE *phExportCookie,
-                                PVRSRV_MEMALLOCFLAGS_T uiFlags,
-                                PVRSRV_MEMDESC *phMemDescOut);
+IMG_EXPORT PVRSRV_ERROR PVRSRVImportDevMem(
+	const PVRSRV_DEV_CONNECTION *psConnection,
+	PVRSRV_DEVMEM_EXPORTCOOKIE *phExportCookie,
+	PVRSRV_MEMALLOCFLAGS_T uiFlags, PVRSRV_MEMDESC *phMemDescOut);
 #endif /* SUPPORT_INSECURE_EXPORT */
 
 /*************************************************************************/ /*!
@@ -828,8 +801,8 @@ IMG_EXPORT PVRSRV_ERROR PVRSRVImportDevMem(const PVRSRV_DEV_CONNECTION *psConnec
 @Return         PVRSRV_OK if address is valid or
                 PVRSRV_ERROR_INVALID_GPU_ADDR when address is invalid
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR PVRSRVIsDeviceMemAddrValid(PVRSRV_REMOTE_DEVMEMCTX hContext,
-                                        IMG_DEV_VIRTADDR sDevVAddr);
+IMG_EXPORT PVRSRV_ERROR PVRSRVIsDeviceMemAddrValid(
+	PVRSRV_REMOTE_DEVMEMCTX hContext, IMG_DEV_VIRTADDR sDevVAddr);
 
 /*************************************************************************/ /*!
 @InGroup        DevMemAPIs
@@ -841,8 +814,8 @@ IMG_EXPORT PVRSRV_ERROR PVRSRVIsDeviceMemAddrValid(PVRSRV_REMOTE_DEVMEMCTX hCont
 @Return         PVRSRV_OK on success or
                 PVRSRV_ERROR_INVALID_PARAMS
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVDevmemGetSize(PVRSRV_MEMDESC hMemDesc, IMG_DEVMEM_SIZE_T* puiSize);
+IMG_EXPORT PVRSRV_ERROR PVRSRVDevmemGetSize(PVRSRV_MEMDESC hMemDesc,
+					    IMG_DEVMEM_SIZE_T *puiSize);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVDevmemGetAnnotation
@@ -853,8 +826,8 @@ PVRSRVDevmemGetSize(PVRSRV_MEMDESC hMemDesc, IMG_DEVMEM_SIZE_T* puiSize);
 @Return         PVRSRV_OK on success or
                 PVRSRV_ERROR_INVALID_PARAMS
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVDevmemGetAnnotation(PVRSRV_MEMDESC hMemDesc, IMG_CHAR **pszAnnotation);
+IMG_EXPORT PVRSRV_ERROR PVRSRVDevmemGetAnnotation(PVRSRV_MEMDESC hMemDesc,
+						  IMG_CHAR **pszAnnotation);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVExportDevMemContext
@@ -884,10 +857,9 @@ PVRSRVDevmemGetAnnotation(PVRSRV_MEMDESC hMemDesc, IMG_CHAR **pszAnnotation);
 @Return         PVRSRV_ERROR:      PVRSRV_OK on success. Otherwise, a PVRSRV_
                                    error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVExportDevMemContext(PVRSRV_DEVMEMCTX hLocalDevmemCtx,
-                          PVRSRV_MEMDESC hSharedAllocation,
-                          PVRSRV_EXPORT_DEVMEMCTX *phExportCtx);
+IMG_EXPORT PVRSRV_ERROR PVRSRVExportDevMemContext(
+	PVRSRV_DEVMEMCTX hLocalDevmemCtx, PVRSRV_MEMDESC hSharedAllocation,
+	PVRSRV_EXPORT_DEVMEMCTX *phExportCtx);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVUnexportDevMemContext
@@ -897,8 +869,7 @@ PVRSRVExportDevMemContext(PVRSRV_DEVMEMCTX hLocalDevmemCtx,
 @Input          hExportCtx     An export context retrieved from
                                PVRSRVExportDevMemContext.
 */ /**************************************************************************/
-IMG_EXPORT void
-PVRSRVUnexportDevMemContext(PVRSRV_EXPORT_DEVMEMCTX hExportCtx);
+IMG_EXPORT void PVRSRVUnexportDevMemContext(PVRSRV_EXPORT_DEVMEMCTX hExportCtx);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVAcquireRemoteDevMemContext
@@ -917,10 +888,9 @@ PVRSRVUnexportDevMemContext(PVRSRV_EXPORT_DEVMEMCTX hExportCtx);
 @Return         PVRSRV_ERROR:      PVRSRV_OK on success. Otherwise, a PVRSRV_
                                    error code
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR
-PVRSRVAcquireRemoteDevMemContext(PVRSRV_DEVMEMCTX hDevmemCtx,
-                                 PVRSRV_MEMDESC hSharedAllocation,
-                                 PVRSRV_REMOTE_DEVMEMCTX *phRemoteCtx);
+IMG_EXPORT PVRSRV_ERROR PVRSRVAcquireRemoteDevMemContext(
+	PVRSRV_DEVMEMCTX hDevmemCtx, PVRSRV_MEMDESC hSharedAllocation,
+	PVRSRV_REMOTE_DEVMEMCTX *phRemoteCtx);
 
 /*************************************************************************/ /*!
 @Function       PVRSRVReleaseRemoteDevMemContext
@@ -971,8 +941,8 @@ PVRSRVUnregisterDevmemPageFaultNotify(PVRSRV_DEVMEMCTX psDevmemCtx);
 @Return         PVRSRV_OK if an address is returned,
                 PVRSRV_ERROR_RESOURCE_UNAVAILABLE otherwise.
 */ /**************************************************************************/
-IMG_EXPORT PVRSRV_ERROR PVRSRVGetRemoteDeviceMemFaultAddress(PVRSRV_REMOTE_DEVMEMCTX hContext,
-                                                             IMG_DEV_VIRTADDR *psFaultAddress);
+IMG_EXPORT PVRSRV_ERROR PVRSRVGetRemoteDeviceMemFaultAddress(
+	PVRSRV_REMOTE_DEVMEMCTX hContext, IMG_DEV_VIRTADDR *psFaultAddress);
 
 #if defined(__cplusplus)
 }
