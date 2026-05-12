@@ -57,6 +57,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define SYS_RGX_OF_COMPATIBLE    \
 	_COMPAT("ti,am62-gpu")   \
 	_COMPAT("ti,j721s2-gpu") \
-	_COMPAT("ti,j721s2-pvr")
+	_COMPAT("ti,j721s2-pvr") \
+	_COMPAT("ti,am62p-pvr")
 
 #endif
