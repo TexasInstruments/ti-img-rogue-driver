@@ -1,0 +1,102 @@
+From e2b061a4f57eb34005a71dfc63af6d088e193596 Mon Sep 17 00:00:00 2001
+From: Karolis Mituzas <karolis.mituzas@imgtec.com>
+Date: Tue, 20 Jan 2026 10:18:11 +0000
+Subject: [PATCH 2/8] arm64/config: Add aarch64 config fragment for RogueDDK
+ usage
+
+arm64 defconfig tends to have enough options enabled to support GPU
+kernel driver. However, it also has support for too many different SoC
+architectures/drivers.
+
+The config fragment in this commit trims those architectures down and
+enables a couple of things required for our target SoCs (Mediatek mt8173
+as well as TI am625/j721).
+
+Some (low performance cost) debug features are also enabled.
+---
+ arch/arm64/configs/rogueddk_fragment.config | 73 +++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
+ create mode 100644 arch/arm64/configs/rogueddk_fragment.config
+
+diff --git a/arch/arm64/configs/rogueddk_fragment.config b/arch/arm64/configs/rogueddk_fragment.config
+new file mode 100644
+index 000000000000..882a949e0745
+--- /dev/null
++++ b/arch/arm64/configs/rogueddk_fragment.config
+@@ -0,0 +1,73 @@
++# Ensure kernel is correctly tagged
++CONFIG_LOCALVERSION_AUTO=n
++CONFIG_LOCALVERSION="-pvr-arm64-1"
++
++# Trim unused SoC architectures
++CONFIG_ARCH_ACTIONS=n
++CONFIG_ARCH_AIROHA=n
++CONFIG_ARCH_ALPINE=n
++CONFIG_ARCH_APPLE=n
++CONFIG_ARCH_AXIADO=n
++CONFIG_ARCH_BCM=n
++CONFIG_ARCH_BERLIN=n
++CONFIG_ARCH_BLAIZE=n
++CONFIG_ARCH_CIX=n
++CONFIG_ARCH_EXYNOS=n
++CONFIG_ARCH_HISI=n
++CONFIG_ARCH_INTEL_SOCFPGA=n
++CONFIG_ARCH_KEEMBAY=n
++CONFIG_ARCH_LG1K=n
++CONFIG_ARCH_MA35=n
++CONFIG_ARCH_MESON=n
++CONFIG_ARCH_MVEBU=n
++CONFIG_ARCH_NPCM=n
++CONFIG_ARCH_NXP=n
++CONFIG_ARCH_QCOM=n
++CONFIG_ARCH_REALTEK=n
++CONFIG_ARCH_RENESAS=n
++CONFIG_ARCH_ROCKCHIP=n
++CONFIG_ARCH_SEATTLE=n
++CONFIG_ARCH_SOPHGO=n
++CONFIG_ARCH_SPRD=n
++CONFIG_ARCH_STM32=n
++CONFIG_ARCH_SUNXI=n
++CONFIG_ARCH_SYNQUACER=n
++CONFIG_ARCH_TEGRA=n
++CONFIG_ARCH_THUNDER=n
++CONFIG_ARCH_THUNDER2=n
++CONFIG_ARCH_UNIPHIER=n
++CONFIG_ARCH_VISCONTI=n
++CONFIG_ARCH_XGENE=n
++CONFIG_ARCH_ZYNQMP=n
++
++# Trim unused DRM components
++CONFIG_DRM_ETNAVIV=n
++CONFIG_DRM_HISI_HIBMC=n
++CONFIG_DRM_HISI_KIRIN=n
++CONFIG_DRM_LIMA=n
++CONFIG_DRM_NOUVEAU=n
++CONFIG_DRM_PANFROST=n
++CONFIG_DRM_PANTHOR=n
++
++# Trim some unneeded media components
++CONFIG_MEDIA_ANALOG_TV_SUPPORT=n
++CONFIG_MEDIA_DIGITAL_TV_SUPPORT=n
++CONFIG_RC_CORE=n
++
++# Quality of life
++CONFIG_FW_LOADER_COMPRESS=y
++CONFIG_FW_LOADER_COMPRESS_ZSTD=y
++CONFIG_FTRACE=y
++
++# Chromebook-specific settings
++CONFIG_SND_SOC_MT8173=m
++CONFIG_GOOGLE_FIRMWARE=n
++
++# am68-specific settings
++CONFIG_PCI_J721E_HOST=m
++
++# CIFS support - needed for automation
++CONFIG_CIFS=m
++CONFIG_CIFS_POSIX=y
++CONFIG_CIFS_UPCALL=y
++CONFIG_CIFS_XATTR=y
+-- 
+2.43.0
+

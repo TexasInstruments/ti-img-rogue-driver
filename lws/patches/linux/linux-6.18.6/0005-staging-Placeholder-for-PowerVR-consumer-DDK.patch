@@ -1,0 +1,67 @@
+From 7bd5b9ef56972a438e60733dc0ca4561de78402a Mon Sep 17 00:00:00 2001
+From: Karolis Mituzas <karolis.mituzas@imgtec.com>
+Date: Thu, 22 Jan 2026 09:20:54 +0000
+Subject: [PATCH 5/8] staging: Placeholder for PowerVR consumer DDK
+
+This is useful so that consumer DDK can be simply copied in using
+copy-to-kernel.sh script, without having to patch staging
+Kconfig/Makefile.
+
+Also add config fragment suitable for in-tree module build of nohw_linux
+KMD.
+---
+ arch/x86/configs/rogue_in_tree_fragment.config | 5 +++++
+ drivers/staging/Kconfig                        | 2 ++
+ drivers/staging/Makefile                       | 1 +
+ drivers/staging/imgtec/Kconfig                 | 7 +++++++
+ 4 files changed, 15 insertions(+)
+ create mode 100644 arch/x86/configs/rogue_in_tree_fragment.config
+ create mode 100644 drivers/staging/imgtec/Kconfig
+
+diff --git a/arch/x86/configs/rogue_in_tree_fragment.config b/arch/x86/configs/rogue_in_tree_fragment.config
+new file mode 100644
+index 000000000000..d0159ecd0f00
+--- /dev/null
++++ b/arch/x86/configs/rogue_in_tree_fragment.config
+@@ -0,0 +1,5 @@
++CONFIG_STAGING=y
++CONFIG_IMGTEC_OUT_OF_TREE=y
++CONFIG_POWERVR_ROGUE=m
++CONFIG_POWERVR_NULLDISP=m
++CONFIG_POWERVR_TC=n
+diff --git a/drivers/staging/Kconfig b/drivers/staging/Kconfig
+index 075e775d3868..3fc3c67a4be3 100644
+--- a/drivers/staging/Kconfig
++++ b/drivers/staging/Kconfig
+@@ -50,4 +50,6 @@ source "drivers/staging/vme_user/Kconfig"
+ 
+ source "drivers/staging/gpib/Kconfig"
+ 
++source "drivers/staging/imgtec/Kconfig"
++
+ endif # STAGING
+diff --git a/drivers/staging/Makefile b/drivers/staging/Makefile
+index e681e403509c..c18c3ede6c3d 100644
+--- a/drivers/staging/Makefile
++++ b/drivers/staging/Makefile
+@@ -14,3 +14,4 @@ obj-$(CONFIG_GREYBUS)		+= greybus/
+ obj-$(CONFIG_BCM2835_VCHIQ)	+= vc04_services/
+ obj-$(CONFIG_XIL_AXIS_FIFO)	+= axis-fifo/
+ obj-$(CONFIG_GPIB)	 	+= gpib/
++obj-$(CONFIG_IMGTEC_OUT_OF_TREE) += imgtec/
+diff --git a/drivers/staging/imgtec/Kconfig b/drivers/staging/imgtec/Kconfig
+new file mode 100644
+index 000000000000..d81e301388a6
+--- /dev/null
++++ b/drivers/staging/imgtec/Kconfig
+@@ -0,0 +1,7 @@
++# Placeholder Kconfig - this will be overwritten if non-upstream PowerVR kernel
++# driver deliverable is copied in-tree
++
++# OOT stands for out-of-tree
++config IMGTEC_OUT_OF_TREE
++	bool
++	default n
+-- 
+2.43.0
+

@@ -1,0 +1,85 @@
+From a56c6d3d5a7a2e3efb48c1a5b5b1cc9ef68a5585 Mon Sep 17 00:00:00 2001
+From: Karolis Mituzas <karolis.mituzas@imgtec.com>
+Date: Sat, 17 Jan 2026 11:28:03 +0000
+Subject: [PATCH 1/8] x86/config: Add x86_64 config fragment for RogueDDK usage
+
+Enable kernel options required for the GPU kernel mode driver.
+
+Also, enable some kernel options that are required for automation
+workflows and Docker support.
+---
+ arch/x86/configs/rogueddk_fragment.config | 62 +++++++++++++++++++++++
+ 1 file changed, 62 insertions(+)
+ create mode 100644 arch/x86/configs/rogueddk_fragment.config
+
+diff --git a/arch/x86/configs/rogueddk_fragment.config b/arch/x86/configs/rogueddk_fragment.config
+new file mode 100644
+index 000000000000..f802f19edb3a
+--- /dev/null
++++ b/arch/x86/configs/rogueddk_fragment.config
+@@ -0,0 +1,62 @@
++# Ensure kernel is correctly tagged
++CONFIG_LOCALVERSION_AUTO=n
++CONFIG_LOCALVERSION="-pvr-1"
++
++# DDK Requirements/nice-to-haves
++CONFIG_COMMON_CLK=y
++CONFIG_DEVFREQ_GOV_SIMPLE_ONDEMAND=y
++CONFIG_DEVFREQ_THERMAL=y
++CONFIG_DMABUF_HEAPS=y
++CONFIG_DMABUF_HEAPS_SYSTEM=y
++CONFIG_DRM_FBDEV_EMULATION=y
++CONFIG_FB=y
++CONFIG_FB_EFI=y # may not be required
++CONFIG_FB_MODE_HELPERS=y # may not be required
++CONFIG_FB_TILEBLITTING=y # may not be required
++CONFIG_PM_DEVFREQ=y
++
++# Quality of life
++CONFIG_FUSE_FS=y # to enable sshfs
++CONFIG_FW_LOADER_COMPRESS=y
++CONFIG_FW_LOADER_COMPRESS_ZSTD=y
++
++# Config options for in-house automation
++CONFIG_ATL1C=y
++CONFIG_BLK_DEV_NVME=y
++CONFIG_CIFS=y
++CONFIG_CIFS_POSIX=y # may not be required
++CONFIG_CIFS_UPCALL=y # may not be required
++CONFIG_CIFS_XATTR=y # may not be required
++CONFIG_FDDI=y # may not be required
++CONFIG_HW_RANDOM_VIRTIO=y
++CONFIG_KVM=y
++CONFIG_KVM_AMD=y
++CONFIG_KVM_INTEL=y
++CONFIG_PARAVIRT_SPINLOCKS=y
++CONFIG_VIRTIO_BALLOON=y
++CONFIG_VIRTIO_MMIO=y
++CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y # may not be required
++
++# To support Docker
++CONFIG_BPF_SYSCALL=y
++CONFIG_BRIDGE=m
++CONFIG_NETFILTER_ADVANCED=y # needed for BRIDGE_NETFILTER=m
++CONFIG_BRIDGE_NETFILTER=m
++CONFIG_CGROUP_BPF=y
++CONFIG_DM_MULTIPATH=m
++CONFIG_IP_VS=m
++CONFIG_MEMCG=y
++CONFIG_NETFILTER_XT_MATCH_IPVS=m
++CONFIG_NFT_COMPAT=m
++CONFIG_NFT_NAT=m
++CONFIG_NF_TABLES=m
++CONFIG_NF_TABLES_IPV4=y
++CONFIG_OVERLAY_FS=m
++CONFIG_VETH=m
++
++# Extras
++CONFIG_RPMSG_CHAR=y
++CONFIG_RPMSG_VIRTIO=y
++
++# Perf optimisation
++CONFIG_DEBUG_ENTRY=n
+-- 
+2.43.0
+

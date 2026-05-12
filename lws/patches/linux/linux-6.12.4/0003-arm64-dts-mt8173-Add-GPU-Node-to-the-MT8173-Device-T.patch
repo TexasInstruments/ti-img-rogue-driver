@@ -1,0 +1,181 @@
+From f305f612e2693f17e412e7e12433a099127d10c3 Mon Sep 17 00:00:00 2001
+From: Ravi Kiri <ravi.kiri@imgtec.com>
+Date: Mon, 27 Feb 2023 14:58:18 +0000
+Subject: [PATCH 3/5] arm64: dts: mt8173: Add GPU Node to the MT8173 Device
+ Tree
+
+Added GPU node to the MT8173 SoC device tree file and enabled the
+GPU device for MT8173-Elm board. This includes enabling the device
+by setting status to "okay", providing respective "operating-points"
+etc.
+
+Also added the "mfg-async_supply" property in the "scpsys" node for
+ELM board because this supply is used to power on the GPU.
+
+These DT nodes are taken from the Google Chrome-OS Linux sources,
+
+  URL=chromium-review.googlesource.com/admin/repos/chromiumos/third_party/kernel
+  COMMIT_ID=2e3e46b91da4aac56e9679141a803849019edf42
+
+On top of this commit, we made the following changes,
+  - Removed the redundant "mfgsys@13fff000" node as the imgtec mtk system driver
+    used the "reg" property of "mfgsys-gpu@13000000" to get its base address.
+  - Used macros for "cooling-device" property instead of hardcoded constants for
+    better readability.
+
+Signed-off-by: Ravi Kiri <ravi.kiri@imgtec.com>
+---
+ arch/arm64/boot/dts/mediatek/mt8173-elm.dtsi  | 13 +++++++
+ arch/arm64/boot/dts/mediatek/mt8173.dtsi      | 34 +++++++++++++++++++
+ arch/arm64/configs/mt8173_img_fragment.config | 14 +-------
+ 3 files changed, 48 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/mediatek/mt8173-elm.dtsi b/arch/arm64/boot/dts/mediatek/mt8173-elm.dtsi
+index b4d85147b77b..e006db7a91c8 100644
+--- a/arch/arm64/boot/dts/mediatek/mt8173-elm.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt8173-elm.dtsi
+@@ -219,6 +219,19 @@ &dpi0 {
+ 	status = "okay";
+ };
+ 
++&gpu {
++	mfgsys-power-supply = <&da9211_vgpu_reg>;
++	operating-points = <
++		253500 1000000
++		299000 1000000
++		396500 1000000
++		455000 1000000
++		494000 1130000
++		598000 1130000
++	>;
++	status = "okay";
++};
++
+ &hdmi0 {
+ 	status = "okay";
+ 	ports {
+diff --git a/arch/arm64/boot/dts/mediatek/mt8173.dtsi b/arch/arm64/boot/dts/mediatek/mt8173.dtsi
+index 3458be7f7f61..a7d152849263 100644
+--- a/arch/arm64/boot/dts/mediatek/mt8173.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt8173.dtsi
+@@ -310,6 +310,12 @@ THERMAL_NO_LIMIT>,
+ 							  THERMAL_NO_LIMIT>;
+ 					contribution = <1024>;
+ 				};
++				map2 {
++					trip = <&target>;
++					cooling-device = <&gpu THERMAL_NO_LIMIT
++							  THERMAL_NO_LIMIT>;
++					contribution = <2048>;
++				};
+ 			};
+ 		};
+ 	};
+@@ -993,6 +999,34 @@ u2port1: usb-phy@11291000 {
+ 			};
+ 		};
+ 
++		gpu: mfgsys-gpu@13000000 {
++			compatible = "mediatek,mt8173-gpu";
++			reg = <0 0x13000000 0 0xffff>, <0 0x13fff000 0 0x1000>;
++			power-domains =	<&spm MT8173_POWER_DOMAIN_MFG>;
++			clocks = <&apmixedsys CLK_APMIXED_MMPLL>,
++					 <&topckgen CLK_TOP_MEM_MFG_IN_SEL>,
++					 <&topckgen CLK_TOP_AXI_MFG_IN_SEL>,
++					 <&topckgen CLK_TOP_AXI_SEL>,
++					 <&topckgen CLK_TOP_MEM_SEL>,
++					 <&topckgen CLK_TOP_MFG_SEL>,
++					 <&topckgen CLK_TOP_MMPLL>,
++					 <&clk26m>;
++			clock-names = "mmpll_clk",
++						  "mfg_mem_in_sel",
++						  "mfg_axi_in_sel",
++						  "top_axi",
++						  "top_mem",
++						  "top_mfg",
++						  "top_mmpll",
++						  "clk26m";
++			interrupts = <GIC_SPI 217 IRQ_TYPE_LEVEL_LOW>;
++			interrupt-names = "RGX";
++			status = "disabled";
++			#cooling-cells = <2>;
++			#cooling-min-level = <0>;
++			#cooling-max-level = <3>;
++		};
++
+ 		mmsys: syscon@14000000 {
+ 			compatible = "mediatek,mt8173-mmsys", "syscon";
+ 			reg = <0 0x14000000 0 0x1000>;
+diff --git a/arch/arm64/configs/mt8173_img_fragment.config b/arch/arm64/configs/mt8173_img_fragment.config
+index 530bbd40ab1f..16595cda941c 100644
+--- a/arch/arm64/configs/mt8173_img_fragment.config
++++ b/arch/arm64/configs/mt8173_img_fragment.config
+@@ -40,7 +40,6 @@ CONFIG_DRM_HDLCD=n
+ CONFIG_DRM_HISI_KIRIN=n
+ CONFIG_DRM_I2C_ADV7511_AUDIO=n
+ CONFIG_DRM_KOMEDA=n
+-CONFIG_DRM_LEGACY=n
+ CONFIG_DRM_LIMA=n
+ CONFIG_DRM_LONTIUM_LT8912B=n
+ CONFIG_DRM_LONTIUM_LT9611=n
+@@ -52,12 +51,8 @@ CONFIG_DRM_PANEL_RAYDIUM_RM67191=n
+ CONFIG_DRM_PANEL_SITRONIX_ST7703=n
+ CONFIG_DRM_PANFROST=n
+ CONFIG_DRM_PL111=n
+-CONFIG_DRM_RCAR_DW_HDMI=n
+-CONFIG_DRM_RCAR_USE_LVDS=n
+-CONFIG_DRM_RCAR_USE_MIPI_DSI=n
+ CONFIG_DRM_SIMPLE_BRIDGE=n
+ CONFIG_DRM_TIDSS=n
+-CONFIG_DRM_MXSFB=n
+ 
+ # Explicitly needed
+ CONFIG_REGULATOR=y
+@@ -80,7 +75,7 @@ CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
+ CONFIG_CPU_FREQ_GOV_POWERSAVE=y
+ CONFIG_CPU_IDLE_GOV_LADDER=y
+ CONFIG_DRM=y
+-CONFIG_SND_SOC_MT8173_RT5650_RT5676=y
++CONFIG_SPI_MT65XX=y
+ # Requested for arm64 virtualisation experiments
+ CONFIG_VIRTUALIZATION=y
+ # Required because Debian/Ubuntu publishes firmware-linux with compressed FW
+@@ -164,7 +159,6 @@ CONFIG_DRM_ANALOGIX_ANX78XX=y
+ CONFIG_DRM_ANALOGIX_DP=y
+ CONFIG_DRM_DISPLAY_CONNECTOR=y
+ CONFIG_DRM_DISPLAY_HELPER=y
+-CONFIG_DRM_GEM_DMA_HELPER=y
+ CONFIG_DRM_KMS_HELPER=y
+ CONFIG_DRM_MEDIATEK_HDMI=y
+ CONFIG_DW_WATCHDOG=n
+@@ -211,7 +205,6 @@ CONFIG_MHI_BUS=n
+ CONFIG_MICREL_PHY=n
+ CONFIG_MICROSEMI_PHY=n
+ CONFIG_MII=m
+-CONFIG_MMC_SDHCI_AM654=n
+ CONFIG_MMC_SDHCI_OF_DWCMSHC=n
+ CONFIG_MOUSE_ELAN_I2C=y
+ CONFIG_MQ_IOSCHED_KYBER=n
+@@ -261,19 +254,14 @@ CONFIG_RPMSG_QCOM_GLINK_RPM=n
+ CONFIG_SENSORS_GPIO_FAN=n
+ CONFIG_SENSORS_JC42=n
+ CONFIG_SENSORS_LM75=n
+-CONFIG_SLAB=y
+ CONFIG_SLIMBUS=n
+-CONFIG_SLUB=n
+-CONFIG_SOC_BRCMSTB=n
+ CONFIG_SOUNDWIRE=n
+ CONFIG_SPI_BITBANG=y
+ CONFIG_SPI_DESIGNWARE=n
+ CONFIG_SPI_GPIO=y
+-CONFIG_SPI_MT65XX=y
+ CONFIG_SPI_SPIDEV=y
+ CONFIG_SPMI=n
+ CONFIG_STAGING=n
+-CONFIG_STM=n
+ CONFIG_STRICT_DEVMEM=n
+ CONFIG_SUNRPC=m
+ CONFIG_SUNRPC_GSS=m
+-- 
+2.48.1
+

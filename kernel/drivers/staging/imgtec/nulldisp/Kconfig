@@ -1,0 +1,4 @@
+config POWERVR_NULLDISP
+	tristate "DRM display driver for VNC viewing"
+	default n
+	depends on DRM

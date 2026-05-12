@@ -1,0 +1,218 @@
+#!/bin/sh
+########################################################################### ###
+#@Description   Copy driver to kernel tree
+#@Copyright     Copyright (c) Imagination Technologies Ltd. All Rights Reserved
+#@License       Dual MIT/GPLv2
+#
+# The contents of this file are subject to the MIT license as set out below.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# Alternatively, the contents of this file may be used under the terms of
+# the GNU General Public License Version 2 ("GPL") in which case the provisions
+# of GPL are applicable instead of those above.
+#
+# If you wish to allow use of your version of this file only under the terms of
+# GPL, and not to allow others to use your version of this file under the terms
+# of the MIT license, indicate your decision by deleting the provisions above
+# and replace them with the notice and other provisions required by GPL as set
+# out in the file called "GPL-COPYING" included in this distribution. If you do
+# not delete the provisions above, a recipient may use your version of this file
+# under the terms of either the MIT license or GPL.
+#
+# This License is also included in this distribution in the file called
+# "MIT-COPYING".
+#
+# EXCEPT AS OTHERWISE STATED IN A NEGOTIATED AGREEMENT: (A) THE SOFTWARE IS
+# PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+# BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+# PURPOSE AND NONINFRINGEMENT; AND (B) IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+### ###########################################################################
+
+set -e
+
+verbose=0
+quiet=0
+
+usage() {
+	scriptname="$(basename "$0")"
+	echo "usage: ${scriptname} [OPTIONS] [--] KERNELDIR DDK_DIR [OUTDIR]"
+	echo
+	echo 'Copy kernel driver tree in DDK_DIR to kernel tree specified by KERNELDIR.'
+	echo
+	echo 'Optional positional argument OUTDIR is for internal use only and should not be'
+	echo "used when ${scriptname} is used from within release package."
+	echo
+	echo 'options:'
+	echo '  -s   skip hwdefs'
+	echo '  -v   verbose mode'
+	echo '  -q   quiet mode'
+}
+
+error() {
+	echo >&2 "error:" "$@"
+	exit 1
+}
+
+while getopts :vsq OPT; do
+	case $OPT in
+		v)
+			verbose=1
+			;;
+		q)
+			quiet=1
+			;;
+		s)
+			skip_hwdefs=1
+			;;
+		*)
+			usage
+			exit 1
+	esac
+done
+shift $((OPTIND - 1))
+OPTIND=1
+
+if [ $# -lt 1 ]; then
+	usage
+	exit 1
+fi
+
+kerneldir="$1"
+ddkdir="$2"
+outdir="$3"
+
+type=package
+if [ -n "$outdir" ]; then
+	type=internal
+fi
+
+[ $verbose = 1 ] && copy_opts=-v || copy_opts=
+
+require_dir() {
+	if [ ! -d "$1" ]; then
+		error "required directory '$1' not found"
+	fi
+}
+
+say() {
+	[ $quiet != 1 ] && echo "$@"
+}
+
+copy() {
+	cp -u $copy_opts "$@" || error "copy failed"
+}
+
+make_dir() {
+	[ $verbose = 1 ] && echo mkdir -p "$@"
+	mkdir -p "$@" || error "mkdir failed"
+}
+
+require_dir "$kerneldir"
+require_dir "$ddkdir"
+cd "$ddkdir"
+
+case "$type" in
+	package)
+		;;
+	internal)
+		copy_opts="$copy_opts --no-preserve=mode"
+		;;
+esac
+
+require_dir 'hwdefs'
+require_dir 'services/system'
+require_dir 'services/server/env/linux'
+
+subtree=drivers/staging/imgtec
+
+say "Create $kerneldir/$subtree/pvrsrvkm/services"
+make_dir "$kerneldir/$subtree/pvrsrvkm/services"
+
+########################################################################
+# Copy new kernel-style DDK code in kernel/drivers/staging.
+
+say "Copy kernel/$subtree"
+copy -r "kernel/$subtree" "$kerneldir/drivers/staging"
+
+########################################################################
+# We don't want these platforms in overlay:
+rm -vrf "$kerneldir/$subtree/plato"
+
+########################################################################
+# Copy DDK source files.
+#
+say "Copy DDK source files"
+copy -r services/include "$kerneldir/$subtree/pvrsrvkm/services/"
+copy -r services/server "$kerneldir/$subtree/pvrsrvkm/services/"
+copy -r services/shared "$kerneldir/$subtree/pvrsrvkm/services/"
+copy -r services/system "$kerneldir/$subtree/pvrsrvkm/services/"
+copy -r include "$kerneldir/$subtree/pvrsrvkm/"
+
+########################################################################
+# Autogenerated bridge code.
+#
+say 'Copy pregenerated bridge source files'
+
+make_dir "$kerneldir/$subtree/pvrsrvkm/generated"
+case $type in
+	internal)
+		arch="$(grep 'PVR_ARCH\>' "$outdir/config_kernel.mk" | \
+			sed 's,override PVR_ARCH := ,,g')"
+		make_dir "$kerneldir/$subtree/pvrsrvkm/generated/$arch"
+		copy -r "$outdir/target_neutral/intermediates"/*_bridge "$kerneldir/$subtree/pvrsrvkm/generated/$arch"
+		;;
+	package)
+		copy -r "$ddkdir/generated" "$kerneldir/$subtree/pvrsrvkm"
+		;;
+esac
+
+if [ -z "${skip_hwdefs}" ]; then
+	say 'Copy hwdefs'
+	copy -r hwdefs "$kerneldir/$subtree/pvrsrvkm/"
+fi
+
+########################################################################
+# Last step: copy pvrversion.h files into the kernel
+# tree.
+
+say 'Copy pvrversion.h'
+case $type in
+	internal)
+		copy "$outdir/include/pvrversion.h" "$kerneldir/$subtree/"
+		;;
+	package)
+		copy include/pvrversion.h "$kerneldir/$subtree/"
+		;;
+esac
+
+say 'Remove placeholder Kconfig if it exists'
+rm -f "$kerneldir/$subtree/Kconfig"
+
+say 'Copying kbuild files'
+for kbuild_file in \
+	$subtree/Kconfig \
+	$subtree/Makefile \
+	$subtree/pvrsrvkm/Kconfig \
+	$subtree/pvrsrvkm/Makefile \
+	$subtree/tc/Kconfig \
+	$subtree/tc/Makefile
+do
+	copy --no-preserve=mode "kernel/$kbuild_file" "$kerneldir/$kbuild_file"
+done
+
+# Remove DDK makefiles
+find "$kerneldir/$subtree" -name 'Linux.mk' -delete
+
+say "Driver installed in $kerneldir/$subtree"
