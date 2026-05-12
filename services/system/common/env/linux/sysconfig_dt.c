@@ -387,7 +387,8 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
 		if (id) {
 			if (!(strcmp(id->compatible, "ti,j721s2-gpu") &&
 				strcmp(id->compatible, "ti,j721s2-pvr") &&
-				strcmp(id->compatible, "ti,j721e-pvr")))
+				strcmp(id->compatible, "ti,j721e-pvr") &&
+				strcmp(id->compatible, "ti,j721e-gpu")))
 			{
 				(*ppsDevConfig)->eSystemCoherencyMode =
 					PVRSRV_DEVICE_SNOOP_CPU_ONLY;
