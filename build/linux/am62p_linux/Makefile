@@ -65,11 +65,6 @@ endif
 # Always print fatal and error logs, especially in kernel mode.
 PVRSRV_NEED_PVR_DPF := 1
 
-# System is UMA
-SUPPORT_WRAP_EXTMEM := 1
-
 # Should be last
 include ../config/core.mk
 include ../common/lws.mk
-include ../common/wrapextmem.mk
-include ../common/3rdparty.mk
